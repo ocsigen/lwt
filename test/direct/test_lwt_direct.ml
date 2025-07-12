@@ -70,6 +70,39 @@ let main_tests = suite "main" [
       List.iter (fun fut -> yield(); sum := !sum + await fut) items;
       !sum = 5050
   end;
+
+  test "awaiting on failing promise" begin fun () ->
+    let fut: unit Lwt.t = let* () = Lwt.pause () in let* () = Lwt_unix.sleep 0.0001 in Lwt.fail Exit in
+    run @@ fun () ->
+      try await fut; false
+      with Exit -> true
+  end;
+
+  test "run can fail" begin fun () ->
+    run @@ fun () ->
+      let sub: unit Lwt.t = run @@ fun () ->
+        Lwt_unix.sleep 0.00001 |> await;
+        raise Exit
+      in
+      try await sub; false
+      with Exit -> true
+  end;
+
+  test "concurrent fib" begin fun () ->
+    let rec badfib n =
+      if n <= 2 then Lwt.return 1
+      else
+        run begin fun () ->
+          let f1 = badfib (n-1) in
+          let f2 = badfib (n-2) in
+          await f1 + await f2
+        end
+    in
+    run @@ fun () ->
+      let fib12 = badfib 12 in
+      let fib12 = await fib12 in
+      fib12 = 144
+  end
 ]
 
 let storage_tests = suite "storage" [
