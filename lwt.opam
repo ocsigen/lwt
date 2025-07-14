@@ -25,7 +25,6 @@ depends: [
   "cppo" {build & >= "1.1.0"}
   "ocamlfind" {dev & >= "1.7.3-1"}
   "odoc" {with-doc & >= "2.3.0"}
-  "bisect_ppx" {with-test}
   "dune-configurator"
   "ocplib-endian"
 ]

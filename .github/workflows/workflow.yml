@@ -58,9 +58,7 @@ jobs:
 
       - run: opam exec -- dune build
 
-      - run: opam exec -- dune runtest --instrument-with bisect_ppx --force
-
-      - run: opam exec -- bisect-ppx-report summary --per-file
+      - run: opam exec -- dune runtest
 
   lint-opam:
     runs-on: ubuntu-latest
