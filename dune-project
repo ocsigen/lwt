@@ -46,6 +46,7 @@
 
 (package
  (name lwt_direct)
+ (version 6.0.0~alpha00)
  (synopsis "Direct-style control-flow and `await` for Lwt")
  (authors "Simon Cruanes")
  (depends
@@ -56,6 +57,7 @@
 
 (package
  (name lwt)
+ (version 6.0.0~alpha00)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
 
