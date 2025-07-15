@@ -24,6 +24,7 @@ let run_all_tasks () : unit =
     with exn ->
       (* TODO 6.0: change async_exception handler to accept a backtrace, pass it
          here and at the other use site. *)
+      (* TODO 6.0: this and other try-with: respect exception-filter *)
       !Lwt.async_exception_hook exn
   done;
   (* In the case where there are no promises ready for wakeup, the scheduler's
