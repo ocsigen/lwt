@@ -4,7 +4,7 @@
     {{:https://ocaml.org/manual/5.3/effects.html} effect handlers}.
     Instead of chaining promises using {!Lwt.bind} and {!Lwt.map}
     and other combinators, it becomes possible to start
-    lightweight "tasks" using [Lwt_direct.run (fun () -> ...)].
+    lightweight "tasks" using [Lwt_direct.spawn (fun () -> ...)].
     The body of such a task is written in direct-style code,
     using OCaml's standard control flow structures such as loops,
     higher-order functions, exception handlers, [match], etc.
@@ -13,7 +13,7 @@
     for example:
 
     {[
-    Lwt_direct.run (fun () ->
+    Lwt_direct.spawn (fun () ->
       let continue = ref true in
       while !continue do
         match Lwt_io.read_line in_channel |> Lwt_direct.await with
@@ -35,21 +35,21 @@
 
     *)
 
-val run : (unit -> 'a) -> 'a Lwt.t
-(** [run f] runs the function [f ()] in a task within
+val spawn : (unit -> 'a) -> 'a Lwt.t
+(** [spawn f] runs the function [f ()] in a task within
     the [Lwt_unix] event loop. [f ()] can create [Lwt]
     promises and use {!await} to wait for them. Like any promise
     in Lwt, [f ()] can starve the event loop if it runs long computations
     without yielding to the event loop.
 
     When [f ()] terminates (successfully or not), the promise
-    [run f] is resolved with [f ()]'s result, or the exception
+    [spawn f] is resolved with [f ()]'s result, or the exception
     raised by [f ()]. *)
 
-val run_in_the_background :
+val spawn_in_the_background :
   (unit -> unit) ->
   unit
-(** [run_in_the_background f] is similar to [ignore (run f)].
+(** [spawn_in_the_background f] is similar to [ignore (spawn f)].
     The computation [f()] runs in the background in the event loop
     and returns no result.
     If [f()] raises an exception, {!Lwt.async_exception_hook} is called. *)
@@ -57,7 +57,7 @@ val run_in_the_background :
 val yield : unit -> unit
 (** Yield to the event loop.
 
-    Calling [yield] outside of {!run} or {!run_in_the_background} will raise an exception,
+    Calling [yield] outside of {!spawn} or {!run_in_the_background} will raise an exception,
     crash your program, or otherwise cause errors. It is a programming error to do so. *)
 
 val await : 'a Lwt.t -> 'a
@@ -66,13 +66,13 @@ val await : 'a Lwt.t -> 'a
     If [prom] is not resolved yet, [await prom] will suspend the
     current task and resume it when [prom] is resolved.
 
-    Calling [await] outside of {!run} or {!run_in_the_background} will raise an exception,
+    Calling [await] outside of {!spawn} or {!run_in_the_background} will raise an exception,
     crash your program, or otherwise cause errors. It is a programming error to do so. *)
 
 (** Local storage.
 
     This storage is the same as the one described with {!Lwt.key},
-    except that it is usable from the inside of {!run} or
+    except that it is usable from the inside of {!spawn} or
     {!run_in_the_background}.
 
     Each task has its own storage, independent from other tasks or promises. *)
