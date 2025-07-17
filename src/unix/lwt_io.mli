@@ -572,7 +572,8 @@ val open_connection :
 
       @raise Unix.Unix_error on error.
 
-      @param set_tcp_nodelay if true, [TCP_NODELY] is set on the socket FD
+      @param set_tcp_nodelay if true, [TCP_NODELAY] is set on the socket FD
+
       @param prepare_fd is a custom callback that can be used to modify the socket FD
       before it is turned into high level channels
   *)
