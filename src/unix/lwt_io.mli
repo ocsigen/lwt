@@ -572,10 +572,16 @@ val open_connection :
 
       @raise Unix.Unix_error on error.
 
-      @param set_tcp_nodelay if true, [TCP_NODELAY] is set on the socket FD
+      @param set_tcp_nodelay if true, [TCP_NODELAY] is set on the socket FD. This
+        avoids a surprising 40ms delay in some situations.
+        See for example https://brooker.co.za/blog/2024/05/09/nagle.html for why.
 
       @param prepare_fd is a custom callback that can be used to modify the socket FD
-      before it is turned into high level channels
+      before it is turned into high level channels.
+
+      For example passing
+      [~prepare_fd:(fun fd -> Lwt_unix.setsockopt_int fd SO_SNDBUF 65_536)]
+      will set the socket's send buffer's size to 64kiB.
   *)
 
 val with_connection :
@@ -588,7 +594,8 @@ val with_connection :
       connection to the given address and passes the channels to
       [f]
 
-      See {!open_connection} for more details. *)
+      See {!open_connection} for more details about [set_tcp_nodelay]
+      and [prepare_fd]. *)
 
 (**/**)
 
@@ -661,6 +668,9 @@ f client_address client_socket
     The returned promise (a [server Lwt.t]) resolves when the server has just
     started listening on [listen_address]: right after the internal call to
     [listen], and right before the first internal call to [accept].
+
+    See {!open_connection} for more details about [set_tcp_nodelay]
+      and [prepare_fd].
 
     @since 4.1.0 *)
 
