@@ -60,16 +60,15 @@ let run_already_called = Domain.DLS.new_key (fun () -> `No)
 let run_already_called_mutex = Domain.DLS.new_key (fun () -> Mutex.create ())
 
 let finished () =
-  Mutex.protect (Domain.DLS.get run_already_called_mutex) (fun () ->
-    Domain.DLS.set run_already_called `No
-  )
+  Mutex.lock (Domain.DLS.get run_already_called_mutex);
+  Domain.DLS.set run_already_called `No;
+  Mutex.unlock (Domain.DLS.get run_already_called_mutex)
 
 let run p =
   (* Fail in case a call to Lwt_main.run is nested under another invocation of
      Lwt_main.run. *)
+  Mutex.lock (Domain.DLS.get run_already_called_mutex);
   let error_message_if_call_is_nested =
-    Mutex.protect (Domain.DLS.get run_already_called_mutex) (fun () ->
-
       match (Domain.DLS.get run_already_called) with
       (* `From is effectively disabled for the time being, because there is a bug,
          present in all versions of OCaml supported by Lwt, where, with the
@@ -103,8 +102,8 @@ let run p =
         in
         Domain.DLS.set run_already_called called_from;
         None
-  )
   in
+  Mutex.unlock (Domain.DLS.get run_already_called_mutex);
 
   begin match error_message_if_call_is_nested with
   | Some message -> failwith message
