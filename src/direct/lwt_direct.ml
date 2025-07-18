@@ -111,7 +111,7 @@ let run_inside_effect_handler_and_resolve_ (type a) (promise : a Lwt.u) f () : u
   in
   Effect.Deep.try_with run_f_and_set_res () handler
 
-let run f : _ Lwt.t =
+let spawn f : _ Lwt.t =
   setup_hooks ();
   let lwt, resolve = Lwt.wait () in
   push_task (run_inside_effect_handler_and_resolve_ resolve f);
@@ -129,6 +129,6 @@ let run_inside_effect_handler_in_the_background_ f () : unit =
   in
   Effect.Deep.try_with run_f () handler
 
-let run_in_the_background f : unit =
+let spawn_in_the_background f : unit =
   setup_hooks ();
   push_task (run_inside_effect_handler_in_the_background_ f)

@@ -4,7 +4,7 @@ open Lwt.Syntax
 
 let main_tests = suite "main" [
   test "basic await" begin fun () ->
-    let fut = run @@ fun () ->
+    let fut = spawn @@ fun () ->
       Lwt_unix.sleep 1e-6 |> await;
       42
     in
@@ -17,7 +17,7 @@ let main_tests = suite "main" [
     let fut2 = let+ () = Lwt_unix.sleep 2e-6 in 2 in
     let fut3 = let+ () = Lwt_unix.sleep 3e-6 in 3 in
 
-    run @@ fun () ->
+    spawn @@ fun () ->
       let x1 = fut1 |> await in
       let x2 = fut2 |> await in
       let x3 = fut3 |> await in
@@ -26,16 +26,16 @@ let main_tests = suite "main" [
 
   test "list.iter await" begin fun () ->
     let items = List.init 101 (fun i -> Lwt.return i) in
-    run @@ fun () ->
+    spawn @@ fun () ->
       let sum = ref 0 in
       List.iter (fun fut -> sum := !sum + await fut) items;
       !sum = 5050
   end;
 
-  test "lwt_list.iter_p run" begin fun () ->
+  test "lwt_list.iter_p spawn" begin fun () ->
     let items = List.init 101 (fun i -> i) in
     let+ items = Lwt_list.map_p
-      (fun i -> run (fun () ->
+      (fun i -> spawn (fun () ->
         for _ = 0 to i mod 5 do yield () done;
         i
       ))
@@ -44,14 +44,14 @@ let main_tests = suite "main" [
     List.fold_left (+) 0 items = 5050
   end;
 
-  test "run in background" begin fun () ->
+  test "spawn in background" begin fun () ->
     let stream, push = Lwt_stream.create_bounded 2 in
-    run_in_the_background (fun () ->
+    spawn_in_the_background (fun () ->
       for i = 1 to 10 do
         push#push i |> await
       done;
       push#close);
-    run @@ fun () ->
+    spawn @@ fun () ->
       let continue = ref true in
       let seen = ref [] in
 
@@ -65,7 +65,7 @@ let main_tests = suite "main" [
 
   test "list.iter await with yield" begin fun () ->
     let items = List.init 101 (fun i -> Lwt.return i) in
-    run @@ fun () ->
+    spawn @@ fun () ->
       let sum = ref 0 in
       List.iter (fun fut -> yield(); sum := !sum + await fut) items;
       !sum = 5050
@@ -73,14 +73,14 @@ let main_tests = suite "main" [
 
   test "awaiting on failing promise" begin fun () ->
     let fut: unit Lwt.t = let* () = Lwt.pause () in let* () = Lwt_unix.sleep 0.0001 in Lwt.fail Exit in
-    run @@ fun () ->
+    spawn @@ fun () ->
       try await fut; false
       with Exit -> true
   end;
 
-  test "run can fail" begin fun () ->
-    run @@ fun () ->
-      let sub: unit Lwt.t = run @@ fun () ->
+  test "spawn can fail" begin fun () ->
+    spawn @@ fun () ->
+      let sub: unit Lwt.t = spawn @@ fun () ->
         Lwt_unix.sleep 0.00001 |> await;
         raise Exit
       in
@@ -92,13 +92,13 @@ let main_tests = suite "main" [
     let rec badfib n =
       if n <= 2 then Lwt.return 1
       else
-        run begin fun () ->
+        spawn begin fun () ->
           let f1 = badfib (n-1) in
           let f2 = badfib (n-2) in
           await f1 + await f2
         end
     in
-    run @@ fun () ->
+    spawn @@ fun () ->
       let fib12 = badfib 12 in
       let fib12 = await fib12 in
       fib12 = 144
@@ -109,7 +109,7 @@ let storage_tests = suite "storage" [
   test "get set" begin fun () ->
     let k1 = Storage.new_key () in
     let k2 = Storage.new_key () in
-    run @@ fun () ->
+    spawn @@ fun () ->
       assert (Storage.get k1 = None);
       assert (Storage.get k2 = None);
       Storage.set k1 42;
@@ -127,7 +127,7 @@ let storage_tests = suite "storage" [
   test "storage across await" begin fun () ->
     let k = Storage.new_key () in
 
-    (* run another promise that touches storage *)
+    (* spawn another promise that touches storage *)
     let run_promise_async () =
       Lwt.async @@ fun () ->
         Lwt.with_value k (Some "something else") @@ fun () ->
@@ -165,10 +165,10 @@ let storage_tests = suite "storage" [
       assert (Storage.get k = Some "v2");
     in
 
-    (* run multiple such tasks *)
-    let tasks = [ run one_task; run one_task; run one_task ] in
+    (* spawn multiple such tasks *)
+    let tasks = [ spawn one_task; spawn one_task; spawn one_task ] in
 
-    run @@ fun () ->
+    spawn @@ fun () ->
       List.iter await tasks;
       true
   end;
@@ -178,7 +178,7 @@ let io_tests = suite "io" [
   test "read io" begin fun () ->
     let str = "some\ninteresting\ntext string here!\n" in
     let ic = Lwt_io.of_bytes ~mode:Input (Lwt_bytes.of_string str) in
-    run @@ fun () ->
+    spawn @@ fun () ->
       let lines = ref [] in
       while
         try
@@ -194,7 +194,7 @@ let io_tests = suite "io" [
 
   test "pipe" begin fun () ->
     let ic, oc = Lwt_io.pipe() in
-    run_in_the_background (fun () ->
+    spawn_in_the_background (fun () ->
       for i = 1 to 100 do
         Lwt_io.write_line oc (string_of_int i) |> await;
         Lwt_io.flush oc |> await
@@ -202,7 +202,7 @@ let io_tests = suite "io" [
       Lwt_io.close oc |> await;
     );
 
-    run @@ fun () ->
+    spawn @@ fun () ->
       let sum = ref 0 in
       let continue = ref true in
       while !continue do
