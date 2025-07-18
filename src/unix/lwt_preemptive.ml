@@ -17,23 +17,23 @@ open Lwt.Infix
    +-----------------------------------------------------------------+ *)
 
 (* Minimum number of preemptive threads: *)
-let min_threads : int ref = ref 0
+let min_threads : int Atomic.t = Atomic.make 0
 
 (* Maximum number of preemptive threads: *)
-let max_threads : int ref = ref 0
+let max_threads : int Atomic.t = Atomic.make 0
 
 (* Size of the waiting queue: *)
-let max_thread_queued = ref 1000
+let max_thread_queued = Atomic.make 1000
 
 let get_max_number_of_threads_queued _ =
-  !max_thread_queued
+  Atomic.get max_thread_queued
 
 let set_max_number_of_threads_queued n =
   if n < 0 then invalid_arg "Lwt_preemptive.set_max_number_of_threads_queued";
-  max_thread_queued := n
+  Atomic.set max_thread_queued n
 
 (* The total number of preemptive threads currently running: *)
-let threads_count = ref 0
+let threads_count = Atomic.make 0
 
 (* +-----------------------------------------------------------------+
    | Preemptive threads management                                   |
@@ -102,14 +102,14 @@ let rec worker_loop worker =
   task ();
   (* If there is too much threads, exit. This can happen if the user
      decreased the maximum: *)
-  if !threads_count > !max_threads then worker.reuse <- false;
+  if Atomic.get threads_count > Atomic.get max_threads then worker.reuse <- false;
   (* Tell the main thread that work is done: *)
-  Lwt_unix.send_notification id;
+  Lwt_unix.send_notification (Domain.self ()) id;
   if worker.reuse then worker_loop worker
 
 (* create a new worker: *)
 let make_worker () =
-  incr threads_count;
+  Atomic.incr threads_count;
   let worker = {
     task_cell = CELL.make ();
     thread = Thread.self ();
@@ -130,7 +130,7 @@ let add_worker worker =
 let get_worker () =
   if not (Queue.is_empty workers) then
     Lwt.return (Queue.take workers)
-  else if !threads_count < !max_threads then
+  else if Atomic.get threads_count < Atomic.get max_threads then
     Lwt.return (make_worker ())
   else
     (Lwt.add_task_r [@ocaml.warning "-3"]) waiters
@@ -139,33 +139,33 @@ let get_worker () =
    | Initialisation, and dynamic parameters reset                    |
    +-----------------------------------------------------------------+ *)
 
-let get_bounds () = (!min_threads, !max_threads)
+let get_bounds () = (Atomic.get min_threads, Atomic.get max_threads)
 
 let set_bounds (min, max) =
   if min < 0 || max < min then invalid_arg "Lwt_preemptive.set_bounds";
-  let diff = min - !threads_count in
-  min_threads := min;
-  max_threads := max;
+  let diff = min - Atomic.get threads_count in
+  Atomic.set min_threads min;
+  Atomic.set max_threads max;
   (* Launch new workers: *)
   for _i = 1 to diff do
     add_worker (make_worker ())
   done
 
-let initialized = ref false
+let initialized = Atomic.make false
 
 let init min max _errlog =
-  initialized := true;
+  Atomic.set initialized true;
   set_bounds (min, max)
 
 let simple_init () =
-  if not !initialized then begin
-    initialized := true;
+  if not (Atomic.get initialized) then begin
+    Atomic.set initialized true;
     set_bounds (0, 4)
   end
 
-let nbthreads () = !threads_count
+let nbthreads () = Atomic.get threads_count
 let nbthreadsqueued () = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
-let nbthreadsbusy () = !threads_count - Queue.length workers
+let nbthreadsbusy () = Atomic.get threads_count - Queue.length workers
 
 (* +-----------------------------------------------------------------+
    | Detaching                                                       |
@@ -186,7 +186,7 @@ let detach f args =
   get_worker () >>= fun worker ->
   let waiter, wakener = Lwt.wait () in
   let id =
-    Lwt_unix.make_notification ~once:true
+    Lwt_unix.make_notification ~once:true (Domain.self ())
       (fun () -> Lwt.wakeup_result wakener !result)
   in
   Lwt.finalize
@@ -199,7 +199,7 @@ let detach f args =
          (* Put back the worker to the pool: *)
          add_worker worker
        else begin
-         decr threads_count;
+         Atomic.decr threads_count;
          (* Or wait for the thread to terminates, to free its associated
             resources: *)
          Thread.join worker.thread
@@ -217,7 +217,7 @@ let jobs = Queue.create ()
 let jobs_mutex = Mutex.create ()
 
 let job_notification =
-  Lwt_unix.make_notification
+  Lwt_unix.make_notification (Domain.self ())
     (fun () ->
        (* Take the first job. The queue is never empty at this
           point. *)
@@ -226,20 +226,20 @@ let job_notification =
        Mutex.unlock jobs_mutex;
        ignore (thunk ()))
 
-let run_in_main_dont_wait f =
+let run_in_domain_dont_wait d f =
   (* Add the job to the queue. *)
   Mutex.lock jobs_mutex;
   Queue.add f jobs;
   Mutex.unlock jobs_mutex;
   (* Notify the main thread. *)
-  Lwt_unix.send_notification job_notification
+  Lwt_unix.send_notification d job_notification
 
 (* There is a potential performance issue from creating a cell every time this
    function is called. See:
    https://github.com/ocsigen/lwt/issues/218
    https://github.com/ocsigen/lwt/pull/219
    https://github.com/ocaml/ocaml/issues/7158 *)
-let run_in_main f =
+let run_in_domain d f =
   let cell = CELL.make () in
   (* Create the job. *)
   let job () =
@@ -251,13 +251,13 @@ let run_in_main f =
     CELL.set cell result;
     Lwt.return_unit
   in
-  run_in_main_dont_wait job;
+  run_in_domain_dont_wait d job;
   (* Wait for the result. *)
   match CELL.get cell with
   | Result.Ok ret -> ret
   | Result.Error exn -> raise exn
 
 (* This version shadows the one above, adding an exception handler *)
-let run_in_main_dont_wait f handler =
+let run_in_domain_dont_wait d f handler =
   let f () = Lwt.catch f (fun exc -> handler exc; Lwt.return_unit) in
-  run_in_main_dont_wait f
+  run_in_domain_dont_wait d f
