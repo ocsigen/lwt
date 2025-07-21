@@ -2201,18 +2201,20 @@ external init_notification : Domain.id -> Unix.file_descr = "lwt_unix_init_notif
 external send_notification : Domain.id -> int -> unit = "lwt_unix_send_notification_stub"
 external recv_notifications : Domain.id -> int array = "lwt_unix_recv_notifications_stub"
 
-let handle_notifications domain_id (_ : Lwt_engine.event) =
+let handle_notifications (_ : Lwt_engine.event) =
+  let domain_id = Domain.self () in
   Array.iter (call_notification domain_id) (recv_notifications domain_id)
 
-let event_notifications = Domain_map.create_protected_map ()
+let event_notifications =
+  Domain.DLS.new_key (fun () ->
+    let domain_id = Domain.self () in
+    Lwt_engine.on_readable (init_notification domain_id) handle_notifications
+  )
 
 let init_domain () =
   let domain_id = Domain.self () in
   let _ : notifier Notifiers.t = (Domain_map.init notifiers domain_id (fun () -> Notifiers.create 1024)) in
-  let _ : Lwt_engine.event = Domain_map.init event_notifications domain_id (fun () ->
-    let eventfd = init_notification domain_id in
-    Lwt_engine.on_readable eventfd (handle_notifications domain_id))
-  in
+  let _ : Lwt_engine.event = Domain.DLS.get event_notifications in
   ()
 
 (* +-----------------------------------------------------------------+
@@ -2316,12 +2318,9 @@ let fork () =
     reset_after_fork ();
     (* Stop the old event for notifications. *)
     let domain_id = Domain.self () in
-    (match Domain_map.find event_notifications domain_id with
-     | Some event -> Lwt_engine.stop_event event
-     | None -> ());
+    Lwt_engine.stop_event (Domain.DLS.get event_notifications);
     (* Reinitialise the notification system. *)
-    let new_event = Lwt_engine.on_readable (init_notification domain_id) (handle_notifications domain_id) in
-    Domain_map.add event_notifications domain_id new_event;
+    Domain.DLS.set event_notifications (Lwt_engine.on_readable (init_notification domain_id) handle_notifications);
     (* Collect all pending jobs. *)
     let l = Lwt_sequence.fold_l (fun (_, f) l -> f :: l) jobs [] in
     (* Remove them all. *)
