@@ -35,8 +35,6 @@ let _fake_event = {
   node = Lwt_sequence.add_l (Obj.repr ()) (Lwt_sequence.create ());
 }
 
-let fake_event = ref _fake_event
-
 (* +-----------------------------------------------------------------+
    | Engines                                                         |
    +-----------------------------------------------------------------+ *)

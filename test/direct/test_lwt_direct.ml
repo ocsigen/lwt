@@ -189,11 +189,11 @@ let io_tests = suite "io" [
         with End_of_file -> false
       do ()
       done;
-      List.rev !lines = ["some"; "interesting"; "text string here!"]      
+      List.rev !lines = ["some"; "interesting"; "text string here!"]
   end;
 
   test "pipe" begin fun () ->
-    let ic, oc = Lwt_io.pipe() in
+    let ic, oc = Lwt_io.pipe () in
     spawn_in_the_background (fun () ->
       for i = 1 to 100 do
         Lwt_io.write_line oc (string_of_int i) |> await;
@@ -208,8 +208,7 @@ let io_tests = suite "io" [
       while !continue do
         match Lwt_io.read_line ic |> await |> String.trim |> int_of_string with
         | exception End_of_file -> continue := false
-        | i ->
-          sum := !sum + i
+        | i -> sum := !sum + i
       done;
       Lwt_io.close ic |> await;
       !sum = 5050

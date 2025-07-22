@@ -191,6 +191,6 @@
   (flags
    (:include unix_c_flags.sexp)))
  (c_library_flags
-  (:include unix_c_library_flags.sexp) -fPIC -pthread)
+  (:include unix_c_library_flags.sexp))
  (instrumentation
   (backend bisect_ppx)))

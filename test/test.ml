@@ -264,6 +264,7 @@ let run library_name suites =
       end
   in
 
+  Lwt_unix.init_domain ();
   loop_over_suites [] suites
   |> Lwt_main.run
 
@@ -337,6 +338,7 @@ let concurrent library_name suites =
   end
 
 let concurrent library_name suites =
+  Lwt_unix.init_domain ();
   Lwt_main.run (concurrent library_name suites)
 
 let with_async_exception_hook hook f =

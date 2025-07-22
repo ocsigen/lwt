@@ -493,13 +493,10 @@ CAMLprim value lwt_unix_socketpair_stub(value cloexec, value domain, value type,
    | Notifications                                                   |
    +-----------------------------------------------------------------+ */
 
-/* The mutex used to send and receive notifications. */
-static lwt_unix_mutex notification_mutex;
-
 /* The mode currently used for notifications. */
 enum notification_mode {
-  /* Not yet initialized. */
-  NOTIFICATION_MODE_NOT_INITIALIZED,
+  /* Not yet initialized. Explicitly set to zero for domain-array initialisation */
+  NOTIFICATION_MODE_NOT_INITIALIZED = 0,
 
   /* Initialized but no mode defined. */
   NOTIFICATION_MODE_NONE,
@@ -516,10 +513,10 @@ enum notification_mode {
 
 /* Domain-specific notification state */
 struct domain_notification_state {
+  lwt_unix_mutex notification_mutex;
   intnat *notifications;
   long notification_count;
   long notification_index;
-  enum notification_mode notification_mode;
 #if defined(HAVE_EVENTFD)
   int notification_fd;
 #endif
@@ -529,7 +526,7 @@ struct domain_notification_state {
 /* table to store per-domain notification state */
 #define MAX_DOMAINS 64 // TODO: review values
 static struct domain_notification_state domain_states[MAX_DOMAINS];
-static int domain_states_initialized[MAX_DOMAINS] = {0};
+static enum notification_mode domain_notification_mode[MAX_DOMAINS] = {0};
 
 /* Send one notification. */
 static int (*notification_send)(int domain_id);
@@ -537,23 +534,15 @@ static int (*notification_send)(int domain_id);
 /* Read one notification. */
 static int (*notification_recv)(int domain_id);
 
-static void init_notifications() {
-  lwt_unix_mutex_init(&notification_mutex);
-}
-
 static void init_domain_notifications(int domain_id) {
-  if (domain_id >= 0 && domain_id < MAX_DOMAINS && !domain_states_initialized[domain_id]) {
+    lwt_unix_mutex_init(&domain_states[domain_id].notification_mutex);
     domain_states[domain_id].notification_count = 4096;
     domain_states[domain_id].notifications =
         (intnat *)lwt_unix_malloc(domain_states[domain_id].notification_count * sizeof(intnat));
     domain_states[domain_id].notification_index = 0;
-    domain_states[domain_id].notification_mode = NOTIFICATION_MODE_NOT_INITIALIZED;
-    domain_states_initialized[domain_id] = 1;
-  }
 }
 
 static void resize_notifications(int domain_id) {
-  if (domain_id >= 0 && domain_id < MAX_DOMAINS && domain_states_initialized[domain_id]) {
     struct domain_notification_state *state = &domain_states[domain_id];
     long new_notification_count = state->notification_count * 2;
     intnat *new_notifications =
@@ -563,7 +552,6 @@ static void resize_notifications(int domain_id) {
     free(state->notifications);
     state->notifications = new_notifications;
     state->notification_count = new_notification_count;
-  }
 }
 
 void lwt_unix_send_notification(intnat domain_id, intnat id) {
@@ -577,39 +565,36 @@ void lwt_unix_send_notification(intnat domain_id, intnat id) {
 #else
   DWORD error;
 #endif
-  init_domain_notifications(domain_id);
-  lwt_unix_mutex_lock(&notification_mutex);
-  if (domain_id >= 0 && domain_id < MAX_DOMAINS && domain_states_initialized[domain_id]) {
-    struct domain_notification_state *state = &domain_states[domain_id];
-    if (state->notification_index > 0) {
-      /* There is already a pending notification in the buffer, no
-         need to signal the main thread. */
-      if (state->notification_index == state->notification_count) resize_notifications(domain_id);
-      state->notifications[state->notification_index++] = id;
-    } else {
-      /* There is none, notify the main thread. */
-      state->notifications[state->notification_index++] = id;
-      ret = notification_send(domain_id);
+  lwt_unix_mutex_lock(&domain_states[domain_id].notification_mutex);
+  struct domain_notification_state *state = &domain_states[domain_id];
+  if (state->notification_index > 0) {
+    /* There is already a pending notification in the buffer, no
+       need to signal the main thread. */
+    if (state->notification_index == state->notification_count) resize_notifications(domain_id);
+    state->notifications[state->notification_index++] = id;
+  } else {
+    /* There is none, notify the main thread. */
+    state->notifications[state->notification_index++] = id;
+    ret = notification_send(domain_id);
 #if defined(LWT_ON_WINDOWS)
-      if (ret == SOCKET_ERROR) {
-        error = WSAGetLastError();
-        if (error != WSANOTINITIALISED) {
-          lwt_unix_mutex_unlock(&notification_mutex);
-          win32_maperr(error);
-          uerror("send_notification", Nothing);
-        } /* else we're probably shutting down, so ignore the error */
-      }
-#else
-      if (ret < 0) {
-        error = errno;
-        lwt_unix_mutex_unlock(&notification_mutex);
-        pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
-        unix_error(error, "send_notification", Nothing);
-      }
-#endif
+    if (ret == SOCKET_ERROR) {
+      error = WSAGetLastError();
+      if (error != WSANOTINITIALISED) {
+        lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
+        win32_maperr(error);
+        uerror("send_notification", Nothing);
+      } /* else we're probably shutting down, so ignore the error */
     }
+#else
+    if (ret < 0) {
+      error = errno;
+      lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
+      pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+      unix_error(error, "send_notification", Nothing);
+    }
+#endif
   }
-  lwt_unix_mutex_unlock(&notification_mutex);
+  lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
 #if !defined(LWT_ON_WINDOWS)
   pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 #endif
@@ -633,29 +618,27 @@ value lwt_unix_recv_notifications(intnat domain_id) {
   DWORD error;
 #endif
   /* Initialize domain state if needed */
-  init_domain_notifications(domain_id);
-  lwt_unix_mutex_lock(&notification_mutex);
+  lwt_unix_mutex_lock(&domain_states[domain_id].notification_mutex);
   /* Receive the signal. */
   ret = notification_recv(domain_id);
 #if defined(LWT_ON_WINDOWS)
   if (ret == SOCKET_ERROR) {
     error = WSAGetLastError();
-    lwt_unix_mutex_unlock(&notification_mutex);
+    lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
     win32_maperr(error);
     uerror("recv_notifications", Nothing);
   }
 #else
   if (ret < 0) {
     error = errno;
-    lwt_unix_mutex_unlock(&notification_mutex);
+    lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
     pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
     unix_error(error, "recv_notifications", Nothing);
   }
 #endif
 
-  if (domain_id >= 0 && domain_id < MAX_DOMAINS && domain_states_initialized[domain_id]) {
     struct domain_notification_state *state = &domain_states[domain_id];
-    
+
     do {
       /*
        release the mutex while calling caml_alloc,
@@ -664,25 +647,18 @@ value lwt_unix_recv_notifications(intnat domain_id) {
        when thread in question tries another send
       */
       current_index = state->notification_index;
-      lwt_unix_mutex_unlock(&notification_mutex);
+      lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
       result = caml_alloc_tuple(current_index);
-      lwt_unix_mutex_lock(&notification_mutex);
+      lwt_unix_mutex_lock(&domain_states[domain_id].notification_mutex);
       /* check that no new notifications appeared meanwhile (rare) */
     } while (current_index != state->notification_index);
 
     /* Read all pending notifications. */
-    for (i = 0; i < state->notification_index; i++) {
+    for (i = 0; i < state->notification_index; i++)
       Field(result, i) = Val_long(state->notifications[i]);
-    }
     /* Reset the index. */
     state->notification_index = 0;
-  } else {
-    /* Domain not initialized, return empty array */
-    lwt_unix_mutex_unlock(&notification_mutex);
-    result = caml_alloc_tuple(0);
-    lwt_unix_mutex_lock(&notification_mutex);
-  }
-  lwt_unix_mutex_unlock(&notification_mutex);
+  lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
 #if !defined(LWT_ON_WINDOWS)
   pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 #endif
@@ -696,30 +672,31 @@ value lwt_unix_recv_notifications_stub(value domain_id) {
 
 #if defined(LWT_ON_WINDOWS)
 
-static SOCKET socket_r, socket_w;
+static SOCKET domain_socket_r[MAX_DOMAINS];
+static SOCKET domain_socket_w[MAX_DOMAINS];
 
 static int windows_notification_send(int domain_id) {
   char buf = '!';
-  return send(socket_w, &buf, 1, 0);
+  return send(domain_socket_w[domain_id], &buf, 1, 0);
 }
 
 static int windows_notification_recv(int domain_id) {
   char buf;
-  return recv(socket_r, &buf, 1, 0);
+  return recv(domain_socket_r[domain_id], &buf, 1, 0);
 }
 
-value lwt_unix_init_notification(intnat domain_id) {
+value lwt_unix_init_notification(int domain_id) {
   SOCKET sockets[2];
 
-  switch (notification_mode) {
+  switch (domain_notification_mode[domain_id]) {
     case NOTIFICATION_MODE_NOT_INITIALIZED:
-      notification_mode = NOTIFICATION_MODE_NONE;
-      init_notifications();
+      domain_notification_mode[domain_id] = NOTIFICATION_MODE_NONE;
+      init_domain_notifications(domain_id);
       break;
     case NOTIFICATION_MODE_WINDOWS:
-      notification_mode = NOTIFICATION_MODE_NONE;
-      closesocket(socket_r);
-      closesocket(socket_w);
+      domain_notification_mode[domain_id] = NOTIFICATION_MODE_NONE;
+      closesocket(domain_socket_r[domain_id]);
+      closesocket(domain_socket_w[domain_id]);
       break;
     case NOTIFICATION_MODE_NONE:
       break;
@@ -731,14 +708,13 @@ value lwt_unix_init_notification(intnat domain_id) {
      sockets. */
   lwt_unix_socketpair(AF_INET, SOCK_STREAM, IPPROTO_TCP, sockets, FALSE);
 
-  socket_r = sockets[0];
-  socket_w = sockets[1];
-  notification_mode = NOTIFICATION_MODE_WINDOWS;
+  domain_socket_r[domain_id] = sockets[0];
+  domain_socket_w[domain_id] = sockets[1];
+  domain_notification_mode[domain_id] = NOTIFICATION_MODE_WINDOWS;
   notification_send = windows_notification_send;
   notification_recv = windows_notification_recv;
-  return win_alloc_socket(socket_r);
+  return win_alloc_socket(domain_socket_r[domain_id]);
 }
-
 
 #else /* defined(LWT_ON_WINDOWS) */
 
@@ -752,7 +728,7 @@ static void set_close_on_exec(int fd) {
 
 static int eventfd_notification_send(int domain_id) {
   uint64_t buf = 1;
-  if (domain_id < 0 || domain_id >= MAX_DOMAINS || !domain_states_initialized[domain_id]) {
+  if (domain_id < 0 || domain_id >= MAX_DOMAINS) {
     return -1;
   }
   struct domain_notification_state *state = &domain_states[domain_id];
@@ -762,7 +738,7 @@ static int eventfd_notification_send(int domain_id) {
 
 static int eventfd_notification_recv(int domain_id) {
   uint64_t buf;
-  if (domain_id < 0 || domain_id >= MAX_DOMAINS || !domain_states_initialized[domain_id]) {
+  if (domain_id < 0 || domain_id >= MAX_DOMAINS) {
     return -1;
   }
   struct domain_notification_state *state = &domain_states[domain_id];
@@ -774,7 +750,7 @@ static int eventfd_notification_recv(int domain_id) {
 
 static int pipe_notification_send(int domain_id) {
   char buf = 0;
-  if (domain_id < 0 || domain_id >= MAX_DOMAINS || !domain_states_initialized[domain_id]) {
+  if (domain_id < 0 || domain_id >= MAX_DOMAINS) {
     return -1;
   }
   struct domain_notification_state *state = &domain_states[domain_id];
@@ -784,7 +760,7 @@ static int pipe_notification_send(int domain_id) {
 
 static int pipe_notification_recv(int domain_id) {
   char buf;
-  if (domain_id < 0 || domain_id >= MAX_DOMAINS || !domain_states_initialized[domain_id]) {
+  if (domain_id < 0 || domain_id >= MAX_DOMAINS) {
     return -1;
   }
   struct domain_notification_state *state = &domain_states[domain_id];
@@ -793,27 +769,25 @@ static int pipe_notification_recv(int domain_id) {
 }
 
 value lwt_unix_init_notification(int domain_id) {
-  /* Initialize domain state if needed */
-  init_domain_notifications(domain_id);
-  if (domain_id < 0 || domain_id >= MAX_DOMAINS || !domain_states_initialized[domain_id]) {
+  if (domain_id < 0 || domain_id >= MAX_DOMAINS) {
     caml_failwith("invalid domain_id in lwt_unix_init_notification");
   }
   struct domain_notification_state *state = &domain_states[domain_id];
-  switch (state->notification_mode) {
+  switch (domain_notification_mode[domain_id]) {
 #if defined(HAVE_EVENTFD)
     case NOTIFICATION_MODE_EVENTFD:
-      state->notification_mode = NOTIFICATION_MODE_NONE;
+      domain_notification_mode[domain_id] = NOTIFICATION_MODE_NONE;
       if (close(state->notification_fd) == -1) uerror("close", Nothing);
       break;
 #endif
     case NOTIFICATION_MODE_PIPE:
-      state->notification_mode = NOTIFICATION_MODE_NONE;
+      domain_notification_mode[domain_id] = NOTIFICATION_MODE_NONE;
       if (close(state->notification_fds[0]) == -1) uerror("close", Nothing);
       if (close(state->notification_fds[1]) == -1) uerror("close", Nothing);
       break;
     case NOTIFICATION_MODE_NOT_INITIALIZED:
-      state->notification_mode = NOTIFICATION_MODE_NONE;
-      init_notifications();
+      domain_notification_mode[domain_id] = NOTIFICATION_MODE_NONE;
+      init_domain_notifications(domain_id);
       break;
     case NOTIFICATION_MODE_NONE:
       break;
@@ -824,7 +798,7 @@ value lwt_unix_init_notification(int domain_id) {
 #if defined(HAVE_EVENTFD)
   state->notification_fd = eventfd(0, 0);
   if (state->notification_fd != -1) {
-    state->notification_mode = NOTIFICATION_MODE_EVENTFD;
+    domain_notification_mode[domain_id] = NOTIFICATION_MODE_EVENTFD;
     notification_send = eventfd_notification_send;
     notification_recv = eventfd_notification_recv;
     set_close_on_exec(state->notification_fd);
@@ -835,7 +809,7 @@ value lwt_unix_init_notification(int domain_id) {
   if (pipe(state->notification_fds) == -1) uerror("pipe", Nothing);
   set_close_on_exec(state->notification_fds[0]);
   set_close_on_exec(state->notification_fds[1]);
-  state->notification_mode = NOTIFICATION_MODE_PIPE;
+  domain_notification_mode[domain_id] = NOTIFICATION_MODE_PIPE;
   notification_send = pipe_notification_send;
   notification_recv = pipe_notification_recv;
   return Val_int(state->notification_fds[0]);
@@ -1127,7 +1101,7 @@ void lwt_unix_free_job(lwt_unix_job job) {
   free(job);
 }
 
-CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
+CAMLprim value lwt_unix_start_job(value domain_id, value val_job, value val_async_method) {
   lwt_unix_job job = Job_val(val_job);
   lwt_unix_async_method async_method = Int_val(val_async_method);
   int done = 0;
@@ -1142,6 +1116,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
   job->state = LWT_UNIX_JOB_STATE_PENDING;
   job->fast = 1;
   job->async_method = async_method;
+  job->domain_id = Long_val(domain_id);
 
   switch (async_method) {
     case LWT_UNIX_ASYNC_METHOD_NONE:
