@@ -1,3 +1,12 @@
+===== 6.0.0 =====
+
+====== Misc
+
+  * In `Lwt_io`, functions that create sockets gain new options `?set_tcp_nodelay`
+    and `?prepare_fd` to exert more control over the socket. (#1061)
+    `?set_tcp_nodelay` is set to `true` by default which means TCP_NODELAY is now
+    set by default for such functions.
+
 ===== 5.9.0 =====
 
 ====== Additions ======
