@@ -573,8 +573,11 @@ val open_connection :
       @raise Unix.Unix_error on error.
 
       @param set_tcp_nodelay if true, [TCP_NODELAY] is set on the socket FD. This
-        avoids a surprising 40ms delay in some situations.
+        avoids a surprising 40ms delay in some situations. It disables
+        Nagle's algorithm (https://en.wikipedia.org/wiki/Nagle%27s_algorithm).
         See for example https://brooker.co.za/blog/2024/05/09/nagle.html for why.
+
+        The default value is [true].
 
       @param prepare_fd is a custom callback that can be used to modify the socket FD
       before it is turned into high level channels.
