@@ -690,11 +690,11 @@ value lwt_unix_init_notification(int domain_id) {
 
   switch (domain_notification_mode[domain_id]) {
     case NOTIFICATION_MODE_NOT_INITIALIZED:
-      notification_mode = NOTIFICATION_MODE_NONE;
+      domain_notification_mode[domain_id] = NOTIFICATION_MODE_NONE;
       init_domain_notifications(domain_id);
       break;
     case NOTIFICATION_MODE_WINDOWS:
-      notification_mode = NOTIFICATION_MODE_NONE;
+      domain_notification_mode[domain_id] = NOTIFICATION_MODE_NONE;
       closesocket(domain_socket_r[domain_id]);
       closesocket(domain_socket_w[domain_id]);
       break;
@@ -863,7 +863,9 @@ static BOOL WINAPI handle_break(DWORD event) {
   intnat id = signal_notifications[SIGINT];
   if (id == -1 || (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT))
     return FALSE;
-  lwt_unix_send_notification(id);
+  //TODO: domain_self instead of root (0)? caml doesn't expose
+  //caml_ml_domain_id in domain.h :(
+  lwt_unix_send_notification(0, id);
   return TRUE;
 }
 #endif
