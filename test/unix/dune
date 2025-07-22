@@ -2,9 +2,16 @@
  (name tester)
  (libraries lwt lwttester)
  (modules
-  (:standard \ main dummy ocaml_runtime_exc_1 ocaml_runtime_exc_2
-    ocaml_runtime_exc_3 ocaml_runtime_exc_4 ocaml_runtime_exc_5
-    ocaml_runtime_exc_6)))
+  (:standard
+   \
+   main
+   dummy
+   ocaml_runtime_exc_1
+   ocaml_runtime_exc_2
+   ocaml_runtime_exc_3
+   ocaml_runtime_exc_4
+   ocaml_runtime_exc_5
+   ocaml_runtime_exc_6)))
 
 (executable
  (name dummy)
