@@ -1551,7 +1551,7 @@ let close_socket fd =
     (fun () ->
        Lwt_unix.close fd)
 
-let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
+let open_connection ?fd ?(set_tcp_nodelay=true) ?(prepare_fd=ignore) ?in_buffer ?out_buffer sockaddr =
   let fd =
     match fd with
     | None ->
@@ -1559,6 +1559,10 @@ let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
     | Some fd ->
       fd
   in
+
+  if set_tcp_nodelay then Lwt_unix.setsockopt fd Unix.TCP_NODELAY true;
+  prepare_fd fd;
+
   let close = lazy (close_socket fd) in
   Lwt.catch
     (fun () ->
@@ -1584,8 +1588,8 @@ let with_close_connection f (ic, oc) =
     (fun () -> f (ic, oc))
     (fun () -> close_if_not_closed ic <&> close_if_not_closed oc)
 
-let with_connection ?fd ?in_buffer ?out_buffer sockaddr f =
-  open_connection ?fd ?in_buffer ?out_buffer sockaddr >>= fun channels ->
+let with_connection ?fd ?set_tcp_nodelay ?prepare_fd ?in_buffer ?out_buffer sockaddr f =
+  open_connection ?fd ?set_tcp_nodelay ?prepare_fd ?in_buffer ?out_buffer sockaddr >>= fun channels ->
   with_close_connection f channels
 
 type server = {
@@ -1603,6 +1607,9 @@ let shutdown_server_deprecated server =
 let establish_server_generic
     bind_function
     ?fd:preexisting_socket_for_listening
+    ?(set_tcp_nodelay=true)
+    ?(prepare_listening_fd=ignore)
+    ?(prepare_client_fd=ignore)
     ?(backlog = Lwt_unix.somaxconn () [@ocaml.warning "-3"])
     listening_address
     connection_handler_callback =
@@ -1616,6 +1623,7 @@ let establish_server_generic
       socket
   in
   Lwt_unix.setsockopt listening_socket Unix.SO_REUSEADDR true;
+  prepare_listening_fd listening_socket;
 
   (* This promise gets resolved with `Should_stop when the user calls
      Lwt_io.shutdown_server. This begins the shutdown procedure. *)
@@ -1643,10 +1651,13 @@ let establish_server_generic
     Lwt.pick [try_to_accept; should_stop] >>= function
     | `Accepted (client_socket, client_address) ->
       begin
-        try Lwt_unix.set_close_on_exec client_socket
+        try
+          Lwt_unix.set_close_on_exec client_socket
         with Invalid_argument _ -> ()
       end;
 
+      if set_tcp_nodelay then Lwt_unix.setsockopt client_socket Unix.TCP_NODELAY true;
+      prepare_client_fd client_socket;
       connection_handler_callback client_address client_socket;
 
       accept_loop ()
@@ -1688,7 +1699,9 @@ let establish_server_generic
   server, server_has_started
 
 let establish_server_with_client_socket
-    ?server_fd ?backlog ?(no_close = false) sockaddr f =
+    ?server_fd ?backlog ?(no_close = false)
+    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+    sockaddr f =
   let handler client_address client_socket =
     Lwt.async begin fun () ->
       (* Not using Lwt.finalize here, to make sure that exceptions from [f]
@@ -1716,7 +1729,9 @@ let establish_server_with_client_socket
 
   let server, server_started =
     establish_server_generic
-      Lwt_unix.bind ?fd:server_fd ?backlog sockaddr handler
+      Lwt_unix.bind ?fd:server_fd ?backlog
+        ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+        sockaddr handler
   in
   server_started >>= fun () ->
   Lwt.return server
@@ -1727,6 +1742,7 @@ let establish_server_with_client_address_generic
     ?(buffer_size = !default_buffer_size)
     ?backlog
     ?(no_close = false)
+    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
     sockaddr
     handler =
 
@@ -1782,13 +1798,19 @@ let establish_server_with_client_address_generic
         best_effort_close output_channel)
   in
 
-  establish_server_generic bind_function ?fd ?backlog sockaddr handler
+  establish_server_generic bind_function ?fd ?backlog
+    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+    sockaddr handler
 
 let establish_server_with_client_address
-    ?fd ?buffer_size ?backlog ?no_close sockaddr handler =
+    ?fd ?buffer_size ?backlog ?no_close
+    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+    sockaddr handler =
   let server, server_started =
     establish_server_with_client_address_generic
-      Lwt_unix.bind ?fd ?buffer_size ?backlog ?no_close sockaddr handler
+      Lwt_unix.bind ?fd ?buffer_size ?backlog ?no_close
+      ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+      sockaddr handler
   in
   server_started >>= fun () ->
   Lwt.return server
