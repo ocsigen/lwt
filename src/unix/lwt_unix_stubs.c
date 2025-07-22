@@ -236,7 +236,101 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition,
 }
 
 #elif defined(LWT_ON_WINDOWS)
-//TODO: windows
+
+int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
+  HANDLE handle =
+      CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start, data, 0, NULL);
+  if (handle)
+    CloseHandle(handle);
+  return 0;
+}
+
+lwt_unix_thread lwt_unix_thread_self() { return GetCurrentThreadId(); }
+
+int lwt_unix_thread_equal(lwt_unix_thread thread1, lwt_unix_thread thread2) {
+  return thread1 == thread2;
+}
+
+void lwt_unix_mutex_init(lwt_unix_mutex *mutex) {
+  InitializeCriticalSection(mutex);
+}
+
+void lwt_unix_mutex_destroy(lwt_unix_mutex *mutex) {
+  DeleteCriticalSection(mutex);
+}
+
+void lwt_unix_mutex_lock(lwt_unix_mutex *mutex) { EnterCriticalSection(mutex); }
+
+void lwt_unix_mutex_unlock(lwt_unix_mutex *mutex) {
+  LeaveCriticalSection(mutex);
+}
+
+struct wait_list {
+  HANDLE event;
+  struct wait_list *next;
+};
+
+struct lwt_unix_condition {
+  CRITICAL_SECTION mutex;
+  struct wait_list *waiters;
+};
+
+void lwt_unix_condition_init(lwt_unix_condition *condition) {
+  InitializeCriticalSection(&condition->mutex);
+  condition->waiters = NULL;
+}
+
+void lwt_unix_condition_destroy(lwt_unix_condition *condition) {
+  DeleteCriticalSection(&condition->mutex);
+}
+
+void lwt_unix_condition_signal(lwt_unix_condition *condition) {
+  struct wait_list *node;
+  EnterCriticalSection(&condition->mutex);
+
+  node = condition->waiters;
+  if (node) {
+    condition->waiters = node->next;
+    SetEvent(node->event);
+  }
+  LeaveCriticalSection(&condition->mutex);
+}
+
+void lwt_unix_condition_broadcast(lwt_unix_condition *condition) {
+  struct wait_list *node;
+  EnterCriticalSection(&condition->mutex);
+  for (node = condition->waiters; node; node = node->next)
+    SetEvent(node->event);
+  condition->waiters = NULL;
+  LeaveCriticalSection(&condition->mutex);
+}
+
+void lwt_unix_condition_wait(lwt_unix_condition *condition,
+                             lwt_unix_mutex *mutex) {
+  struct wait_list node;
+
+  /* Create the event for the notification. */
+  node.event = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+  /* Add the node to the condition. */
+  EnterCriticalSection(&condition->mutex);
+  node.next = condition->waiters;
+  condition->waiters = &node;
+  LeaveCriticalSection(&condition->mutex);
+
+  /* Release the mutex. */
+  LeaveCriticalSection(mutex);
+
+  /* Wait for a signal. */
+  WaitForSingleObject(node.event, INFINITE);
+
+  /* The event is no more used. */
+  CloseHandle(node.event);
+
+  /* Re-acquire the mutex. */
+  EnterCriticalSection(mutex);
+}
+
 #else
 
 #error "no threading library available!"
@@ -248,7 +342,151 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition,
    +-----------------------------------------------------------------+ */
 
 #if defined(LWT_ON_WINDOWS)
-//TODO: windows
+
+#if OCAML_VERSION < 41400
+static int win_set_inherit(HANDLE fd, BOOL inherit)
+{
+  if (! SetHandleInformation(fd,
+                             HANDLE_FLAG_INHERIT,
+                             inherit ? HANDLE_FLAG_INHERIT : 0)) {
+    win32_maperr(GetLastError());
+    return -1;
+  }
+  return 0;
+}
+#endif
+
+static SOCKET lwt_win_socket(int domain, int type, int protocol,
+                             LPWSAPROTOCOL_INFO info,
+                             BOOL inherit)
+{
+  SOCKET s;
+  DWORD flags = WSA_FLAG_OVERLAPPED;
+
+#ifndef WSA_FLAG_NO_HANDLE_INHERIT
+#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
+#endif
+
+  if (! inherit)
+    flags |= WSA_FLAG_NO_HANDLE_INHERIT;
+
+  s = WSASocket(domain, type, protocol, info, 0, flags);
+  if (s == INVALID_SOCKET) {
+    if (! inherit && WSAGetLastError() == WSAEINVAL) {
+      /* WSASocket probably doesn't suport WSA_FLAG_NO_HANDLE_INHERIT,
+       * retry without. */
+      flags &= ~(DWORD)WSA_FLAG_NO_HANDLE_INHERIT;
+      s = WSASocket(domain, type, protocol, info, 0, flags);
+      if (s == INVALID_SOCKET)
+        goto err;
+      win_set_inherit((HANDLE) s, FALSE);
+      return s;
+    }
+    goto err;
+  }
+
+  return s;
+
+ err:
+  win32_maperr(WSAGetLastError());
+  return INVALID_SOCKET;
+}
+
+static void lwt_unix_socketpair(int domain, int type, int protocol,
+                                SOCKET sockets[2], BOOL inherit) {
+  union {
+    struct sockaddr_in inaddr;
+    struct sockaddr_in6 inaddr6;
+    struct sockaddr addr;
+  } a;
+  SOCKET listener;
+  int addrlen;
+  int reuse = 1;
+  DWORD err;
+
+  if (domain != PF_INET && domain != PF_INET6)
+    unix_error(ENOPROTOOPT, "socketpair", Nothing);
+
+  sockets[0] = INVALID_SOCKET;
+  sockets[1] = INVALID_SOCKET;
+
+  listener = lwt_win_socket(domain, type, protocol, NULL, inherit);
+  if (listener == INVALID_SOCKET) goto failure;
+
+  memset(&a, 0, sizeof(a));
+  if (domain == PF_INET) {
+    a.inaddr.sin_family = domain;
+    a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    a.inaddr.sin_port = 0;
+  } else {
+    a.inaddr6.sin6_family = domain;
+    a.inaddr6.sin6_addr = in6addr_loopback;
+    a.inaddr6.sin6_port = 0;
+  }
+
+  if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse,
+                 sizeof(reuse)) == -1)
+    goto failure;
+
+  addrlen = domain == PF_INET ? sizeof(a.inaddr) : sizeof(a.inaddr6);
+  if (bind(listener, &a.addr, addrlen) == SOCKET_ERROR) goto failure;
+
+  memset(&a, 0, sizeof(a));
+  if (getsockname(listener, &a.addr, &addrlen) == SOCKET_ERROR) goto failure;
+
+  if (domain == PF_INET) {
+    a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    a.inaddr.sin_family = AF_INET;
+  } else {
+    a.inaddr6.sin6_addr = in6addr_loopback;
+    a.inaddr6.sin6_family = AF_INET6;
+  }
+
+  if (listen(listener, 1) == SOCKET_ERROR) goto failure;
+
+  sockets[0] = lwt_win_socket(domain, type, protocol, NULL, inherit);
+  if (sockets[0] == INVALID_SOCKET) goto failure;
+
+  addrlen = domain == PF_INET ? sizeof(a.inaddr) : sizeof(a.inaddr6);
+  if (connect(sockets[0], &a.addr, addrlen) == SOCKET_ERROR)
+    goto failure;
+
+  sockets[1] = accept(listener, NULL, NULL);
+  if (sockets[1] == INVALID_SOCKET) goto failure;
+
+  closesocket(listener);
+  return;
+
+failure:
+  err = WSAGetLastError();
+  closesocket(listener);
+  closesocket(sockets[0]);
+  closesocket(sockets[1]);
+  win32_maperr(err);
+  uerror("socketpair", Nothing);
+}
+
+static const int socket_domain_table[] =
+  {PF_UNIX, PF_INET, PF_INET6};
+
+static const int socket_type_table[] =
+  {SOCK_STREAM, SOCK_DGRAM, SOCK_RAW, SOCK_SEQPACKET};
+
+CAMLprim value lwt_unix_socketpair_stub(value cloexec, value domain, value type,
+                                        value protocol) {
+  CAMLparam4(cloexec, domain, type, protocol);
+  CAMLlocal1(result);
+  SOCKET sockets[2];
+  lwt_unix_socketpair(socket_domain_table[Int_val(domain)],
+                      socket_type_table[Int_val(type)], Int_val(protocol),
+                      sockets,
+                      ! unix_cloexec_p(cloexec));
+  result = caml_alloc_tuple(2);
+  Store_field(result, 0, win_alloc_socket(sockets[0]));
+  Store_field(result, 1, win_alloc_socket(sockets[1]));
+  CAMLreturn(result);
+}
+
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -325,7 +563,7 @@ void lwt_unix_send_notification(intnat domain_id, intnat id) {
   sigfillset(&new_mask);
   pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
 #else
-	//TODO: windows
+  DWORD error;
 #endif
   lwt_unix_mutex_lock(&domain_states[domain_id].notification_mutex);
   struct domain_notification_state *state = &domain_states[domain_id];
@@ -339,7 +577,14 @@ void lwt_unix_send_notification(intnat domain_id, intnat id) {
     state->notifications[state->notification_index++] = id;
     ret = notification_send(domain_id);
 #if defined(LWT_ON_WINDOWS)
-	//TODO: windows
+    if (ret == SOCKET_ERROR) {
+      error = WSAGetLastError();
+      if (error != WSANOTINITIALISED) {
+        lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
+        win32_maperr(error);
+        uerror("send_notification", Nothing);
+      } /* else we're probably shutting down, so ignore the error */
+    }
 #else
     if (ret < 0) {
       error = errno;
@@ -370,14 +615,19 @@ value lwt_unix_recv_notifications(intnat domain_id) {
   sigfillset(&new_mask);
   pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
 #else
-	//TODO: windows
+  DWORD error;
 #endif
   /* Initialize domain state if needed */
   lwt_unix_mutex_lock(&domain_states[domain_id].notification_mutex);
   /* Receive the signal. */
   ret = notification_recv(domain_id);
 #if defined(LWT_ON_WINDOWS)
-	//TODO: windows
+  if (ret == SOCKET_ERROR) {
+    error = WSAGetLastError();
+    lwt_unix_mutex_unlock(&domain_states[domain_id].notification_mutex);
+    win32_maperr(error);
+    uerror("recv_notifications", Nothing);
+  }
 #else
   if (ret < 0) {
     error = errno;
@@ -422,7 +672,49 @@ value lwt_unix_recv_notifications_stub(value domain_id) {
 
 #if defined(LWT_ON_WINDOWS)
 
-//TODO: windows
+static SOCKET domain_socket_r[MAX_DOMAINS];
+static SOCKET domain_socket_w[MAX_DOMAINS];
+
+static int windows_notification_send(int domain_id) {
+  char buf = '!';
+  return send(domain_socket_w[domain_id], &buf, 1, 0);
+}
+
+static int windows_notification_recv(int domain_id) {
+  char buf;
+  return recv(domain_socket_r[domain_id], &buf, 1, 0);
+}
+
+value lwt_unix_init_notification(int domain_id) {
+  SOCKET sockets[2];
+
+  switch (domain_notification_mode[domain_id]) {
+    case NOTIFICATION_MODE_NOT_INITIALIZED:
+      notification_mode = NOTIFICATION_MODE_NONE;
+      init_domain_notifications(domain_id);
+      break;
+    case NOTIFICATION_MODE_WINDOWS:
+      notification_mode = NOTIFICATION_MODE_NONE;
+      closesocket(domain_socket_r[domain_id]);
+      closesocket(domain_socket_w[domain_id]);
+      break;
+    case NOTIFICATION_MODE_NONE:
+      break;
+    default:
+      caml_failwith("notification system in unknown state");
+  }
+
+  /* Since pipes do not works with select, we need to use a pair of
+     sockets. */
+  lwt_unix_socketpair(AF_INET, SOCK_STREAM, IPPROTO_TCP, sockets, FALSE);
+
+  domain_socket_r[domain_id] = sockets[0];
+  domain_socket_w[domain_id] = sockets[1];
+  domain_notification_mode[domain_id] = NOTIFICATION_MODE_WINDOWS;
+  notification_send = windows_notification_send;
+  notification_recv = windows_notification_recv;
+  return win_alloc_socket(domain_socket_r[domain_id]);
+}
 
 #else /* defined(LWT_ON_WINDOWS) */
 
@@ -549,7 +841,9 @@ void handle_signal(int signum) {
     intnat id = signal_notifications[signum];
     if (id != -1) {
 #if defined(LWT_ON_WINDOWS)
-	//TODO: windows
+      /* The signal handler must be reinstalled if we use the signal
+         function. */
+      signal(signum, handle_signal);
 #endif
       //TODO: domain_self instead of root (0)? caml doesn't expose
       //caml_ml_domain_id in domain.h :(
@@ -564,7 +858,14 @@ CAMLprim value lwt_unix_handle_signal(value val_signum) {
 }
 
 #if defined(LWT_ON_WINDOWS)
-	//TODO: windows
+/* Handle Ctrl+C on windows. */
+static BOOL WINAPI handle_break(DWORD event) {
+  intnat id = signal_notifications[SIGINT];
+  if (id == -1 || (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT))
+    return FALSE;
+  lwt_unix_send_notification(id);
+  return TRUE;
+}
 #endif
 
 /* Install a signal handler. */
@@ -583,7 +884,18 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification, val
   if (Bool_val(val_forwarded)) return Val_unit;
 
 #if defined(LWT_ON_WINDOWS)
-	//TODO: windows
+  if (signum == SIGINT) {
+    if (!SetConsoleCtrlHandler(handle_break, TRUE)) {
+      signal_notifications[signum] = -1;
+      win32_maperr(GetLastError());
+      uerror("SetConsoleCtrlHandler", Nothing);
+    }
+  } else {
+    if (signal(signum, handle_signal) == SIG_ERR) {
+      signal_notifications[signum] = -1;
+      uerror("signal", Nothing);
+    }
+  }
 #else
   sa.sa_handler = handle_signal;
 #if OCAML_VERSION >= 50000
@@ -613,7 +925,10 @@ CAMLprim value lwt_unix_remove_signal(value val_signum, value val_forwarded) {
   if (Bool_val(val_forwarded)) return Val_unit;
 
 #if defined(LWT_ON_WINDOWS)
-	//TODO: windows
+  if (signum == SIGINT)
+    SetConsoleCtrlHandler(NULL, FALSE);
+  else
+    signal(signum, SIG_DFL);
 #else
   sa.sa_handler = SIG_DFL;
   sa.sa_flags = 0;
