@@ -29,7 +29,7 @@
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
-  (ppx_let :with-test)
+  (ppx_let (and :with-test (>= v0.17.1)))
   (lwt (>= 5.7))))
 
 (package
