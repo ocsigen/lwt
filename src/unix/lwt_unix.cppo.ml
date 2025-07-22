@@ -169,7 +169,7 @@ let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
 type 'a job
 
-external start_job : 'a job -> async_method -> bool = "lwt_unix_start_job"
+external start_job : Domain.id -> 'a job -> async_method -> bool = "lwt_unix_start_job"
 (* Starts the given job with given parameters. It returns [true]
    if the job is already terminated. *)
 
@@ -195,7 +195,7 @@ let wait_for_jobs () =
 let run_job_aux async_method job result =
   let domain_id = Domain.self () in
   (* Starts the job. *)
-  if start_job job async_method then
+  if start_job domain_id job async_method then
     (* The job has already terminated, read and return the result
        immediately. *)
     Lwt.of_result (result job)
