@@ -44,7 +44,10 @@ val spawn : (unit -> 'a) -> 'a Lwt.t
 
     When [f ()] terminates (successfully or not), the promise
     [spawn f] is resolved with [f ()]'s result, or the exception
-    raised by [f ()]. *)
+    raised by [f ()].
+
+    The promise returned by [spawn f] is not cancellable. Canceling it
+    will have no effect. *)
 
 val spawn_in_the_background :
   (unit -> unit) ->
