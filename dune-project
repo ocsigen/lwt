@@ -27,7 +27,7 @@
  (name lwt_ppx)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
-  (ocaml (>= 4.08))
+  (ocaml (>= 5.1))
   (ppxlib (>= 0.36))
   (ppx_let (and :with-test (>= v0.17.1)))
   (lwt (>= 5.7))))

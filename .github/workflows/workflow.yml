@@ -54,11 +54,20 @@ jobs:
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
 
-      - run: opam install . --deps-only --with-test
+      - run: opam install ./lwt.opam ./lwt_react.opam ./lwt_retry.opam --deps-only --with-test
 
-      - run: opam exec -- dune build
+      - run: opam install ./lwt_ppx.opam --deps-only --with-test
+        if: ${{ contains(fromJSON('["5.1","5.2","5.3"]'), matrix.ocaml-compiler) }}
 
-      - run: opam exec -- dune runtest
+      - run: opam exec -- dune build -p lwt,lwt_react,lwt_retry
+
+      - run: opam exec -- dune build -p lwt_ppx
+        if: ${{ contains(fromJSON('["5.1","5.2","5.3"]'), matrix.ocaml-compiler) }}
+
+      - run: opam exec -- dune runtest -p lwt,lwt_react,lwt_retry
+
+      - run: opam exec -- dune runtest -p lwt_ppx
+        if: ${{ contains(fromJSON('["5.1","5.2","5.3"]'), matrix.ocaml-compiler) }}
 
   lint-opam:
     runs-on: ubuntu-latest
