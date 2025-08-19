@@ -21,21 +21,21 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 
       Note that Lwt thread-local storage (i.e., {!Lwt.with_value}) cannot be
       safely used from within [f]. The same goes for most of the rest of Lwt. If
-      you need to run an Lwt thread in [f], use {!run_in_main}. *)
+      you need to run an Lwt thread in [f], use {!run_in_domain}. *)
 
-val run_in_main : (unit -> 'a Lwt.t) -> 'a
-  (** [run_in_main f] can be called from a detached computation to execute
+val run_in_domain : Domain.id -> (unit -> 'a Lwt.t) -> 'a
+  (** [run_in_domain f] can be called from a detached computation to execute
       [f ()] in the main preemptive thread, i.e. the one executing
-      {!Lwt_main.run}. [run_in_main f] blocks until [f ()] completes, then
-      returns its result. If [f ()] raises an exception, [run_in_main f] raises
+      {!Lwt_main.run}. [run_in_domain f] blocks until [f ()] completes, then
+      returns its result. If [f ()] raises an exception, [run_in_domain f] raises
       the same exception.
 
       {!Lwt.with_value} may be used inside [f ()]. {!Lwt.get} can correctly
       retrieve values set this way inside [f ()], but not values set using
       {!Lwt.with_value} outside [f ()]. *)
 
-val run_in_main_dont_wait : (unit -> unit Lwt.t) -> (exn -> unit) -> unit
-(** [run_in_main_dont_wait f h] does the same as [run_in_main f] but a bit faster
+val run_in_domain_dont_wait : Domain.id -> (unit -> unit Lwt.t) -> (exn -> unit) -> unit
+(** [run_in_domain_dont_wait f h] does the same as [run_in_domain f] but a bit faster
     and lighter as it does not wait for the result of [f].
 
     If [f]'s promise is rejected (or if it raises), then the function [h] is

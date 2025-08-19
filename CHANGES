@@ -1,3 +1,9 @@
+===== 6.0.0 =====
+
+  * Support multiple scheduler running in parallel in separate domains.
+
+  * Exception filter defaults to letting systems exceptions through.
+
 ===== 5.9.0 =====
 
 ====== Additions ======
