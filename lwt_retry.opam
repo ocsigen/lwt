@@ -12,7 +12,7 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.08"}
-  "lwt" {>= "5.3.0"}
+  "lwt" {>= "5.3"}
   "odoc" {with-doc}
 ]
 build: [

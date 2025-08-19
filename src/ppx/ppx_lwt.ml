@@ -144,12 +144,12 @@ let lwt_expression mapper exp attributes ext_loc =
       match exns with
       | [] ->
         let loc = !default_loc in
-        [%expr Lwt.bind [%e e] [%e pexp_function ~loc cases]]
+        [%expr Lwt.bind [%e e] [%e pexp_function_cases ~loc cases]]
       | _  ->
         let loc = !default_loc in
         [%expr Lwt.try_bind (fun () -> [%e e])
-                                   [%e pexp_function ~loc cases]
-                                   [%e pexp_function ~loc exns]]
+                                   [%e pexp_function_cases ~loc cases]
+                                   [%e pexp_function_cases ~loc exns]]
     in
     Some (mapper#expression { new_exp with pexp_attributes })
 
@@ -223,7 +223,7 @@ let lwt_expression mapper exp attributes ext_loc =
           Lwt.backtrace_catch
             (fun exn -> try Lwt.reraise exn with exn -> exn)
             (fun () -> [%e expr])
-            [%e pexp_function ~loc cases]
+            [%e pexp_function_cases ~loc cases]
         ]
     in
     Some (mapper#expression { new_exp with pexp_attributes })
@@ -248,7 +248,7 @@ let lwt_expression mapper exp attributes ext_loc =
     in
     let new_exp =
       let loc = !default_loc in
-      [%expr Lwt.bind [%e cond] [%e pexp_function ~loc cases]]
+      [%expr Lwt.bind [%e cond] [%e pexp_function_cases ~loc cases]]
     in
     Some (mapper#expression { new_exp with pexp_attributes })
 

@@ -22,9 +22,9 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
   "dune" {>= "2.7"}
   "ocaml" {>= "4.08"}
-  "cppo" {build & >= "1.1.0"}
+  "cppo" {build & >= "1.1"}
   "ocamlfind" {dev & >= "1.7.3-1"}
-  "odoc" {with-doc & >= "2.3.0"}
+  "odoc" {with-doc & >= "2.3"}
   "dune-configurator"
   "ocplib-endian"
 ]
