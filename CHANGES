@@ -1,3 +1,10 @@
+===== dev =====
+
+====== Additions ======
+
+  * Lwt_direct using Lwt in direct-style. (Simon Cruanes, #1060)
+
+
 ===== 5.9.0 =====
 
 ====== Additions ======

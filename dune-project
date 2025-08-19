@@ -42,6 +42,16 @@
   (react (>= 1.0.0))))
 
 (package
+ (name lwt_direct)
+ (synopsis "Direct-style control-flow and `await` for Lwt")
+ (authors "Simon Cruanes")
+ (depends
+  (ocaml (>= 5.0))
+  base-unix
+  (lwt (>= 6))
+  (bisect_ppx :with-test)))
+
+(package
  (name lwt)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.

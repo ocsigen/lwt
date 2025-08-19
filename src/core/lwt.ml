@@ -730,6 +730,9 @@ sig
   val new_key : unit -> _ key
   val get : 'v key -> 'v option
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
+  val get_from_storage : 'v key -> storage -> 'v option
+  val modify_storage : 'v key -> 'v option -> storage -> storage
+  val empty_storage : storage
 
   (* Internal interface *)
   val current_storage : storage ref
@@ -773,28 +776,33 @@ struct
     next_key_id := id + 1;
     {id = id; value = None}
 
-  let current_storage = ref Storage_map.empty
+  (* generic storage *)
+  let empty_storage = Storage_map.empty
 
-  let get key =
-    if Storage_map.mem key.id !current_storage then begin
-      let refresh = Storage_map.find key.id !current_storage in
+  let get_from_storage key storage =
+    match Storage_map.find_opt key.id storage with
+    | Some refresh ->
       refresh ();
       let value = key.value in
       key.value <- None;
       value
-    end
-    else
-      None
+    | None -> None
+
+  let modify_storage key value storage =
+    match value with
+    | Some _ ->
+      let refresh = fun () -> key.value <- value in
+      Storage_map.add key.id refresh storage
+    | None ->
+      Storage_map.remove key.id storage
+
+  (* built-in storage: propagated by bind and such *)
+  let current_storage = ref empty_storage
+
+  let get key = get_from_storage key !current_storage
 
   let with_value key value f =
-    let new_storage =
-      match value with
-      | Some _ ->
-        let refresh = fun () -> key.value <- value in
-        Storage_map.add key.id refresh !current_storage
-      | None ->
-        Storage_map.remove key.id !current_storage
-    in
+    let new_storage = modify_storage key value !current_storage in
 
     let saved_storage = !current_storage in
     current_storage := new_storage;
@@ -3227,4 +3235,9 @@ struct
 
   let (let+) x f = map f x
   let (and+) = both
+end
+
+module Private = struct
+  type nonrec storage = storage
+  module Sequence_associated_storage = Sequence_associated_storage
 end
