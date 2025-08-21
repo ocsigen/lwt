@@ -154,9 +154,9 @@ val p : char Lwt.t = <abstr>
   functions:
 
 {ul
-  {- [Lwt.wakeup : 'a Lwt.u -> 'a -> unit]
+  {- [Lwt.awaken : order:ordering -> 'a Lwt.u -> 'a -> unit]
      fulfills the promise with a value.}
-  {- [Lwt.wakeup_exn : 'a Lwt.u -> exn -> unit]
+  {- [Lwt.awaken_exn : order:ordering -> 'a Lwt.u -> exn -> unit]
      rejects the promise with an exception.}}
 
   Note that it is an error to try to resolve the same promise twice. [Lwt]
@@ -170,11 +170,11 @@ val p : char Lwt.t = <abstr>
 # Lwt.state (Lwt.fail Exit);;
 # let p, r = Lwt.wait ();;
 # Lwt.state p;;
-# Lwt.wakeup r 42;;
+# Lwt.awaken ~order:Nested r 42;;
 # Lwt.state p;;
 # let p, r = Lwt.wait ();;
 # Lwt.state p;;
-# Lwt.wakeup_exn r Exit;;
+# Lwt.awaken_exn ~order:Nested r Exit;;
 # Lwt.state p;;
 ]}
 
@@ -323,7 +323,7 @@ val r2 : '_a Lwt.u = <abstr>
 val p3 : '_a Lwt.t = <abstr>
 # Lwt.state p3;;
 - : '_a Lwt.state = Lwt.Sleep
-# Lwt.wakeup r2 42;;
+# Lwt.awaken ~order:Nested r2 42;;
 - : unit = ()
 # Lwt.state p3;;
 - : int Lwt.state = Lwt.Return 42
