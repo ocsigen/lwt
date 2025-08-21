@@ -43,6 +43,25 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: set ppx-related variables
+        id: configppx
+        shell: bash
+        run: |
+          case ${{ matrix.ocaml-compiler }} in
+            "4.08"|"4.09"|"4.10"|"4.11"|"4.12"|"4.13"|"4.14"|"5.0")
+              echo "ppx=false"
+              echo "ppx=false" >> "$GITHUB_OUTPUT"
+              ;;
+            "5.1"|"5.2"|"5.3")
+              echo "ppx=true"
+              echo "ppx=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              printf "unrecognised version %s\n" "${{ matrix.ocaml-compiler }}";
+              exit 1
+              ;;
+          esac
+
       - name: Checkout tree
         uses: actions/checkout@v5
 
@@ -57,17 +76,17 @@ jobs:
       - run: opam install ./lwt.opam ./lwt_react.opam ./lwt_retry.opam --deps-only --with-test
 
       - run: opam install ./lwt_ppx.opam --deps-only --with-test
-        if: ${{ contains(fromJSON('["5.1","5.2","5.3"]'), matrix.ocaml-compiler) }}
+        if: ${{ fromJSON(steps.configppx.outputs.ppx) }}
 
-      - run: opam exec -- dune build -p lwt,lwt_react,lwt_retry
+      - run: opam exec -- dune build --only-packages lwt,lwt_react,lwt_retry
 
-      - run: opam exec -- dune build -p lwt_ppx
-        if: ${{ contains(fromJSON('["5.1","5.2","5.3"]'), matrix.ocaml-compiler) }}
+      - run: opam exec -- dune build --only-packages lwt_ppx
+        if: ${{ fromJSON(steps.configppx.outputs.ppx) }}
 
-      - run: opam exec -- dune runtest -p lwt,lwt_react,lwt_retry
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_react,lwt_retry
 
-      - run: opam exec -- dune runtest -p lwt_ppx
-        if: ${{ contains(fromJSON('["5.1","5.2","5.3"]'), matrix.ocaml-compiler) }}
+      - run: opam exec -- dune runtest --only-packages lwt_ppx
+        if: ${{ fromJSON(steps.configppx.outputs.ppx) }}
 
   lint-opam:
     runs-on: ubuntu-latest
