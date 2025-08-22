@@ -44,6 +44,7 @@ type 'a mode =
 let input : input mode = Input
 let output : output mode = Output
 
+[@@@ocaml.warning "-69"]
 (* A channel state *)
 type 'mode state =
   | Busy_primitive
@@ -121,6 +122,7 @@ and typ =
      function. *)
   | Type_bytes
   (* The channel has been created with [of_bytes]. *)
+[@@@ocaml.warning "+69"]
 
 type input_channel = input channel
 type output_channel = output channel

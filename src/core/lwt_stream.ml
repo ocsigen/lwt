@@ -38,6 +38,7 @@ type 'a from = {
 }
 
 (* Type of a stream source for push streams. *)
+[@@@ocaml.warning "-69"]
 type push = {
   mutable push_signal : unit Lwt.t;
   (* Thread signaled when a new element is added to the stream. *)
@@ -67,6 +68,7 @@ type 'a push_bounded = {
   mutable pushb_external : Obj.t [@ocaml.warning "-69"];
   (* Reference to an external source. *)
 }
+[@@@ocaml.warning "+69"]
 
 (* Source of a stream. *)
 type 'a source =
