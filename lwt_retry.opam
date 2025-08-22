@@ -10,7 +10,7 @@ homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
-  "dune" {>= "2.7"}
+  "dune" {>= "3.15"}
   "ocaml" {>= "4.08"}
   "lwt" {>= "5.3"}
   "odoc" {with-doc}

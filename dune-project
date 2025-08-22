@@ -1,4 +1,4 @@
-(lang dune 2.7)
+(lang dune 3.15)
 
 (name lwt)
 
@@ -27,10 +27,18 @@
  (name lwt_ppx)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
-  (ocaml (>= 5.1))
+  (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
-  (ppx_let (and :with-test (>= v0.17.1)))
   (lwt (>= 5.7))))
+
+(package
+ (name lwt_ppx__ppx_let_tests)
+ (synopsis "DO NOT RELEASE! only for testing let_ppx")
+ (license NOTFORRELEASE) ;; trap for opam-repo ci
+ (allow_empty)
+ (depends
+  (ocaml (>= 5.1))
+  (ppx_let (and :with-test (>= v0.17.1)))))
 
 (package
  (name lwt_react)
