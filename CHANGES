@@ -1,3 +1,21 @@
+===== 5.9.1 =====
+
+====== Packaging ======
+
+  * lwt_ppx is compatible with newer versions of ppxlib. (Patrick Ferris, Kate Deplaix, Sora Morimoto, #1033)
+
+====== Other ======
+
+  * Misc repository maintenance. (Sora Morimoto)
+
+  * Misc typo. (Kaustubh Maske Patil, #1056)
+
+===== 5.9.1 =====
+
+====== Fixes ======
+
+  * META files now carry version information. (Hugo Heuzard, #1042, #1053)
+
 ===== 5.9.0 =====
 
 ====== Additions ======
@@ -13,6 +31,12 @@
 ====== Other ======
 
   * Misc repository maintenance. (Sora Morimoto, Shon Feder, #1037, #1035)
+
+===== 5.8.1 =====
+
+====== Fixes ======
+
+  * META files now carry version information. (Hugo Heuzard, #1042, #1053)
 
 ===== 5.8.0 =====
 
