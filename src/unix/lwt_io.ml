@@ -73,7 +73,7 @@ and 'mode channel = {
   channel : 'mode _channel;
   (* The real channel *)
 
-  mutable queued : unit Lwt.u Lwt_sequence.t;
+  mutable queued : unit Lwt.u Lwt_sequence.t [@ocaml.warning "-69"];
   (* Queued operations *)
 }
 
