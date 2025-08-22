@@ -6,7 +6,7 @@ synopsis:
 maintainer: [
   "Raphaël Proust <code@bnwr.net>" "Anton Bachin <antonbachin@yahoo.com>"
 ]
-authors: ["Jérôme Vouillon" "Jérémie Dimino"]
+authors: ["Gabriel Radanne"]
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"

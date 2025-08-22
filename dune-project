@@ -26,6 +26,7 @@
 (package
  (name lwt_ppx)
  (version 5.9.2)
+ (authors "Gabriel Radanne")
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
   (ocaml (>= 4.08))
