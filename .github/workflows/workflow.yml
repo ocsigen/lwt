@@ -80,12 +80,12 @@ jobs:
 
       - run: opam exec -- dune build --only-packages lwt,lwt_react,lwt_retry
 
-      - run: opam exec -- dune build --only-packages lwt_ppx__ppx_let_tests
+      - run: opam exec -- dune build --only-packages lwt,lwt_ppx__ppx_let_tests
         if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
 
       - run: opam exec -- dune runtest --only-packages lwt,lwt_react,lwt_retry,lwt_ppx
 
-      - run: opam exec -- dune runtest --only-packages lwt_ppx__ppx_let_tests
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_ppx__ppx_let_tests
         if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
 
   lint-opam:
