@@ -267,6 +267,8 @@ struct
         extend unicode ["ws2_32.lib"]
       else
         extend unicode ["-lws2_32"]
+    else
+      extend ["-fPIC"; "-pthread"] ["-fPIC"; "-pthread"]
 
   let c_flags () =
     !c_flags

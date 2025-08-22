@@ -43,8 +43,27 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: set ppx-related variables
+        id: configppx
+        shell: bash
+        run: |
+          case ${{ matrix.ocaml-compiler }} in
+            "4.08"|"4.09"|"4.10"|"4.11"|"4.12"|"4.13"|"4.14"|"5.0")
+              echo "letppx=false"
+              echo "letppx=false" >> "$GITHUB_OUTPUT"
+              ;;
+            "5.1"|"5.2"|"5.3")
+              echo "letppx=true"
+              echo "letppx=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              printf "unrecognised version %s\n" "${{ matrix.ocaml-compiler }}";
+              exit 1
+              ;;
+          esac
+
       - name: Checkout tree
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
@@ -54,17 +73,26 @@ jobs:
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
 
-      - run: opam install . --deps-only --with-test
+      - run: opam install ./lwt.opam ./lwt_react.opam ./lwt_retry.opam ./lwt_ppx.opam --deps-only --with-test
 
-      - run: opam exec -- dune build
+      - run: opam install ./lwt_ppx__ppx_let_tests.opam --deps-only --with-test
+        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
 
-      - run: opam exec -- dune runtest
+      - run: opam exec -- dune build --only-packages lwt,lwt_react,lwt_retry
+
+      - run: opam exec -- dune build --only-packages lwt,lwt_ppx__ppx_let_tests
+        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
+
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_react,lwt_retry,lwt_ppx
+
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_ppx__ppx_let_tests
+        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
 
   lint-opam:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout tree
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:

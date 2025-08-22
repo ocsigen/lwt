@@ -44,6 +44,7 @@ type 'a mode =
 let input : input mode = Input
 let output : output mode = Output
 
+[@@@ocaml.warning "-69"]
 (* A channel state *)
 type 'mode state =
   | Busy_primitive
@@ -73,7 +74,7 @@ and 'mode channel = {
   channel : 'mode _channel;
   (* The real channel *)
 
-  mutable queued : unit Lwt.u Lwt_sequence.t;
+  mutable queued : unit Lwt.u Lwt_sequence.t [@ocaml.warning "-69"];
   (* Queued operations *)
 }
 
@@ -121,6 +122,7 @@ and typ =
      function. *)
   | Type_bytes
   (* The channel has been created with [of_bytes]. *)
+[@@@ocaml.warning "+69"]
 
 type input_channel = input channel
 type output_channel = output channel
