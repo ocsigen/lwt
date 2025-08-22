@@ -38,8 +38,7 @@
  (allow_empty)
  (depends
   (ocaml (>= 5.1))
-  (ppx_let (and :with-test (>= v0.17.1)))
-  lwt_ppx))
+  (ppx_let (and :with-test (>= v0.17.1)))))
 
 (package
  (name lwt_react)
