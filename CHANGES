@@ -1,4 +1,4 @@
-===== dev =====
+===== 6.0.0+dev =====
 
 ====== Additions ======
 
@@ -7,6 +7,32 @@
   * Support multiple scheduler running in parallel in separate domains.
 
   * Exception filter defaults to letting systems exceptions through.
+
+===== 5.10.0+dev =====
+
+====== Misc
+
+  * In `Lwt_io`, functions that create sockets gain new options `?set_tcp_nodelay` and `?prepare_fd`. (#1061, Simon Cruanes)
+
+  * Breaking change: `?set_tcp_nodelay` is set to `true` by default which means TCP_NODELAY is now set by default for such functions. (#1061, Simon Cruanes)
+
+===== 5.9.2 =====
+
+====== Packaging ======
+
+  * lwt_ppx is compatible with newer versions of ppxlib. (Patrick Ferris, Kate Deplaix, Sora Morimoto, #1033)
+
+====== Other ======
+
+  * Misc repository maintenance. (Sora Morimoto)
+
+  * Misc typo. (Kaustubh Maske Patil, #1056)
+
+===== 5.9.1 =====
+
+====== Fixes ======
+
+  * META files now carry version information. (Hugo Heuzard, #1042, #1053)
 
 ===== 5.9.0 =====
 
@@ -23,6 +49,12 @@
 ====== Other ======
 
   * Misc repository maintenance. (Sora Morimoto, Shon Feder, #1037, #1035)
+
+===== 5.8.1 =====
+
+====== Fixes ======
+
+  * META files now carry version information. (Hugo Heuzard, #1042, #1053)
 
 ===== 5.8.0 =====
 
