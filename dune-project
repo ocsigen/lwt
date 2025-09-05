@@ -60,8 +60,7 @@
  (depends
   (ocaml (>= 5.0))
   base-unix
-  (lwt (>= 6))
-  (bisect_ppx :with-test)))
+  (lwt (>= 6))))
 
 (package
  (name lwt)
