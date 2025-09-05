@@ -16,6 +16,9 @@ jobs:
           - ubuntu-latest
         ocaml-compiler:
           - "4.14"
+          - "5.0"
+          - "5.1"
+          - "5.2"
           - "5.3"
         libev:
           - true
@@ -34,24 +37,42 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: set ppx-related variables
-        id: configppx
+      - name: set version-dependent variables
+        id: configpkgs
         shell: bash
         run: |
+          opampkgs="./lwt.opam ./lwt_react.opam ./lwt_retry.opam ./lwt_ppx.opam"
+          dunepkgs="lwt,lwt_react,lwt_retry,lwt_ppx"
           case ${{ matrix.ocaml-compiler }} in
-            "4.08"|"4.09"|"4.10"|"4.11"|"4.12"|"4.13"|"4.14"|"5.0")
-              echo "letppx=false"
-              echo "letppx=false" >> "$GITHUB_OUTPUT"
+            "4.14"|"5.0")
+              :
               ;;
             "5.1"|"5.2"|"5.3")
-              echo "letppx=true"
-              echo "letppx=true" >> "$GITHUB_OUTPUT"
+              opampkgs="${opampkgs} ./lwt_ppx__ppx_let_tests.opam"
+              dunepkgs="${dunepkgs},lwt_ppx__ppx_let_tests"
               ;;
             *)
               printf "unrecognised version %s\n" "${{ matrix.ocaml-compiler }}";
               exit 1
               ;;
           esac
+          case ${{ matrix.ocaml-compiler }} in
+            "4.14")
+              :
+              ;;
+            "5.0"|"5.1"|"5.2"|"5.3")
+              opampkgs="${opampkgs} ./lwt_direct.opam"
+              dunepkgs="${dunepkgs},lwt_direct"
+              ;;
+            *)
+              printf "unrecognised version %s\n" "${{ matrix.ocaml-compiler }}";
+              exit 1
+              ;;
+          esac
+          echo "opampkgs=${opampkgs}"
+          echo "opampkgs=${opampkgs}" >> "$GITHUB_OUTPUT"
+          echo "dunepkgs=${dunepkgs}"
+          echo "dunepkgs=${dunepkgs}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout tree
         uses: actions/checkout@v5
@@ -64,20 +85,11 @@ jobs:
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
 
-      - run: opam install ./lwt.opam ./lwt_direct.opam ./lwt_react.opam ./lwt_retry.opam ./lwt_ppx.opam --deps-only --with-test
+      - run: opam install --deps-only --with-test ${{ steps.configpkgs.outputs.opampkgs }}
 
-      - run: opam install ./lwt_ppx__ppx_let_tests.opam --deps-only --with-test
-        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
+      - run: opam exec -- dune build --only-packages ${{ steps.configpkgs.outputs.dunepkgs }}
 
-      - run: opam exec -- dune build --only-packages lwt,lwt_direct,lwt_react,lwt_retry
-
-      - run: opam exec -- dune build --only-packages lwt,lwt_ppx__ppx_let_tests
-        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
-
-      - run: opam exec -- dune runtest --only-packages lwt,lwt_direct,lwt_react,lwt_retry,lwt_ppx
-
-      - run: opam exec -- dune runtest --only-packages lwt,lwt_ppx__ppx_let_tests
-        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
+      - run: opam exec -- dune runtest --only-packages ${{ steps.configpkgs.outputs.dunepkgs }}
 
   lint-opam:
     runs-on: ubuntu-latest
