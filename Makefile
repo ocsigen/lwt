@@ -55,7 +55,6 @@ clean :
 	dune clean
 	rm -fr docs/api
 	rm -f src/unix/discover_arguments
-	rm -rf _coverage/
 
 EXPECTED_FILES := \
     --expect src/core/ \
@@ -65,10 +64,3 @@ EXPECTED_FILES := \
     --do-not-expect src/unix/lwt_gc.ml \
     --do-not-expect src/unix/lwt_throttle.ml \
     --do-not-expect src/unix/unix_c/
-
-.PHONY: coverage
-coverage :
-	dune runtest --instrument-with bisect_ppx --force
-	bisect-ppx-report html $(EXPECTED_FILES)
-	bisect-ppx-report summary
-	@echo See _coverage/index.html

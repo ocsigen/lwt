@@ -5,10 +5,6 @@ src/unix/discover_arguments
 # OPAM 2.0 local switches.
 _opam
 
-# Coverage analysis.
-bisect*.out
-_coverage/
-
 # For local work, tests, etc.
 scratch/
 

@@ -2061,3 +2061,20 @@ val backtrace_try_bind :
 val abandon_wakeups : unit -> unit
 
 val debug_state_is : 'a state -> 'a t -> bool t
+
+module Private : sig
+  type storage
+
+  module Sequence_associated_storage : sig
+    val get_from_storage : 'a key -> storage -> 'a option
+    val modify_storage : 'a key -> 'a option -> storage -> storage
+    val empty_storage : storage
+    val current_storage : storage Domain.DLS.key
+  end
+end [@@alert trespassing "for internal use only, keep away"]
+
+[@@@ocaml.warning "-3"]
+(* this is only for cross-domain scheduler synchronisation *)
+val get_sent_callbacks : Domain.id -> (unit -> unit) Lwt_sequence.t
+val register_notification : Domain.id -> (unit -> unit) -> unit
+val is_alredy_registered : Domain.id -> bool
