@@ -14,6 +14,9 @@ type event
 val stop_event : event -> unit
   (** [stop_event event] stops the given event. *)
 
+val fake_event : event
+  (** Event which does nothing when stopped. *)
+
 (** {2 Event loop functions} *)
 
 val iter : bool -> unit
