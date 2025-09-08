@@ -53,8 +53,18 @@
   (react (>= 1.0))))
 
 (package
+ (name lwt_direct)
+ (version 6.0.0~alpha02)
+ (synopsis "Direct-style control-flow and `await` for Lwt")
+ (authors "Simon Cruanes")
+ (depends
+  (ocaml (>= 5.0))
+  base-unix
+  (lwt (>= 6))))
+
+(package
  (name lwt)
- (version 5.9.2+dev)
+ (version 6.0.0~alpha02)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
 
@@ -66,7 +76,8 @@ a single thread by default. This reduces the need for locks or other
 synchronization primitives. Code can be run in parallel on an opt-in basis.
 ")
  (depends
-  (ocaml (>= 4.08))
+  (ocaml (>= 4.14))
+  domain_shims
   (cppo (and :build (>= 1.1)))
   (ocamlfind (and :dev (>= 1.7.3-1)))
   (odoc (and :with-doc (>= 2.3)))
