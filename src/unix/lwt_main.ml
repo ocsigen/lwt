@@ -22,14 +22,14 @@ let abandon_yielded_and_paused () =
 
 let run p =
   let domain_id = Domain.self () in
-  let () = if Lwt.is_alredy_registered domain_id then
+  let () = if (Lwt.Private.Multidomain_sync.is_alredy_registered[@alert "-trespassing"]) domain_id then
     ()
   else begin
     let n = Lwt_unix.make_notification domain_id (fun () ->
-      let cbs = Lwt.get_sent_callbacks domain_id in
+      let cbs = (Lwt.Private.Multidomain_sync.get_sent_callbacks[@alert "-trespassing"]) domain_id in
       Lwt_sequence.iter_l (fun f -> f ()) cbs
     ) in
-    Lwt.register_notification domain_id (fun () -> Lwt_unix.send_notification domain_id n)
+    (Lwt.Private.Multidomain_sync.register_notification[@alert "-trespassing"]) domain_id (fun () -> Lwt_unix.send_notification domain_id n)
   end
   in
   let rec run_loop () =

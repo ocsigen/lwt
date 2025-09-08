@@ -364,61 +364,63 @@ module Storage_map =
     end)
 type storage = (unit -> unit) Storage_map.t
 
+module Multidomain_sync = struct
 
-(* callback_exchange is a domain-indexed map for storing callbacks that
-   different domains should execute. This is used when a domain d1 resolves a
-   promise on which a different domain d2 has attached callbacks (implicitely
-   via bind etc. or explicitly via on_success etc.). When this happens, the
-   domain resolving the promise calls its local callbacks and sends the other
-   domains' callbacks into the callback exchange *)
-let callback_exchange = Domain_map.create_protected_map ()
+  (* callback_exchange is a domain-indexed map for storing callbacks that
+     different domains should execute. This is used when a domain d1 resolves a
+     promise on which a different domain d2 has attached callbacks (implicitely
+     via bind etc. or explicitly via on_success etc.). When this happens, the
+     domain resolving the promise calls its local callbacks and sends the other
+     domains' callbacks into the callback exchange *)
+  let callback_exchange = Domain_map.create_protected_map ()
 
-(* notification_map is a domain-indexed map for waking sleeping domains. each
-   (should) domain registers a notification (see Lwt_unix) into the map when it
-   starts its scheduler. other domains can wake the domain up to indicate that
-   callbacks are available to be called *)
-let notification_map = Domain_map.create_protected_map ()
+  (* notification_map is a domain-indexed map for waking sleeping domains. each
+     (should) domain registers a notification (see Lwt_unix) into the map when it
+     starts its scheduler. other domains can wake the domain up to indicate that
+     callbacks are available to be called *)
+  let notification_map = Domain_map.create_protected_map ()
 
-(* send_callback d cb adds the callback cb into the callback_exchange and pings
-   the domain d via the notification_map *)
-let send_callback d cb =
-    Domain_map.update
-      callback_exchange
-      d
-        (function
-          | None ->
-              let cbs = Lwt_sequence.create () in
-              let _ : (unit -> unit) Lwt_sequence.node = Lwt_sequence.add_l cb cbs in
-              Some cbs
-          | Some cbs ->
-              let _ : (unit -> unit) Lwt_sequence.node = Lwt_sequence.add_l cb cbs in
-              Some cbs);
-    begin match Domain_map.find notification_map d with
-      | None ->
-          failwith "ERROR: domain didn't register at startup"
-      | Some n ->
-          n ()
-    end
+  (* send_callback d cb adds the callback cb into the callback_exchange and pings
+     the domain d via the notification_map *)
+  let send_callback d cb =
+      Domain_map.update
+        callback_exchange
+        d
+          (function
+            | None ->
+                let cbs = Lwt_sequence.create () in
+                let _ : (unit -> unit) Lwt_sequence.node = Lwt_sequence.add_l cb cbs in
+                Some cbs
+            | Some cbs ->
+                let _ : (unit -> unit) Lwt_sequence.node = Lwt_sequence.add_l cb cbs in
+                Some cbs);
+      begin match Domain_map.find notification_map d with
+        | None ->
+            failwith "ERROR: domain didn't register at startup"
+        | Some n ->
+            n ()
+      end
 
-(* get_sent_callbacks gets a domain's own callback from the callbasck exchange,
-   this is so that the notification handler installed by main.run can obtain the
-   callbacks that have been sent its way *)
-let get_sent_callbacks domain_id =
-    match Domain_map.extract callback_exchange domain_id with
-    | None -> Lwt_sequence.create ()
-    | Some cbs -> cbs
+  (* get_sent_callbacks gets a domain's own callback from the callbasck exchange,
+     this is so that the notification handler installed by main.run can obtain the
+     callbacks that have been sent its way *)
+  let get_sent_callbacks domain_id =
+      match Domain_map.extract callback_exchange domain_id with
+      | None -> Lwt_sequence.create ()
+      | Some cbs -> cbs
 
-(* register_notification adds a domain's own notification (see Lwt_unix) into
-   the notification map *)
-let register_notification d n =
-    Domain_map.update notification_map d (function
-    | None -> Some n
-    | Some _ -> failwith "already registered!!")
+  (* register_notification adds a domain's own notification (see Lwt_unix) into
+     the notification map *)
+  let register_notification d n =
+      Domain_map.update notification_map d (function
+      | None -> Some n
+      | Some _ -> failwith "already registered!!")
 
-let is_alredy_registered d =
-  match Domain_map.find notification_map d with
-  | Some _ -> true
-  | None -> false
+  let is_alredy_registered d =
+    match Domain_map.find notification_map d with
+    | Some _ -> true
+    | None -> false
+end
 
 module Main_internal_types =
 struct
@@ -1230,7 +1232,7 @@ struct
               Domain.DLS.set current_storage storage;
               handle_with_async_exception_hook f ()
             end else
-              send_callback domain (fun () ->
+              Multidomain_sync.send_callback domain (fun () ->
                 Domain.DLS.set current_storage storage;
                 handle_with_async_exception_hook f ()
               )
@@ -1240,7 +1242,7 @@ struct
           begin if domain = Domain.self () then
             Lwt_sequence.remove node
           else
-            send_callback domain (fun () -> Lwt_sequence.remove node)
+            Multidomain_sync.send_callback domain (fun () -> Lwt_sequence.remove node)
           end;
           iter_list rest
         | Cancel_callback_list_concat (fs, fs') ->
@@ -1265,7 +1267,7 @@ struct
             begin if domain = Domain.self () then
               f result
             else
-              send_callback domain (fun () -> f result)
+              Multidomain_sync.send_callback domain (fun () -> f result)
             end;
             iter_list rest
         | Regular_callback_list_explicitly_removable_callback (_, {contents = None}) ->
@@ -1274,7 +1276,7 @@ struct
             begin if domain = Domain.self () then
               f result
             else
-              send_callback domain (fun () -> f result)
+              Multidomain_sync.send_callback domain (fun () -> f result)
             end;
             iter_list rest
         | Regular_callback_list_concat (fs, fs') ->
@@ -3308,4 +3310,5 @@ end
 module Private = struct
   type nonrec storage = storage
   module Sequence_associated_storage = Sequence_associated_storage
+  module Multidomain_sync = Multidomain_sync
 end
