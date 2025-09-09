@@ -47,24 +47,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: set ppx-related variables
-        id: configppx
-        shell: bash
-        run: |
-          case ${{ matrix.ocaml-compiler }} in
-            "4.08"|"4.09"|"4.10"|"4.11"|"4.12"|"4.13"|"4.14"|"5.0")
-              echo "letppx=false"
-              echo "letppx=false" >> "$GITHUB_OUTPUT"
-              ;;
-            "5.1"|"5.2"|"5.3")
-              echo "letppx=true"
-              echo "letppx=true" >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              printf "unrecognised version %s\n" "${{ matrix.ocaml-compiler }}";
-              exit 1
-              ;;
-          esac
 
       - name: Checkout tree
         uses: actions/checkout@v5
@@ -73,6 +55,13 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - name: set ppx-related variables
+        id: configppx
+        shell: bash
+        run: |
+          opam exec -- dune exec src/util/letppx.exe
+          opam exec -- dune exec src/util/letppx.exe >> "$GITHUB_OUTPUT"
 
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
