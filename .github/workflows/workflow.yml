@@ -60,8 +60,8 @@ jobs:
         id: configppx
         shell: bash
         run: |
-          opam exec -- dune exec src/util/letppx.exe
-          opam exec -- dune exec src/util/letppx.exe >> "$GITHUB_OUTPUT"
+          opam exec -- ocaml src/util/letppx.ml
+          opam exec -- ocaml src/util/letppx.ml >> "$GITHUB_OUTPUT"
 
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
