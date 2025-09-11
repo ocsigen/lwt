@@ -29,7 +29,7 @@ let run p =
       let cbs = (Lwt.Private.Multidomain_sync.get_sent_callbacks[@alert "-trespassing"]) domain_id in
       Lwt_sequence.iter_l (fun f -> f ()) cbs
     ) in
-    (Lwt.Private.Multidomain_sync.register_notification[@alert "-trespassing"]) domain_id (fun () -> Lwt_unix.send_notification domain_id n)
+    (Lwt.Private.Multidomain_sync.register_notification[@alert "-trespassing"]) domain_id (fun () -> Lwt_unix.send_notification n)
   end
   in
   let rec run_loop () =

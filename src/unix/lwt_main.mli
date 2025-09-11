@@ -77,8 +77,14 @@ val abandon_yielded_and_paused : unit -> unit [@@deprecated "Use Lwt.abandon_pau
 
 
 (** Hook sequences. Each module of this type is a set of hooks, to be run by Lwt
-    at certain points during execution. See modules {!Enter_iter_hooks},
-    {!Leave_iter_hooks}, and {!Exit_hooks}. *)
+    at certain points during execution.
+
+    Hooks are added for the current domain. If you are calling the Hook
+    functions from a domain where Lwt is not running a scheduler then some
+    unspecified error may occur. If you need to set some Hooks to/from a
+    different domain, you can use [Lwt_preemptive.run_in_domain].
+
+    See modules {!Enter_iter_hooks}, {!Leave_iter_hooks}, and {!Exit_hooks}. *)
 module type Hooks =
 sig
   type 'return_value kind

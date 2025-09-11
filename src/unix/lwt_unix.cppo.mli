@@ -1462,7 +1462,9 @@ val wait_for_jobs : unit -> unit Lwt.t
 (** Lwt internally use a pipe to send notification to the main
     thread. The following functions allow to use this pipe. *)
 
-val make_notification : ?once : bool -> Domain.id -> (unit -> unit) -> int
+type notification_id
+
+val make_notification : ?once : bool -> Domain.id -> (unit -> unit) -> notification_id
   (** [make_notification ?once f] registers a new notifier. It returns the
       id of the notifier. Each time a notification with this id is
       received, [f] is called.
@@ -1470,21 +1472,21 @@ val make_notification : ?once : bool -> Domain.id -> (unit -> unit) -> int
       if [once] is specified, then the notification is stopped after
       the first time it is received. It defaults to [false]. *)
 
-val send_notification : Domain.id -> int -> unit
+val send_notification : notification_id -> unit
   (** [send_notification id] sends a notification.
 
       This function is thread-safe. *)
 
-val stop_notification : Domain.id -> int -> unit
+val stop_notification : notification_id -> unit
   (** Stop the given notification. Note that you should not reuse the
       id after the notification has been stopped, the result is
       unspecified if you do so. *)
 
-val call_notification : Domain.id -> int -> unit
+val call_notification : notification_id -> unit
   (** Call the handler associated to the given notification. Note that
       if the notification was defined with [once = true] it is removed. *)
 
-val set_notification : Domain.id -> int -> (unit -> unit) -> unit
+val set_notification : notification_id -> (unit -> unit) -> unit
   (** [set_notification id f] replace the function associated to the
       notification by [f]. It raises [Not_found] if the given
       notification is not found. *)

@@ -78,7 +78,7 @@ struct
 end
 
 type thread = {
-  task_cell: (int * (unit -> unit)) CELL.t;
+  task_cell: (Lwt_unix.notification_id * (unit -> unit)) CELL.t;
   (* Channel used to communicate notification id and tasks to the
      worker thread. *)
 
@@ -104,7 +104,7 @@ let rec worker_loop worker =
      decreased the maximum: *)
   if Atomic.get threads_count > Atomic.get max_threads then worker.reuse <- false;
   (* Tell the main thread that work is done: *)
-  Lwt_unix.send_notification (Domain.self ()) id;
+  Lwt_unix.send_notification id;
   if worker.reuse then worker_loop worker
 
 (* create a new worker: *)
@@ -186,6 +186,7 @@ let detach f args =
   get_worker () >>= fun worker ->
   let waiter, wakener = Lwt.wait () in
   let id =
+    (* call back the domain that called the [detach] function: self *)
     Lwt_unix.make_notification ~once:true (Domain.self ())
       (fun () -> Lwt.wakeup_result wakener !result)
   in
@@ -216,15 +217,19 @@ let jobs = Queue.create ()
 (* Mutex to protect access to [jobs]. *)
 let jobs_mutex = Mutex.create ()
 
-let job_notification =
-  Lwt_unix.make_notification (Domain.self ())
+let job_notification = Domain_map.create_protected_map ()
+let get_job_notification d =
+  Domain_map.init job_notification d
     (fun () ->
-       (* Take the first job. The queue is never empty at this
-          point. *)
-       Mutex.lock jobs_mutex;
-       let thunk = Queue.take jobs in
-       Mutex.unlock jobs_mutex;
-       ignore (thunk ()))
+      Lwt_unix.make_notification (Domain.self ())
+        (fun () ->
+           (* Take the first job. The queue is never empty at this
+              point. *)
+           Mutex.lock jobs_mutex;
+           let thunk = Queue.take jobs in
+           Mutex.unlock jobs_mutex;
+           ignore (thunk ()))
+  )
 
 let run_in_domain_dont_wait d f =
   (* Add the job to the queue. *)
@@ -232,7 +237,7 @@ let run_in_domain_dont_wait d f =
   Queue.add f jobs;
   Mutex.unlock jobs_mutex;
   (* Notify the main thread. *)
-  Lwt_unix.send_notification d job_notification
+  Lwt_unix.send_notification (get_job_notification d)
 
 (* There is a potential performance issue from creating a cell every time this
    function is called. See:
