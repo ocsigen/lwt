@@ -64,7 +64,7 @@ let put mvar v =
       | None ->
         mvar.mvar_contents <- Some v
       | Some w ->
-        Lwt.wakeup_later w v
+        Lwt.awaken ~order:Dont_care w v
     end;
     Lwt.return_unit
   | Some _ ->
@@ -77,7 +77,7 @@ let next_writer mvar =
   match Lwt_sequence.take_opt_l mvar.writers with
   | Some(v', w) ->
     mvar.mvar_contents <- Some v';
-    Lwt.wakeup_later w ()
+    Lwt.awaken ~order:Dont_care w ()
   | None ->
     mvar.mvar_contents <- None
 

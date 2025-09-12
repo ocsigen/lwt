@@ -24,7 +24,7 @@ module E = struct
 
   let next ev =
     let waiter, wakener = Lwt.task () in
-    let ev = map (fun x -> Lwt.wakeup wakener x) (once ev) in
+    let ev = map (fun x -> Lwt.awaken ~order:Nested wakener x) (once ev) in
     Lwt.on_cancel waiter (fun () -> stop ev);
     waiter
 
