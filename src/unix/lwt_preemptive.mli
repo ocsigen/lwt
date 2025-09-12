@@ -53,7 +53,10 @@ val init : int -> int -> (string -> unit) -> unit
       @param log is used to log error messages
 
       If {!Lwt_preemptive} has already been initialised, this call
-      only modify bounds and the log function. *)
+      only modify bounds and the log function.
+
+      The limits are set per-domain. More specifically, each domain manages a
+      pool of systhreads, each pool having its own limits and its own state. *)
 
 val simple_init : unit -> unit
 (** [simple_init ()] checks if the library is not yet initialized, and if not,

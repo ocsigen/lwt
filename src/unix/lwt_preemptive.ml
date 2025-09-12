@@ -16,24 +16,23 @@ open Lwt.Infix
    | Parameters                                                      |
    +-----------------------------------------------------------------+ *)
 
-(* Minimum number of preemptive threads: *)
-let min_threads : int Atomic.t = Atomic.make 0
+(* Minimum number of preemptive threads per domain *)
+let min_threads : int Domain.DLS.key = Domain.DLS.new_key (fun () -> 0)
 
-(* Maximum number of preemptive threads: *)
-let max_threads : int Atomic.t = Atomic.make 0
+(* Maximum number of preemptive threads per domain *)
+let max_threads : int Domain.DLS.key = Domain.DLS.new_key (fun () -> 0)
 
-(* Size of the waiting queue: *)
-let max_thread_queued = Atomic.make 1000
+(* Size of the waiting queue per domain *)
+let max_thread_queued = Domain.DLS.new_key (fun () -> 1000)
 
-let get_max_number_of_threads_queued _ =
-  Atomic.get max_thread_queued
+let get_max_number_of_threads_queued () = Domain.DLS.get max_thread_queued
 
 let set_max_number_of_threads_queued n =
   if n < 0 then invalid_arg "Lwt_preemptive.set_max_number_of_threads_queued";
-  Atomic.set max_thread_queued n
+  Domain.DLS.set max_thread_queued n
 
 (* The total number of preemptive threads currently running: *)
-let threads_count = Atomic.make 0
+let threads_count = Domain.DLS.new_key (fun () -> 0)
 
 (* +-----------------------------------------------------------------+
    | Preemptive threads management                                   |
@@ -91,10 +90,10 @@ type thread = {
 }
 
 (* Pool of worker threads: *)
-let workers : thread Queue.t = Queue.create ()
+let workers : thread Queue.t Domain.DLS.key = Domain.DLS.new_key Queue.create
 
 (* Queue of clients waiting for a worker to be available: *)
-let waiters : thread Lwt.u Lwt_sequence.t = Lwt_sequence.create ()
+let waiters : thread Lwt.u Lwt_sequence.t Domain.DLS.key = Domain.DLS.new_key Lwt_sequence.create
 
 (* Code executed by a worker: *)
 let rec worker_loop worker =
@@ -102,14 +101,14 @@ let rec worker_loop worker =
   task ();
   (* If there is too much threads, exit. This can happen if the user
      decreased the maximum: *)
-  if Atomic.get threads_count > Atomic.get max_threads then worker.reuse <- false;
+  if Domain.DLS.get threads_count > Domain.DLS.get max_threads then worker.reuse <- false;
   (* Tell the main thread that work is done: *)
   Lwt_unix.send_notification id;
   if worker.reuse then worker_loop worker
 
 (* create a new worker: *)
 let make_worker () =
-  Atomic.incr threads_count;
+  Domain.DLS.set threads_count (Domain.DLS.get threads_count + 1);
   let worker = {
     task_cell = CELL.make ();
     thread = Thread.self ();
@@ -120,52 +119,52 @@ let make_worker () =
 
 (* Add a worker to the pool: *)
 let add_worker worker =
-  match Lwt_sequence.take_opt_l waiters with
+  match Lwt_sequence.take_opt_l (Domain.DLS.get waiters) with
   | None ->
-    Queue.add worker workers
+    Queue.add worker (Domain.DLS.get workers)
   | Some w ->
     Lwt.wakeup w worker
 
 (* Wait for worker to be available, then return it: *)
 let get_worker () =
-  if not (Queue.is_empty workers) then
-    Lwt.return (Queue.take workers)
-  else if Atomic.get threads_count < Atomic.get max_threads then
+  if not (Queue.is_empty (Domain.DLS.get workers)) then
+    Lwt.return (Queue.take (Domain.DLS.get workers))
+  else if Domain.DLS.get threads_count < Domain.DLS.get max_threads then
     Lwt.return (make_worker ())
   else
-    (Lwt.add_task_r [@ocaml.warning "-3"]) waiters
+    (Lwt.add_task_r [@ocaml.warning "-3"]) (Domain.DLS.get waiters)
 
 (* +-----------------------------------------------------------------+
    | Initialisation, and dynamic parameters reset                    |
    +-----------------------------------------------------------------+ *)
 
-let get_bounds () = (Atomic.get min_threads, Atomic.get max_threads)
+let get_bounds () = (Domain.DLS.get min_threads, Domain.DLS.get max_threads)
 
 let set_bounds (min, max) =
   if min < 0 || max < min then invalid_arg "Lwt_preemptive.set_bounds";
-  let diff = min - Atomic.get threads_count in
-  Atomic.set min_threads min;
-  Atomic.set max_threads max;
+  let diff = min - Domain.DLS.get threads_count in
+  Domain.DLS.set min_threads min;
+  Domain.DLS.set max_threads max;
   (* Launch new workers: *)
   for _i = 1 to diff do
     add_worker (make_worker ())
   done
 
-let initialized = Atomic.make false
+let initialized = Domain.DLS.new_key (fun () -> false)
 
 let init min max _errlog =
-  Atomic.set initialized true;
+  Domain.DLS.set initialized true;
   set_bounds (min, max)
 
 let simple_init () =
-  if not (Atomic.get initialized) then begin
-    Atomic.set initialized true;
+  if not (Domain.DLS.get initialized) then begin
+    Domain.DLS.set initialized true;
     set_bounds (0, 4)
   end
 
-let nbthreads () = Atomic.get threads_count
-let nbthreadsqueued () = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
-let nbthreadsbusy () = Atomic.get threads_count - Queue.length workers
+let nbthreads () = Domain.DLS.get threads_count
+let nbthreadsqueued () = Lwt_sequence.fold_l (fun _ x -> x + 1) (Domain.DLS.get waiters) 0
+let nbthreadsbusy () = Domain.DLS.get threads_count - Queue.length (Domain.DLS.get workers)
 
 (* +-----------------------------------------------------------------+
    | Detaching                                                       |
@@ -200,7 +199,7 @@ let detach f args =
          (* Put back the worker to the pool: *)
          add_worker worker
        else begin
-         Atomic.decr threads_count;
+         Domain.DLS.set threads_count (Domain.DLS.get threads_count - 1);
          (* Or wait for the thread to terminates, to free its associated
             resources: *)
          Thread.join worker.thread
@@ -221,7 +220,7 @@ let job_notification = Domain_map.create_protected_map ()
 let get_job_notification d =
   Domain_map.init job_notification d
     (fun () ->
-      Lwt_unix.make_notification (Domain.self ())
+      Lwt_unix.make_notification d
         (fun () ->
            (* Take the first job. The queue is never empty at this
               point. *)
