@@ -53,7 +53,10 @@ code
 
    - sequencing:
 
-   {|<expr>;%lwt|}
+   {|
+<expr1>;%lwt
+<expr2>
+   |}
 
    For example:
 
