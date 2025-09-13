@@ -51,6 +51,24 @@ code
 
    Not using parentheses will confuse the OCaml parser.
 
+   - sequencing:
+
+   {|<expr>;%lwt|}
+
+   For example:
+
+   {|
+Lwt_io.write file "hello, ";%lwt
+Lwt_io.write_line file "world!"
+  |}
+
+  is expanded to:
+
+  {|
+bind (Lwt_io.write file "hello, ") (fun () ->
+      Lwt_io.write_line file "world!")
+  |}
+
    - exception catching:
 
    {[
