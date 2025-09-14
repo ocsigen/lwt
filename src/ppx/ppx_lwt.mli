@@ -15,7 +15,7 @@
 
    This extension adds the following syntax:
 
-   - lwt-binding:
+   {3 Lwt binding}
 
    {[
 let%lwt ch = get_char stdin in
@@ -51,7 +51,7 @@ code
 
    Not using parentheses will confuse the OCaml parser.
 
-   - sequencing:
+   {3 Sequencing promises}
 
    {[
 <expr1>;%lwt
@@ -72,7 +72,7 @@ bind (Lwt_io.write file "hello, ") (fun () ->
       Lwt_io.write_line file "world!")
    ]}
 
-   - exception catching:
+   {3 Exception handling}
 
    {[
 try%lwt
@@ -107,7 +107,7 @@ catch (fun () -> f x)
    Note that the [exn -> Lwt.reraise exn] branch is automatically added
    when needed.
 
-   - finalizer:
+   {3 Finalizer}
 
    {[
      (<expr>) [%finally <expr>]
@@ -116,13 +116,13 @@ catch (fun () -> f x)
    You can use [[%lwt.finally ...]] instead of [[%finally ...]].
 
 
-   - assertion:
+   {3 Assertion}
 
    {[
      assert%lwt <expr>
    ]}
 
-   - for loop:
+   {3 For loop}
 
    {[
 for%lwt i = <expr> to <expr> do
@@ -138,7 +138,7 @@ for%lwt i = <expr> downto <expr> do
 done
    ]}
 
-   - while loop:
+   {3 While loop}
 
    {[
 while%lwt <expr> do
@@ -146,7 +146,7 @@ while%lwt <expr> do
 done
    ]}
 
-   - pattern matching:
+   {3 Pattern matching}
 
    {[
 match%lwt <expr> with
@@ -165,7 +165,7 @@ match%lwt <expr> with
   | <patt_n> -> <expr_n>
    ]}
 
-   - conditional:
+   {3 Conditional}
 
    {[
 if%lwt <expr> then
