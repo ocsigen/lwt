@@ -53,24 +53,24 @@ code
 
    - sequencing:
 
-   {|
+   {[
 <expr1>;%lwt
 <expr2>
-   |}
+   ]}
 
    For example:
 
-   {|
+   {[
 Lwt_io.write file "hello, ";%lwt
 Lwt_io.write_line file "world!"
-  |}
+   ]}
 
-  is expanded to:
+   is expanded to:
 
-  {|
+   {[
 bind (Lwt_io.write file "hello, ") (fun () ->
       Lwt_io.write_line file "world!")
-  |}
+   ]}
 
    - exception catching:
 
