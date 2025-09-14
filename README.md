@@ -20,40 +20,38 @@ Here is a simplistic Lwt program which requests the Google front page, and fails
 if the request is not completed in five seconds:
 
 ```ocaml
-open Lwt.Syntax
-
 let () =
   let request =
-    let* addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
+    let%lwt addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
     let google = Lwt_unix.((List.hd addresses).ai_addr) in
 
     Lwt_io.(with_connection google (fun (incoming, outgoing) ->
-      let* () = write outgoing "GET / HTTP/1.1\r\n" in
-      let* () = write outgoing "Connection: close\r\n\r\n" in
-      let* response = read incoming in
+      write outgoing "GET / HTTP/1.1\r\n";%lwt
+      write outgoing "Connection: close\r\n\r\n";%lwt
+      let%lwt response = read incoming in
       Lwt.return (Some response)))
   in
 
   let timeout =
-    let* () = Lwt_unix.sleep 5. in
-    Lwt.return None
+    Lwt_unix.sleep 5.;%lwt
+    Lwt.return_none
   in
 
   match Lwt_main.run (Lwt.pick [request; timeout]) with
   | Some response -> print_string response
   | None -> prerr_endline "Request timed out"; exit 1
 
-(* ocamlfind opt -package lwt.unix -linkpkg example.ml && ./a.out *)
+(* ocamlfind opt -package lwt.unix,lwt_ppx -linkpkg example.ml && ./a.out *)
 ```
 
 In the program, functions such as `Lwt_io.write` create promises. The
-`let* ... in` construct is used to wait for a promise to become determined; the
-code after `in` is scheduled to run in a "callback." `Lwt.pick` races promises
-against each other, and behaves as the first one to complete. `Lwt_main.run`
-forces the whole promise-computation network to be executed. All the visible
-OCaml code is run in a single thread, but Lwt internally uses a combination of
-worker threads and non-blocking file descriptors to resolve in parallel the
-promises that do I/O.
+`let%lwt ... in` construct is used to wait for a promise to become determined;
+the code after `in` is scheduled to run in a "callback." `Lwt.pick` races
+promises against each other, and behaves as the first one to complete.
+`Lwt_main.run` forces the whole promise-computation network to be executed. All
+the visible OCaml code is run in a single thread, but Lwt internally uses a
+combination of worker threads and non-blocking file descriptors to resolve in
+parallel the promises that do I/O.
 
 
 <br/>
