@@ -87,3 +87,7 @@ val get_max_number_of_threads_queued : unit -> int
 val nbthreads : unit -> int
 val nbthreadsbusy : unit -> int
 val nbthreadsqueued : unit -> int
+
+(* kill_all is to be called before joining the domain, not satisfying UI for
+   now, searching for a better way *)
+val kill_all : unit -> unit

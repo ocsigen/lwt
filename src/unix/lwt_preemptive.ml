@@ -43,14 +43,15 @@ sig
   type 'a t
 
   val make : unit -> 'a t
-  val get : 'a t -> 'a
+  val get : 'a t -> ('a, unit) result
   val set : 'a t -> 'a -> unit
+  val kill : 'a t -> unit
 end =
 struct
   type 'a t = {
     m  : Mutex.t;
     cv : Condition.t;
-    mutable cell : 'a option;
+    mutable cell : ('a, unit) result option;
   }
 
   let make () = { m = Mutex.create (); cv = Condition.create (); cell = None }
@@ -71,7 +72,13 @@ struct
 
   let set t v =
     Mutex.lock t.m;
-    t.cell <- Some v;
+    t.cell <- Some (Ok v);
+    Mutex.unlock t.m;
+    Condition.signal t.cv
+
+  let kill t =
+    Mutex.lock t.m;
+    t.cell <- Some (Error ());
     Mutex.unlock t.m;
     Condition.signal t.cv
 end
@@ -97,14 +104,16 @@ let waiters : thread Lwt.u Lwt_sequence.t Domain.DLS.key = Domain.DLS.new_key Lw
 
 (* Code executed by a worker: *)
 let rec worker_loop worker =
-  let id, task = CELL.get worker.task_cell in
-  task ();
-  (* If there is too much threads, exit. This can happen if the user
-     decreased the maximum: *)
-  if Domain.DLS.get threads_count > Domain.DLS.get max_threads then worker.reuse <- false;
-  (* Tell the main thread that work is done: *)
-  Lwt_unix.send_notification id;
-  if worker.reuse then worker_loop worker
+  match CELL.get worker.task_cell with
+  | Error () -> ()
+  | Ok (id, task) ->
+      task ();
+      (* If there is too much threads, exit. This can happen if the user
+         decreased the maximum: *)
+      if Domain.DLS.get threads_count > Domain.DLS.get max_threads then worker.reuse <- false;
+      (* Tell the main thread that work is done: *)
+      Lwt_unix.send_notification id;
+      if worker.reuse then worker_loop worker
 
 (* create a new worker: *)
 let make_worker () =
@@ -258,10 +267,14 @@ let run_in_domain d f =
   run_in_domain_dont_wait d job;
   (* Wait for the result. *)
   match CELL.get cell with
-  | Result.Ok ret -> ret
-  | Result.Error exn -> raise exn
+  | Ok (Ok ret) -> ret
+  | Ok (Error exn) -> raise exn
+  | Error () -> assert false
 
 (* This version shadows the one above, adding an exception handler *)
 let run_in_domain_dont_wait d f handler =
   let f () = Lwt.catch f (fun exc -> handler exc; Lwt.return_unit) in
   run_in_domain_dont_wait d f
+
+let kill_all () =
+  Queue.iter (fun thread -> CELL.kill thread.task_cell) (Domain.DLS.get workers)
