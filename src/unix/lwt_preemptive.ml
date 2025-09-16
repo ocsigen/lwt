@@ -84,7 +84,7 @@ struct
 end
 
 type thread = {
-  task_cell: (Lwt_unix.notification_id * (unit -> unit)) CELL.t;
+  task_cell: (Lwt_unix.notification * (unit -> unit)) CELL.t;
   (* Channel used to communicate notification id and tasks to the
      worker thread. *)
 
@@ -195,7 +195,7 @@ let detach f args =
   let waiter, wakener = Lwt.wait () in
   let id =
     (* call back the domain that called the [detach] function: self *)
-    Lwt_unix.make_notification ~once:true (Domain.self ())
+    Lwt_unix.make_notification ~once:true
       (fun () -> Lwt.wakeup_result wakener !result)
   in
   Lwt.finalize
@@ -229,7 +229,7 @@ let job_notification = Domain_map.create_protected_map ()
 let get_job_notification d =
   Domain_map.init job_notification d
     (fun () ->
-      Lwt_unix.make_notification d
+      Lwt_unix.make_notification ~for_other_domain:d
         (fun () ->
            (* Take the first job. The queue is never empty at this
               point. *)

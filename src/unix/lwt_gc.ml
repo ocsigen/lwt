@@ -21,7 +21,6 @@ let ensure_termination t =
   end
 
 let finaliser ?domain f =
-  let domain = match domain with None -> Domain.self () | Some domain -> domain in
   (* In order not to create a reference to the value in the
      notification callback, we use an initially unset option cell
      which will be filled when the finaliser is called. *)
@@ -29,7 +28,7 @@ let finaliser ?domain f =
   let id =
     Lwt_unix.make_notification
       ~once:true
-      domain
+      ?for_other_domain:domain
       (fun () ->
          match !opt with
          | None ->
