@@ -61,15 +61,15 @@ code
    For example:
 
    {[
-Lwt_io.write file "hello, ";%lwt
-Lwt_io.write_line file "world!"
+Lwt_io.printl "Hello,";%lwt
+Lwt_io.printl "world!"
    ]}
 
    is expanded to:
 
    {[
-bind (Lwt_io.write file "hello, ") (fun () ->
-      Lwt_io.write_line file "world!")
+bind (Lwt_io.printl "Hello,") (fun () ->
+      Lwt_io.printl "world!")
    ]}
 
    {3 Exception handling}
