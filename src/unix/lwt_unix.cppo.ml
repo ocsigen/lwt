@@ -19,7 +19,6 @@ open Lwt.Infix
 type async_method =
   | Async_none
   | Async_detach
-  | Async_switch
 
 let default_async_method_var = Atomic.make Async_detach
 
@@ -30,11 +29,9 @@ let () =
       Atomic.set default_async_method_var Async_none
     | "detach" ->
       Atomic.set default_async_method_var Async_detach
-    | "switch" ->
-      Atomic.set default_async_method_var Async_switch
     | str ->
       Printf.eprintf
-        "%s: invalid lwt async method: '%s', must be 'none', 'detach' or 'switch'\n%!"
+        "%s: invalid lwt async method: '%s', must be 'none' or 'detach'\n%!"
         (Filename.basename Sys.executable_name) str
   with Not_found ->
     ()
@@ -54,9 +51,6 @@ let with_async_none f =
 
 let with_async_detach f =
   Lwt.with_value async_method_key (Some Async_detach) f
-
-let with_async_switch f =
-  Lwt.with_value async_method_key (Some Async_switch) f
 
 (* +-----------------------------------------------------------------+
    | Notifications management                                        |
