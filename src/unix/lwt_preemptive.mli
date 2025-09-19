@@ -83,11 +83,18 @@ val get_max_number_of_threads_queued : unit -> int
   (** Returns the size of the waiting queue, if no more threads are
       available *)
 
+val terminate_worker_threads : unit -> unit
+(* [terminate_worker_threads ()] queues up a message for all the workers of the
+   calling domain to self-terminate. This causes all the workers to terminate
+   after their current jobs are done which causes the threads of these workers
+   to end.
+
+   Terminating the threads attached to a domain is necessary for joining the
+   domain. Thus, if you use-case for domains includes spawning and joining them,
+   you must call [terminate_worker_threads] just before calling
+   [Domain.join]. *)
+
 (**/**)
 val nbthreads : unit -> int
 val nbthreadsbusy : unit -> int
 val nbthreadsqueued : unit -> int
-
-(* kill_all is to be called before joining the domain, not satisfying UI for
-   now, searching for a better way *)
-val kill_all : unit -> unit

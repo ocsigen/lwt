@@ -21,7 +21,7 @@ let domain_go_brrrrrrr input = Domain.spawn (fun () ->
       Lwt_list.map_p (Lwt_preemptive.detach simulate_work) input
     )
   in
-  Lwt_preemptive.kill_all ();
+  Lwt_preemptive.terminate_worker_threads ();
   v
 )
 

@@ -276,5 +276,5 @@ let run_in_domain_dont_wait d f handler =
   let f () = Lwt.catch f (fun exc -> handler exc; Lwt.return_unit) in
   run_in_domain_dont_wait d f
 
-let kill_all () =
+let terminate_worker_threads () =
   Queue.iter (fun thread -> CELL.kill thread.task_cell) (Domain.DLS.get workers)
