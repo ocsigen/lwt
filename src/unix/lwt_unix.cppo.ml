@@ -84,9 +84,15 @@ let notifiers = Domain_map.create_protected_map ()
    https://github.com/ocsigen/lwt/pull/278. *)
 let current_notification_id = Atomic.make (0x7FFFFFFF - 1000)
 
-let make_notification ?(once=false) domain_id f =
+type notification = { domain: Domain.id; id: int; }
+
+let make_notification ?(once=false) ?for_other_domain f =
+  let domain = match for_other_domain with
+    | Some domain -> domain
+    | None -> Domain.self ()
+  in
   let id = Atomic.fetch_and_add current_notification_id 1 in
-  Domain_map.update notifiers domain_id
+  Domain_map.update notifiers domain
     (function
       | None ->
           let notifiers = Notifiers.create 1024 in
@@ -95,18 +101,18 @@ let make_notification ?(once=false) domain_id f =
       | Some notifiers ->
           Notifiers.add notifiers id { notify_once = once; notify_handler = f };
           Some notifiers);
-  id
+  { domain; id }
 
-let stop_notification domain_id id =
-  Domain_map.update notifiers domain_id
+let stop_notification { domain; id } =
+  Domain_map.update notifiers domain
     (function
       | None -> None
       | Some notifiers ->
           Notifiers.remove notifiers id;
           Some notifiers)
 
-let set_notification domain_id id f =
-  Domain_map.update notifiers domain_id
+let set_notification { domain; id } f =
+  Domain_map.update notifiers domain
     (function
       | None -> raise Not_found
       | Some notifiers ->
@@ -114,8 +120,8 @@ let set_notification domain_id id f =
           Notifiers.replace notifiers id { notifier with notify_handler = f };
           Some notifiers)
 
-let call_notification domain_id id =
-  match Domain_map.find notifiers domain_id with
+let call_notification { domain; id } =
+  match Domain_map.find notifiers domain with
   | None -> ()
   | Some notifiers ->
       (match Notifiers.find notifiers id with
@@ -193,9 +199,9 @@ let wait_for_jobs () =
   Lwt.join (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) jobs [])
 
 let run_job_aux async_method job result =
-  let domain_id = Domain.self () in
+  let domain = Domain.self () in
   (* Starts the job. *)
-  if start_job domain_id job async_method then
+  if start_job domain job async_method then
     (* The job has already terminated, read and return the result
        immediately. *)
     Lwt.of_result (result job)
@@ -209,8 +215,8 @@ let run_job_aux async_method job result =
       jobs in
     ignore begin
       (* Create the notification for asynchronous wakeup. *)
-      let id =
-        make_notification ~once:true domain_id
+      let notification =
+        make_notification ~once:true
           (fun () ->
              Lwt_sequence.remove node;
              let result = result job in
@@ -220,7 +226,7 @@ let run_job_aux async_method job result =
          notification. *)
       Lwt.pause () >>= fun () ->
       (* The job has terminated, send the result immediately. *)
-      if check_job job id then call_notification domain_id id;
+      if check_job job notification.id then call_notification notification;
       Lwt.return_unit
     end;
     waiter
@@ -2199,21 +2205,22 @@ let tcflow ch act =
 
 external init_notification : Domain.id -> Unix.file_descr = "lwt_unix_init_notification_stub"
 external send_notification : Domain.id -> int -> unit = "lwt_unix_send_notification_stub"
+let send_notification { domain; id } = send_notification domain id
 external recv_notifications : Domain.id -> int array = "lwt_unix_recv_notifications_stub"
 
 let handle_notifications (_ : Lwt_engine.event) =
-  let domain_id = Domain.self () in
-  Array.iter (call_notification domain_id) (recv_notifications domain_id)
+  let domain = Domain.self () in
+  Array.iter (fun id -> call_notification { domain; id }) (recv_notifications domain)
 
 let event_notifications =
   Domain.DLS.new_key (fun () ->
-    let domain_id = Domain.self () in
-    Lwt_engine.on_readable (init_notification domain_id) handle_notifications
+    let domain = Domain.self () in
+    Lwt_engine.on_readable (init_notification domain) handle_notifications
   )
 
 let init_domain () =
-  let domain_id = Domain.self () in
-  let _ : notifier Notifiers.t = (Domain_map.init notifiers domain_id (fun () -> Notifiers.create 1024)) in
+  let domain = Domain.self () in
+  let _ : notifier Notifiers.t = (Domain_map.init notifiers domain (fun () -> Notifiers.create 1024)) in
   let _ : Lwt_engine.event = Domain.DLS.get event_notifications in
   ()
 
@@ -2221,14 +2228,12 @@ let init_domain () =
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-(* TODO: should all notifications for signals be on domain0? or should each
-   domain be able to install their own signal handler? what domain receives a
-   signal? *)
-
 external set_signal : int -> int -> bool -> unit = "lwt_unix_set_signal"
 external remove_signal : int -> bool -> unit = "lwt_unix_remove_signal"
 external init_signals : unit -> unit = "lwt_unix_init_signals"
 external handle_signal : int -> unit = "lwt_unix_handle_signal"
+
+let signal_setting_mutex = Mutex.create ()
 
 let () = init_signals ()
 
@@ -2247,15 +2252,18 @@ type signal_handler = {
 
 and signal_handler_id = signal_handler option ref
 
-(* TODO: what to do about signals? *)
-let signals = ref Signal_map.empty
+let signals
+  (* a simple ref, but all access for write are behind a mutex *)
+  : (notification * ((signal_handler_id -> file_perm -> unit) Lwt_sequence.t) ) Signal_map.t ref
+  = ref Signal_map.empty
 let signal_count () =
   Signal_map.fold
-    (fun _signum (_id, actions) len -> len + Lwt_sequence.length actions)
+    (fun _signum (_notification, actions) len -> len + Lwt_sequence.length actions)
     !signals
     0
 
 let on_signal_full signum handler =
+  Mutex.lock signal_setting_mutex;
   let id = ref None in
   let _, actions =
     try
@@ -2263,45 +2271,53 @@ let on_signal_full signum handler =
     with Not_found ->
       let actions = Lwt_sequence.create () in
       let notification =
-        make_notification (Domain.self ())
+        (* TODO: this assumes `on_signal` is called from domain0 where an lwt
+           scheduler is running running, should it be possible to set a signal
+           handler to execute in a specific domain?? *)
+        make_notification
           (fun () ->
              Lwt_sequence.iter_l
                (fun f -> f id signum)
                actions)
       in
       (try
-         set_signal signum notification
+         set_signal signum notification.id
        with exn when Lwt.Exception_filter.run exn ->
-         stop_notification (Domain.self ()) notification;
+         stop_notification notification;
          raise exn);
       signals := Signal_map.add signum (notification, actions) !signals;
       (notification, actions)
   in
   let node = Lwt_sequence.add_r handler actions in
   id := Some { sh_num = signum; sh_node = node };
+  Mutex.unlock signal_setting_mutex;
   id
 
-let on_signal signum f = on_signal_full signum (fun _id num -> f num)
+let on_signal signum f = on_signal_full signum (fun _notification num -> f num)
 
 let disable_signal_handler id =
   match !id with
   | None ->
     ()
   | Some sh ->
+    Mutex.lock signal_setting_mutex;
     id := None;
     Lwt_sequence.remove sh.sh_node;
     let notification, actions = Signal_map.find sh.sh_num !signals in
     if Lwt_sequence.is_empty actions then begin
       remove_signal sh.sh_num;
       signals := Signal_map.remove sh.sh_num !signals;
-      stop_notification (Domain.self ()) notification
-    end
+      stop_notification notification
+    end;
+    Mutex.unlock signal_setting_mutex
 
 let reinstall_signal_handler signum =
   match Signal_map.find signum !signals with
   | exception Not_found -> ()
   | notification, _ ->
-    set_signal signum notification
+    Mutex.lock signal_setting_mutex;
+    set_signal signum notification.id;
+    Mutex.unlock signal_setting_mutex
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -2309,6 +2325,7 @@ let reinstall_signal_handler signum =
 
 external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
 
+(* TODO: replace fork with something thread+domain safe *)
 let fork () =
   match Unix.fork () with
   | 0 ->
@@ -2317,10 +2334,10 @@ let fork () =
     (* Reset threading. *)
     reset_after_fork ();
     (* Stop the old event for notifications. *)
-    let domain_id = Domain.self () in
+    let domain = Domain.self () in
     Lwt_engine.stop_event (Domain.DLS.get event_notifications);
     (* Reinitialise the notification system. *)
-    Domain.DLS.set event_notifications (Lwt_engine.on_readable (init_notification domain_id) handle_notifications);
+    Domain.DLS.set event_notifications (Lwt_engine.on_readable (init_notification domain) handle_notifications);
     (* Collect all pending jobs. *)
     let l = Lwt_sequence.fold_l (fun (_, f) l -> f :: l) jobs [] in
     (* Remove them all. *)
@@ -2360,7 +2377,6 @@ let do_wait4 flags pid =
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
 
-(* TODO: what to do about signals? especially sigchld signal? *)
 let sigchld_handler_installed = ref false
 
 let install_sigchld_handler () =
@@ -2389,12 +2405,15 @@ let install_sigchld_handler () =
    install the SIGCHLD handler, in order to cause any EINTR-unsafe code to
    fail (as it should). *)
 let () =
-  (* TODO: figure out what to do about signals *)
-  (* TODO: this interferes with tests because it leaves a pause hanging? *)
-  if (Domain.self () :> int) = 0 then
-    Lwt.async (fun () ->
-      Lwt.pause () >|= fun () ->
-      install_sigchld_handler ())
+  (* TODO: this assumes that an Lwt main loop will be started in domain0 (where
+     this value is allocated bc top-level initialisation), instead
+     [install_sigchld_handler] should be called when the first lwt-scheduler is
+     started which could be in a non-zero domain
+
+     or TODO: remove sigchld handler if fork is completely abandonned?? *)
+  Lwt.async (fun () ->
+    Lwt.pause () >|= fun () ->
+    install_sigchld_handler ())
 
 let _waitpid flags pid =
   Lwt.catch

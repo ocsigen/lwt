@@ -53,7 +53,10 @@ val init : int -> int -> (string -> unit) -> unit
       @param log is used to log error messages
 
       If {!Lwt_preemptive} has already been initialised, this call
-      only modify bounds and the log function. *)
+      only modify bounds and the log function.
+
+      The limits are set per-domain. More specifically, each domain manages a
+      pool of systhreads, each pool having its own limits and its own state. *)
 
 val simple_init : unit -> unit
 (** [simple_init ()] checks if the library is not yet initialized, and if not,
@@ -79,6 +82,17 @@ val set_max_number_of_threads_queued : int -> unit
 val get_max_number_of_threads_queued : unit -> int
   (** Returns the size of the waiting queue, if no more threads are
       available *)
+
+val terminate_worker_threads : unit -> unit
+(* [terminate_worker_threads ()] queues up a message for all the workers of the
+   calling domain to self-terminate. This causes all the workers to terminate
+   after their current jobs are done which causes the threads of these workers
+   to end.
+
+   Terminating the threads attached to a domain is necessary for joining the
+   domain. Thus, if you use-case for domains includes spawning and joining them,
+   you must call [terminate_worker_threads] just before calling
+   [Domain.join]. *)
 
 (**/**)
 val nbthreads : unit -> int
