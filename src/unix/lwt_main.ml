@@ -20,6 +20,11 @@ let yield = Lwt.pause
 let abandon_yielded_and_paused () =
   Lwt.abandon_paused ()
 
+type Runtime_events.User.tag += Scheduler_call
+let sch_call = Runtime_events.User.register "lwt-sch-call" Scheduler_call Runtime_events.Type.span
+type Runtime_events.User.tag += Scheduler_lap
+let sch_lap = Runtime_events.User.register "lwt-sch-lap" Scheduler_lap Runtime_events.Type.unit
+
 let run p =
   let domain = Domain.self () in
   let () = if (Lwt.Private.Multidomain_sync.is_alredy_registered[@alert "-trespassing"]) domain then
@@ -32,9 +37,14 @@ let run p =
     (Lwt.Private.Multidomain_sync.register_notification[@alert "-trespassing"]) domain(fun () -> Lwt_unix.send_notification n)
   end
   in
+  Runtime_events.User.write sch_call Begin;
   let rec run_loop () =
+    Runtime_events.User.write sch_lap ();
+    Runtime_events.User.write Lwt_unix.unix_job_count (Domain.DLS.get Lwt_unix.job_count) ;
+    Runtime_events.User.write (Lwt.Private.paused_count[@alert "-trespassing"]) (Lwt.paused_count ()) ;
     match Lwt.poll p with
     | Some x ->
+      Runtime_events.User.write sch_call End;
       x
     | None ->
       (* Call enter hooks. *)

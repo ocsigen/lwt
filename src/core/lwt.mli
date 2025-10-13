@@ -2077,4 +2077,6 @@ module Private : sig
     val register_notification : Domain.id -> (unit -> unit) -> unit
     val is_alredy_registered : Domain.id -> bool
   end
+
+  val paused_count : int Runtime_events.User.t
 end [@@alert trespassing "for internal use only, keep away"]

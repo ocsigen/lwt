@@ -2,6 +2,8 @@
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
 
+val unix_job_count : int Runtime_events.User.t
+val job_count : int Domain.DLS.key
 
 (** Cooperative system calls *)
 

@@ -54,7 +54,7 @@
  (public_name lwt.unix)
  (synopsis "Unix support for Lwt")
  (wrapped false)
- (libraries bigarray lwt ocplib-endian.bigstring threads unix)
+ (libraries bigarray lwt ocplib-endian.bigstring threads unix runtime_events)
  (install_c_headers lwt_features lwt_config lwt_unix)
  (foreign_stubs
   (language c)

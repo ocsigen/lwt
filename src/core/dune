@@ -2,7 +2,7 @@
  (public_name lwt)
  (synopsis "Monadic promises and concurrent I/O")
  (wrapped false)
- (libraries domain_shims))
+ (libraries domain_shims runtime_events))
 
 (documentation
  (package lwt))

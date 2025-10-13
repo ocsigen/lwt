@@ -12,6 +12,10 @@ module Lwt_sequence = Lwt_sequence
 
 open Lwt.Infix
 
+type Runtime_events.User.tag += Unix_job_count
+let unix_job_count = Runtime_events.User.register "lwt-unix-job-count" Unix_job_count Runtime_events.Type.int
+let job_count = Domain.DLS.new_key (fun () -> 0)
+
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
    +-----------------------------------------------------------------+ *)
@@ -207,12 +211,14 @@ let run_job_aux async_method job result =
       (waiter >>= fun _ -> Lwt.return_unit),
       (fun exn -> if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_exn wakener exn))
       jobs in
+    Domain.DLS.set job_count (Domain.DLS.get job_count + 1);
     ignore begin
       (* Create the notification for asynchronous wakeup. *)
       let notification =
         make_notification ~once:true
           (fun () ->
              Lwt_sequence.remove node;
+             Domain.DLS.set job_count (Domain.DLS.get job_count - 1);
              let result = result job in
              if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_result wakener result)
       in
