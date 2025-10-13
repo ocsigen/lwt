@@ -1,0 +1,4 @@
+(executable
+  (name selfdetector)
+  (libraries unix lwt lwt.unix runtime_events))
+
