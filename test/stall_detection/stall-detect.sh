@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+PROJECT_ROOT=./"$(git rev-parse --show-cdup)"
 dune build "$PROJECT_ROOT/_build/default/test/stall_detection/staller.exe"
 dune build "$PROJECT_ROOT/_build/default/test/stall_detection/detector.exe"
 
@@ -18,3 +18,5 @@ echo "detector started"
 
 # Optional: wait for both processes to finish
 wait
+
+rm -f "$STALLER_PID.events"
