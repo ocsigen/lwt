@@ -23,7 +23,6 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
   "dune" {>= "3.15"}
   "ocaml" {>= "5.1"}
-  "domain_shims"
   "cppo" {build & >= "1.1"}
   "ocamlfind" {dev & >= "1.7.3-1"}
   "odoc" {with-doc & >= "2.3"}
