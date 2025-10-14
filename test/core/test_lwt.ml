@@ -47,6 +47,7 @@ let add_loc exn = try raise exn with exn -> exn
 let suites : Test.suite list = []
 
 
+
 (* Tests for promises created with [Lwt.return], [Lwt.fail], and related
    functions, as well as state query (hard to test one without the other).
    These tests use assertions instead of relying on the correctness of a final
@@ -2122,7 +2123,6 @@ let both_tests = suite "both" [
     let p = Lwt.both (Lwt.fail Exception) (fst (Lwt.wait ())) in
     state_is Lwt.Sleep p
   end;
-
 
   test "pending, fulfilled, then fulfilled" begin fun () ->
     let p1, r1 = Lwt.wait () in
@@ -4205,7 +4205,7 @@ let lwt_sequence_tests = suite "add_task_l and add_task_r" [
 let suites = suites @ [lwt_sequence_tests]
 
 
-(*
+
 let pause_tests = suite "pause" [
   test "initial state" begin fun () ->
     Lwt.return (Lwt.paused_count () = 0)
@@ -4290,7 +4290,6 @@ let pause_tests = suite "pause" [
   end;
 ]
 let suites = suites @ [pause_tests]
-*)
 
 
 

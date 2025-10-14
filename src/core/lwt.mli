@@ -2069,13 +2069,7 @@ module Private : sig
     val get_from_storage : 'a key -> storage -> 'a option
     val modify_storage : 'a key -> 'a option -> storage -> storage
     val empty_storage : storage
-    val current_storage : storage Domain.DLS.key
-  end
-
-  module Multidomain_sync : sig
-    val get_sent_callbacks : Domain.id -> (unit -> unit) Lwt_sequence.t[@ocaml.warning "-3"]
-    val register_notification : Domain.id -> (unit -> unit) -> unit
-    val is_alredy_registered : Domain.id -> bool
+    val current_storage : storage ref
   end
 
   val paused_count : int Runtime_events.User.t

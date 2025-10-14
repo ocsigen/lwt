@@ -12,10 +12,7 @@ module Lwt_sequence = Lwt_sequence
 
 open Lwt.Infix
 
-type Runtime_events.User.tag += Unix_job_count
-let unix_job_count = Runtime_events.User.register "lwt-unix-job-count" Unix_job_count Runtime_events.Type.int
-
-let job_count = Domain.DLS.new_key (fun () -> 0)
+let job_count = ref 0
 
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
@@ -25,15 +22,15 @@ type async_method =
   | Async_none
   | Async_detach
 
-let default_async_method_var = Atomic.make Async_detach
+let default_async_method_var = ref Async_detach
 
 let () =
   try
     match Sys.getenv "LWT_ASYNC_METHOD" with
     | "none" ->
-      Atomic.set default_async_method_var Async_none
+      default_async_method_var := Async_none
     | "detach" ->
-      Atomic.set default_async_method_var Async_detach
+      default_async_method_var := Async_detach
     | str ->
       Printf.eprintf
         "%s: invalid lwt async method: '%s', must be 'none' or 'detach'\n%!"
@@ -41,15 +38,15 @@ let () =
   with Not_found ->
     ()
 
-let default_async_method () = Atomic.get default_async_method_var
-let set_default_async_method am = Atomic.set default_async_method_var am
+let default_async_method () = !default_async_method_var
+let set_default_async_method am = default_async_method_var := am
 
 let async_method_key = Lwt.new_key ()
 
 let async_method () =
   match Lwt.get async_method_key with
   | Some am -> am
-  | None -> Atomic.get default_async_method_var
+  | None -> !default_async_method_var
 
 let with_async_none f =
   Lwt.with_value async_method_key (Some Async_none) f
@@ -77,58 +74,40 @@ module Notifiers = Hashtbl.Make(struct
     let hash (x : int) = x
   end)
 
-let notifiers = Domain_map.create_protected_map ()
+let notifiers = Notifiers.create 1024
+
+type notification = int (* a simple ID*)
 
 (* See https://github.com/ocsigen/lwt/issues/277 and
    https://github.com/ocsigen/lwt/pull/278. *)
-let current_notification_id = Atomic.make (0x7FFFFFFF - 1000)
+let current_notification_id = ref (0x7FFFFFFF - 1000)
 
-type notification = { domain: Domain.id; id: int; }
+let rec find_free_id id =
+  if Notifiers.mem notifiers id then
+    find_free_id (id + 1)
+  else
+    id
 
-let make_notification ?(once=false) ?for_other_domain f =
-  let domain = match for_other_domain with
-    | Some domain -> domain
-    | None -> Domain.self ()
-  in
-  let id = Atomic.fetch_and_add current_notification_id 1 in
-  Domain_map.update notifiers domain
-    (function
-      | None ->
-          let notifiers = Notifiers.create 1024 in
-          Notifiers.add notifiers id { notify_once = once; notify_handler = f };
-          Some notifiers
-      | Some notifiers ->
-          Notifiers.add notifiers id { notify_once = once; notify_handler = f };
-          Some notifiers);
-  { domain; id }
+let make_notification ?(once=false) f =
+  let id = find_free_id (!current_notification_id + 1) in
+  current_notification_id := id;
+  Notifiers.add notifiers id { notify_once = once; notify_handler = f };
+  id
 
-let stop_notification { domain; id } =
-  Domain_map.update notifiers domain
-    (function
-      | None -> None
-      | Some notifiers ->
-          Notifiers.remove notifiers id;
-          Some notifiers)
+let stop_notification id =
+  Notifiers.remove notifiers id
 
-let set_notification { domain; id } f =
-  Domain_map.update notifiers domain
-    (function
-      | None -> raise Not_found
-      | Some notifiers ->
-          let notifier = Notifiers.find notifiers id in
-          Notifiers.replace notifiers id { notifier with notify_handler = f };
-          Some notifiers)
+let set_notification id f =
+  let notifier = Notifiers.find notifiers id in
+  Notifiers.replace notifiers id { notifier with notify_handler = f }
 
-let call_notification { domain; id } =
-  match Domain_map.find notifiers domain with
-  | None -> ()
-  | Some notifiers ->
-      (match Notifiers.find notifiers id with
-       | exception Not_found -> ()
-       | notifier ->
-           if notifier.notify_once then
-             Notifiers.remove notifiers id;
-           notifier.notify_handler ())
+let call_notification id =
+  match Notifiers.find notifiers id with
+  | exception Not_found -> ()
+  | notifier ->
+    if notifier.notify_once then
+      stop_notification id;
+    notifier.notify_handler ()
 
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
@@ -174,7 +153,7 @@ let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
 type 'a job
 
-external start_job : Domain.id -> 'a job -> async_method -> bool = "lwt_unix_start_job"
+external start_job : 'a job -> async_method -> bool = "lwt_unix_start_job"
 (* Starts the given job with given parameters. It returns [true]
    if the job is already terminated. *)
 
@@ -198,9 +177,8 @@ let wait_for_jobs () =
   Lwt.join (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) jobs [])
 
 let run_job_aux async_method job result =
-  let domain = Domain.self () in
   (* Starts the job. *)
-  if start_job domain job async_method then
+  if start_job job async_method then
     (* The job has already terminated, read and return the result
        immediately. *)
     Lwt.of_result (result job)
@@ -212,14 +190,14 @@ let run_job_aux async_method job result =
       (waiter >>= fun _ -> Lwt.return_unit),
       (fun exn -> if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_exn wakener exn))
       jobs in
-    Domain.DLS.set job_count (Domain.DLS.get job_count + 1);
+    incr job_count;
     ignore begin
       (* Create the notification for asynchronous wakeup. *)
       let notification =
         make_notification ~once:true
           (fun () ->
              Lwt_sequence.remove node;
-             Domain.DLS.set job_count (Domain.DLS.get job_count - 1);
+             decr job_count;
              let result = result job in
              if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_result wakener result)
       in
@@ -227,7 +205,7 @@ let run_job_aux async_method job result =
          notification. *)
       Lwt.pause () >>= fun () ->
       (* The job has terminated, send the result immediately. *)
-      if check_job job notification.id then call_notification notification;
+      if check_job job notification then call_notification notification;
       Lwt.return_unit
     end;
     waiter
@@ -239,7 +217,7 @@ let choose_async_method = function
   | None ->
     match Lwt.get async_method_key with
     | Some am -> am
-    | None -> Atomic.get default_async_method_var
+    | None -> !default_async_method_var
 
 external self_result : 'a job -> 'a = "lwt_unix_self_result"
 (* returns the result of a job using the [result] field of the C
@@ -2204,26 +2182,15 @@ let tcflow ch act =
    | Reading notifications                                           |
    +-----------------------------------------------------------------+ *)
 
-external init_notification : Domain.id -> Unix.file_descr = "lwt_unix_init_notification_stub"
-external send_notification : Domain.id -> int -> unit = "lwt_unix_send_notification_stub"
-let send_notification { domain; id } = send_notification domain id
-external recv_notifications : Domain.id -> int array = "lwt_unix_recv_notifications_stub"
+external init_notification : unit -> Unix.file_descr = "lwt_unix_init_notification"
+external send_notification : int -> unit = "lwt_unix_send_notification_stub"
+external recv_notifications : unit -> int array = "lwt_unix_recv_notifications"
 
-let handle_notifications (_ : Lwt_engine.event) =
-  let domain = Domain.self () in
-  Array.iter (fun id -> call_notification { domain; id }) (recv_notifications domain)
+let handle_notifications _ =
+  (* Process available notifications. *)
+  Array.iter call_notification (recv_notifications ())
 
-let event_notifications =
-  Domain.DLS.new_key (fun () ->
-    let domain = Domain.self () in
-    Lwt_engine.on_readable (init_notification domain) handle_notifications
-  )
-
-let init_domain () =
-  let domain = Domain.self () in
-  let _ : notifier Notifiers.t = (Domain_map.init notifiers domain (fun () -> Notifiers.create 1024)) in
-  let _ : Lwt_engine.event = Domain.DLS.get event_notifications in
-  ()
+let event_notifications = ref (Lwt_engine.on_readable (init_notification ()) handle_notifications)
 
 (* +-----------------------------------------------------------------+
    | Signals                                                         |
@@ -2233,8 +2200,6 @@ external set_signal : int -> int -> bool -> unit = "lwt_unix_set_signal"
 external remove_signal : int -> bool -> unit = "lwt_unix_remove_signal"
 external init_signals : unit -> unit = "lwt_unix_init_signals"
 external handle_signal : int -> unit = "lwt_unix_handle_signal"
-
-let signal_setting_mutex = Mutex.create ()
 
 let () = init_signals ()
 
@@ -2253,10 +2218,7 @@ type signal_handler = {
 
 and signal_handler_id = signal_handler option ref
 
-let signals
-  (* a simple ref, but all access for write are behind a mutex *)
-  : (notification * ((signal_handler_id -> file_perm -> unit) Lwt_sequence.t) ) Signal_map.t ref
-  = ref Signal_map.empty
+let signals = ref Signal_map.empty
 let signal_count () =
   Signal_map.fold
     (fun _signum (_notification, actions) len -> len + Lwt_sequence.length actions)
@@ -2264,7 +2226,6 @@ let signal_count () =
     0
 
 let on_signal_full signum handler =
-  Mutex.lock signal_setting_mutex;
   let id = ref None in
   let _, actions =
     try
@@ -2272,9 +2233,6 @@ let on_signal_full signum handler =
     with Not_found ->
       let actions = Lwt_sequence.create () in
       let notification =
-        (* TODO: this assumes `on_signal` is called from domain0 where an lwt
-           scheduler is running running, should it be possible to set a signal
-           handler to execute in a specific domain?? *)
         make_notification
           (fun () ->
              Lwt_sequence.iter_l
@@ -2282,7 +2240,7 @@ let on_signal_full signum handler =
                actions)
       in
       (try
-         set_signal signum notification.id
+         set_signal signum notification
        with exn when Lwt.Exception_filter.run exn ->
          stop_notification notification;
          raise exn);
@@ -2291,7 +2249,6 @@ let on_signal_full signum handler =
   in
   let node = Lwt_sequence.add_r handler actions in
   id := Some { sh_num = signum; sh_node = node };
-  Mutex.unlock signal_setting_mutex;
   id
 
 let on_signal signum f = on_signal_full signum (fun _notification num -> f num)
@@ -2301,7 +2258,6 @@ let disable_signal_handler id =
   | None ->
     ()
   | Some sh ->
-    Mutex.lock signal_setting_mutex;
     id := None;
     Lwt_sequence.remove sh.sh_node;
     let notification, actions = Signal_map.find sh.sh_num !signals in
@@ -2309,16 +2265,13 @@ let disable_signal_handler id =
       remove_signal sh.sh_num;
       signals := Signal_map.remove sh.sh_num !signals;
       stop_notification notification
-    end;
-    Mutex.unlock signal_setting_mutex
+    end
 
 let reinstall_signal_handler signum =
   match Signal_map.find signum !signals with
   | exception Not_found -> ()
   | notification, _ ->
-    Mutex.lock signal_setting_mutex;
-    set_signal signum notification.id;
-    Mutex.unlock signal_setting_mutex
+    set_signal signum notification
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -2335,10 +2288,9 @@ let fork () =
     (* Reset threading. *)
     reset_after_fork ();
     (* Stop the old event for notifications. *)
-    let domain = Domain.self () in
-    Lwt_engine.stop_event (Domain.DLS.get event_notifications);
+    Lwt_engine.stop_event !event_notifications;
     (* Reinitialise the notification system. *)
-    Domain.DLS.set event_notifications (Lwt_engine.on_readable (init_notification domain) handle_notifications);
+    event_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
     (* Collect all pending jobs. *)
     let l = Lwt_sequence.fold_l (fun (_, f) l -> f :: l) jobs [] in
     (* Remove them all. *)
@@ -2378,11 +2330,12 @@ let do_wait4 flags pid =
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
 
-let sigchld_handler_installed = ref false
-
-let install_sigchld_handler () =
-  if not Sys.win32 && not !sigchld_handler_installed then begin
-    sigchld_handler_installed := true;
+(* The lazy value is forced when calling [Lwt_main.run]. This is to avoid
+   installing the sigchld_handler in cases where the user is not really using
+   Lwt (just linking against it for some reason). *)
+let sigchld_handler_installer =
+  lazy begin
+  if not Sys.win32 then
     ignore begin
       on_signal Sys.sigchld
         (fun _ ->
@@ -2401,21 +2354,6 @@ let install_sigchld_handler () =
     end
   end
 
-(* The callback of Lwt.pause will only be run if Lwt_main.run is called by the
-   user. In that case, the process is positively using Lwt, and we want to
-   install the SIGCHLD handler, in order to cause any EINTR-unsafe code to
-   fail (as it should). *)
-let () =
-  (* TODO: this assumes that an Lwt main loop will be started in domain0 (where
-     this value is allocated bc top-level initialisation), instead
-     [install_sigchld_handler] should be called when the first lwt-scheduler is
-     started which could be in a non-zero domain
-
-     or TODO: remove sigchld handler if fork is completely abandonned?? *)
-  Lwt.async (fun () ->
-    Lwt.pause () >|= fun () ->
-    install_sigchld_handler ())
-
 let _waitpid flags pid =
   Lwt.catch
     (fun () -> Lwt.return (Unix.waitpid flags pid))
@@ -2426,7 +2364,7 @@ let waitpid =
     _waitpid
   else
     fun flags pid ->
-      install_sigchld_handler ();
+      Lazy.force sigchld_handler_installer;
       if List.mem Unix.WNOHANG flags then
         _waitpid flags pid
       else
@@ -2443,7 +2381,7 @@ let waitpid =
         end
 
 let wait4 flags pid =
-  install_sigchld_handler ();
+  Lazy.force sigchld_handler_installer;
   if Sys.win32 || Lwt_config.android then
     Lwt.return (do_wait4 flags pid)
   else
@@ -2616,3 +2554,7 @@ struct
 
   let send_msg_2 = send_msg
 end
+
+type Runtime_events.User.tag += Unix_job_count
+let unix_job_count = Runtime_events.User.register "lwt-unix-job-count" Unix_job_count Runtime_events.Type.int
+let write_job_count_runtimte_event () = Runtime_events.User.write unix_job_count !job_count

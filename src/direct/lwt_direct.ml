@@ -6,9 +6,9 @@
 
 (* part 1: tasks, getting the scheduler to call them *)
 
-let tasks : (unit -> unit) Queue.t Domain.DLS.key = Domain.DLS.new_key Queue.create
+let tasks : (unit -> unit) Queue.t ref = ref (Queue.create ())
 
-let[@inline] push_task f : unit = Queue.push f (Domain.DLS.get tasks)
+let[@inline] push_task f : unit = Queue.push f !tasks
 
 let absolute_max_number_of_steps =
   (* TODO 6.0: what's a good number here? should it be customisable? *)
@@ -16,9 +16,9 @@ let absolute_max_number_of_steps =
 
 let run_all_tasks () : unit =
   let n_processed = ref 0 in
-  let max_number_of_steps = min absolute_max_number_of_steps (2 * Queue.length (Domain.DLS.get tasks)) in
-  while (not (Queue.is_empty (Domain.DLS.get tasks))) && !n_processed < max_number_of_steps do
-    let t = Queue.pop (Domain.DLS.get tasks) in
+  let max_number_of_steps = min absolute_max_number_of_steps (2 * Queue.length !tasks) in
+  while (not (Queue.is_empty !tasks)) && !n_processed < max_number_of_steps do
+    let t = Queue.pop !tasks in
     incr n_processed;
     try t ()
     with exn ->
@@ -32,13 +32,13 @@ let run_all_tasks () : unit =
      IO, depending on the program structure and the state of the world. If this
      happens and the queue is not empty, we add a [pause] so that the engine has
      something to wakeup for so that the rest of the queue can be processed. *)
-  if not (Queue.is_empty (Domain.DLS.get tasks)) && Lwt.paused_count () = 0 then ignore (Lwt.pause () : unit Lwt.t)
+  if not (Queue.is_empty !tasks) && Lwt.paused_count () = 0 then ignore (Lwt.pause () : unit Lwt.t)
 
 let setup_hooks =
-  let already_done = Domain.DLS.new_key (fun () -> false) in
+  let already_done = ref false in
   fun () ->
-    if not (Domain.DLS.get already_done) then (
-      Domain.DLS.set already_done true;
+    if not !already_done then (
+      already_done := true;
       (* TODO 6.0: assess whether we should have both hooks or just one (which
          one). Tempted to say we should only have the enter hook. *)
       let _hook1 = Lwt_main.Enter_iter_hooks.add_first run_all_tasks in
@@ -71,15 +71,15 @@ module Storage = struct
   let get = Lwt.get
   let set k v =
     let open Lwt_storage in
-    Domain.DLS.set current_storage (modify_storage k (Some v) (Domain.DLS.get current_storage))
+    current_storage := (modify_storage k (Some v) !current_storage)
   let remove k =
     let open Lwt_storage in
-    Domain.DLS.set current_storage (modify_storage k None (Domain.DLS.get current_storage))
+    current_storage := (modify_storage k None !current_storage)
   let reset_to_empty () =
     let open Lwt_storage in
-    Domain.DLS.set current_storage empty_storage
-  let save_current () = Domain.DLS.get Lwt_storage.current_storage
-  let restore_current saved = Domain.DLS.set Lwt_storage.current_storage saved
+    current_storage := empty_storage
+  let save_current () = !Lwt_storage.current_storage
+  let restore_current saved = Lwt_storage.current_storage := saved
 end
 
 (* part 3: handling effects *)

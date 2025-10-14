@@ -1,3 +1,0 @@
-(tests
-  (names basic domainworkers movingpromises unixpipe preempting)
-  (libraries lwt lwt.unix))

@@ -416,30 +416,29 @@ end
    +-----------------------------------------------------------------+ *)
 
 let current =
-  Domain.DLS.new_key (fun () ->
-    if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default then
-      (new libev () :> t)
-    else
-      (new select :> t)
-)
+  if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default then
+    ref (new libev () :> t)
+  else
+    ref (new select :> t)
 
-let get () = Domain.DLS.get current
+let get () =
+  !current
 
 let set ?(transfer=true) ?(destroy=true) engine =
-  if transfer then (Domain.DLS.get current)#transfer (engine : #t :> abstract);
-  if destroy then (Domain.DLS.get current)#destroy;
-  Domain.DLS.set current (engine : #t :> t)
+  if transfer then !current#transfer (engine : #t :> abstract);
+  if destroy then !current#destroy;
+  current := (engine : #t :> t)
 
-let iter block = (Domain.DLS.get current)#iter block
-let on_readable fd f = (Domain.DLS.get current)#on_readable fd f
-let on_writable fd f = (Domain.DLS.get current)#on_writable fd f
-let on_timer delay repeat f = (Domain.DLS.get current)#on_timer delay repeat f
-let fake_io fd = (Domain.DLS.get current)#fake_io fd
-let readable_count () = (Domain.DLS.get current)#readable_count
-let writable_count () = (Domain.DLS.get current)#writable_count
-let timer_count () = (Domain.DLS.get current)#timer_count
-let fork () = (Domain.DLS.get current)#fork
-let forwards_signal n = (Domain.DLS.get current)#forwards_signal n
+let iter block = !current#iter block
+let on_readable fd f = !current#on_readable fd f
+let on_writable fd f = !current#on_writable fd f
+let on_timer delay repeat f = !current#on_timer delay repeat f
+let fake_io fd = !current#fake_io fd
+let readable_count () = !current#readable_count
+let writable_count () = !current#writable_count
+let timer_count () = !current#timer_count
+let fork () = !current#fork
+let forwards_signal n = !current#forwards_signal n
 
 module Versioned =
 struct

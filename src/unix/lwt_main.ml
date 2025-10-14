@@ -12,8 +12,8 @@ module Lwt_sequence = Lwt_sequence
 
 open Lwt.Infix
 
-let enter_iter_hooks = Domain.DLS.new_key (fun () -> Lwt_sequence.create ())
-let leave_iter_hooks = Domain.DLS.new_key (fun () -> Lwt_sequence.create ())
+let enter_iter_hooks = Lwt_sequence.create ()
+let leave_iter_hooks = Lwt_sequence.create ()
 
 let yield = Lwt.pause
 
@@ -27,27 +27,16 @@ type Runtime_events.User.tag += Scheduler_lap
 let sch_lap = Runtime_events.User.register "lwt-sch-lap" Scheduler_lap Runtime_events.Type.unit
 
 let run p =
-  let domain = Domain.self () in
-  let () = if (Lwt.Private.Multidomain_sync.is_alredy_registered[@alert "-trespassing"]) domain then
-    ()
-  else begin
-    let n = Lwt_unix.make_notification (fun () ->
-      let cbs = (Lwt.Private.Multidomain_sync.get_sent_callbacks[@alert "-trespassing"]) domain in
-      Lwt_sequence.iter_l (fun f -> f ()) cbs
-    ) in
-    (Lwt.Private.Multidomain_sync.register_notification[@alert "-trespassing"]) domain(fun () -> Lwt_unix.send_notification n)
-  end
-  in
   let rec run_loop () =
     Runtime_events.User.write sch_lap ();
-    Runtime_events.User.write Lwt_unix.unix_job_count (Domain.DLS.get Lwt_unix.job_count) ;
+    Lwt_unix.write_job_count_runtimte_event ();
     Runtime_events.User.write (Lwt.Private.paused_count[@alert "-trespassing"]) (Lwt.paused_count ()) ;
     match Lwt.poll p with
     | Some x ->
       x
     | None ->
       (* Call enter hooks. *)
-      Lwt_sequence.iter_l (fun f -> f ()) (Domain.DLS.get enter_iter_hooks);
+      Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
 
       (* Do the main loop call. *)
       let should_block_waiting_for_io = Lwt.paused_count () = 0 in
@@ -57,7 +46,7 @@ let run p =
       Lwt.wakeup_paused ();
 
       (* Call leave hooks. *)
-      Lwt_sequence.iter_l (fun f -> f ()) (Domain.DLS.get leave_iter_hooks);
+      Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
 
       (* Repeat. *)
       run_loop ()
@@ -68,59 +57,63 @@ let run p =
     ~finally:(fun () -> Runtime_events.User.write sch_call End)
     (fun () -> run_loop ())
 
-let run_already_called = Domain.DLS.new_key (fun () -> `No)
-let run_already_called_mutex = Domain.DLS.new_key (fun () -> Mutex.create ())
+let run_already_called = ref `No
+let run_already_called_mutex = Mutex.create ()
 
 let finished () =
-  Mutex.lock (Domain.DLS.get run_already_called_mutex);
-  Domain.DLS.set run_already_called `No;
-  Mutex.unlock (Domain.DLS.get run_already_called_mutex)
+  Mutex.lock run_already_called_mutex;
+  run_already_called := `No;
+  Mutex.unlock run_already_called_mutex
 
 let run p =
   (* Fail in case a call to Lwt_main.run is nested under another invocation of
      Lwt_main.run. *)
-  Mutex.lock (Domain.DLS.get run_already_called_mutex);
-  let error_message_if_call_is_nested =
-      match (Domain.DLS.get run_already_called) with
-      (* `From is effectively disabled for the time being, because there is a bug,
-         present in all versions of OCaml supported by Lwt, where, with the
-         bytecode runtime, if one changes the working directory and then attempts
-         to retrieve the backtrace, the runtime calls [abort] at the C level and
-         exits the program ungracefully. It is especially likely that a daemon
-         would change directory before calling [Lwt_main.run], so we can't have it
-         retrieving the backtrace, even though a daemon is not likely to be
-         compiled to bytecode.
+  Mutex.lock run_already_called_mutex;
 
-         This can be addressed with detection. Starting with 4.04, there is a
-         type [Sys.backend_type] that could be used. *)
-      | `From backtrace_string ->
-        Some (Printf.sprintf "%s\n%s\n%s"
-          "Nested calls to Lwt_main.run are not allowed"
-          "Lwt_main.run already called from:"
-          backtrace_string)
-      | `From_somewhere ->
-        Some ("Nested calls to Lwt_main.run are not allowed")
-      | `No ->
-        let called_from =
-          (* See comment above.
-          if Printexc.backtrace_status () then
-            let backtrace =
-              try raise Exit
-              with Exit -> Printexc.get_backtrace ()
-            in
-            `From backtrace
-          else *)
-            `From_somewhere
-        in
-        Domain.DLS.set run_already_called called_from;
-        None
+  let error_message_if_call_is_nested =
+    match !run_already_called with
+    (* `From is effectively disabled for the time being, because there is a bug,
+       present in all versions of OCaml supported by Lwt, where, with the
+       bytecode runtime, if one changes the working directory and then attempts
+       to retrieve the backtrace, the runtime calls [abort] at the C level and
+       exits the program ungracefully. It is especially likely that a daemon
+       would change directory before calling [Lwt_main.run], so we can't have it
+       retrieving the backtrace, even though a daemon is not likely to be
+       compiled to bytecode.
+
+       This can be addressed with detection. Starting with 4.04, there is a
+       type [Sys.backend_type] that could be used. *)
+    | `From backtrace_string ->
+      Some (Printf.sprintf "%s\n%s\n%s"
+        "Nested calls to Lwt_main.run are not allowed"
+        "Lwt_main.run already called from:"
+        backtrace_string)
+    | `From_somewhere ->
+      Some ("Nested calls to Lwt_main.run are not allowed")
+    | `No ->
+      let called_from =
+        (* See comment above.
+        if Printexc.backtrace_status () then
+          let backtrace =
+            try raise Exit
+            with Exit -> Printexc.get_backtrace ()
+          in
+          `From backtrace
+        else *)
+          `From_somewhere
+      in
+      run_already_called := called_from;
+      None
   in
-  Mutex.unlock (Domain.DLS.get run_already_called_mutex);
+
+  Mutex.unlock run_already_called_mutex;
 
   begin match error_message_if_call_is_nested with
   | Some message -> failwith message
   | None -> ()
   end;
+
+  Lazy.force Lwt_unix.sigchld_handler_installer;
 
   match run p with
   | result ->
@@ -130,10 +123,10 @@ let run p =
     finished ();
     raise exn
 
-let exit_hooks = Domain.DLS.new_key (fun () -> Lwt_sequence.create ())
+let exit_hooks = Lwt_sequence.create ()
 
 let rec call_hooks () =
-  match Lwt_sequence.take_opt_l (Domain.DLS.get exit_hooks) with
+  match Lwt_sequence.take_opt_l exit_hooks with
   | None ->
     Lwt.return_unit
   | Some f ->
@@ -144,13 +137,13 @@ let rec call_hooks () =
 
 let () =
   at_exit (fun () ->
-    if not (Lwt_sequence.is_empty (Domain.DLS.get exit_hooks)) then begin
+    if not (Lwt_sequence.is_empty exit_hooks) then begin
       Lwt.abandon_wakeups ();
       finished ();
       run (call_hooks ())
     end)
 
-let at_exit f = ignore (Lwt_sequence.add_l f (Domain.DLS.get exit_hooks))
+let at_exit f = ignore (Lwt_sequence.add_l f exit_hooks)
 
 module type Hooks =
 sig
@@ -166,7 +159,7 @@ end
 module type Hook_sequence =
 sig
   type 'return_value kind
-  val sequence : (unit -> unit kind) Lwt_sequence.t Domain.DLS.key
+  val sequence : (unit -> unit kind) Lwt_sequence.t
 end
 
 module Wrap_hooks (Sequence : Hook_sequence) =
@@ -175,18 +168,18 @@ struct
   type hook = (unit -> unit Sequence.kind) Lwt_sequence.node
 
   let add_first hook_fn =
-    let hook_node = Lwt_sequence.add_l hook_fn (Domain.DLS.get Sequence.sequence) in
+    let hook_node = Lwt_sequence.add_l hook_fn Sequence.sequence in
     hook_node
 
   let add_last hook_fn =
-    let hook_node = Lwt_sequence.add_r hook_fn (Domain.DLS.get Sequence.sequence) in
+    let hook_node = Lwt_sequence.add_r hook_fn Sequence.sequence in
     hook_node
 
   let remove hook_node =
     Lwt_sequence.remove hook_node
 
   let remove_all () =
-    Lwt_sequence.iter_node_l Lwt_sequence.remove (Domain.DLS.get Sequence.sequence)
+    Lwt_sequence.iter_node_l Lwt_sequence.remove Sequence.sequence
 end
 
 module Enter_iter_hooks =
