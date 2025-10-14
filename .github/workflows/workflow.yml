@@ -15,23 +15,19 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - "4.14"
-          - "5.0"
-          - "5.1"
-          - "5.2"
-          - "5.3"
+          - "5.4"
         libev:
           - true
           - false
         include:
           - os: ubuntu-24.04-arm
-            ocaml-compiler: "5.3"
+            ocaml-compiler: "5.4"
             libev: false
           - os: macos-latest
-            ocaml-compiler: "5.3"
+            ocaml-compiler: "5.4"
             libev: false
           - os: windows-latest
-            ocaml-compiler: "5.3"
+            ocaml-compiler: "5.4"
             libev: false
 
     runs-on: ${{ matrix.os }}
@@ -47,7 +43,7 @@ jobs:
             "4.14"|"5.0")
               :
               ;;
-            "5.1"|"5.2"|"5.3")
+            "5.1"|"5.2"|"5.3"|"5.4")
               opampkgs="${opampkgs} ./lwt_ppx__ppx_let_tests.opam"
               dunepkgs="${dunepkgs},lwt_ppx__ppx_let_tests"
               ;;
@@ -60,7 +56,7 @@ jobs:
             "4.14")
               :
               ;;
-            "5.0"|"5.1"|"5.2"|"5.3")
+            "5.0"|"5.1"|"5.2"|"5.3"|"5.4")
               opampkgs="${opampkgs} ./lwt_direct.opam"
               dunepkgs="${dunepkgs},lwt_direct"
               ;;
