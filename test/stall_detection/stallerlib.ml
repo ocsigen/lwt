@@ -29,6 +29,7 @@ let detect ?ringopt () =
   | None -> Printf.printf "starting detection on self (%d)\n" (Unix.getpid ())
   | Some (path, pid) -> Printf.printf "starting detection on %s/%d.events\n" path pid
   end;
+  flush stdout;
   let cursor = Runtime_events.create_cursor ringopt in
   let is_stall t =
     let delta = Int64.sub (Runtime_events.Timestamp.to_int64 t) !last_lap in
