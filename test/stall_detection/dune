@@ -1,4 +1,11 @@
 (executable
+  (name staller)
+  (libraries lwt lwt.unix))
+
+(executable
+  (name detector)
+  (libraries lwt lwt.unix runtime_events))
+
+(executable
   (name selfdetector)
   (libraries unix lwt lwt.unix runtime_events))
-
