@@ -20,17 +20,11 @@ let yield = Lwt.pause
 let abandon_yielded_and_paused () =
   Lwt.abandon_paused ()
 
-type Runtime_events.User.tag += Scheduler_call
-let sch_call = Runtime_events.User.register "lwt-sch-call" Scheduler_call Runtime_events.Type.span
-
-type Runtime_events.User.tag += Scheduler_lap
-let sch_lap = Runtime_events.User.register "lwt-sch-lap" Scheduler_lap Runtime_events.Type.unit
-
 let run p =
   let rec run_loop () =
-    Runtime_events.User.write sch_lap ();
+    Lwt_rte.emit_sch_lap ();
     Lwt_unix.write_job_count_runtimte_event ();
-    Runtime_events.User.write (Lwt.Private.paused_count[@alert "-trespassing"]) (Lwt.paused_count ()) ;
+    Lwt_rte.emit_paused_count (Lwt.paused_count ()) ;
     match Lwt.poll p with
     | Some x ->
       x
@@ -52,9 +46,9 @@ let run p =
       run_loop ()
   in
 
-  Runtime_events.User.write sch_call Begin;
+  Lwt_rte.emit_sch_call_begin ();
   Fun.protect
-    ~finally:(fun () -> Runtime_events.User.write sch_call End)
+    ~finally:(fun () -> Lwt_rte.emit_sch_call_end ())
     (fun () -> run_loop ())
 
 let run_already_called = ref `No

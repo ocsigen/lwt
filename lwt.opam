@@ -22,14 +22,14 @@ doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
   "dune" {>= "3.15"}
-  "ocaml" {>= "5.1"}
+  "ocaml" {>= "4.14"}
   "cppo" {build & >= "1.1"}
   "ocamlfind" {dev & >= "1.7.3-1"}
   "odoc" {with-doc & >= "2.3"}
   "dune-configurator"
   "ocplib-endian"
 ]
-depopts: ["base-threads" "base-unix" "conf-libev"]
+depopts: ["base-threads" "base-unix" "conf-libev" "lwt_runtime_events"]
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
 build: [
   ["dune" "subst"] {dev}

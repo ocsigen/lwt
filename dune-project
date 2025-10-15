@@ -63,6 +63,15 @@
   (lwt (>= 6))))
 
 (package
+ (name lwt_runtime_events)
+ (version 6.0.0~beta00)
+ (synopsis "Emit runtime events to trace the execution of Lwt programs")
+ (authors "Raphaël Proust")
+ (depends
+  (ocaml (>= 5.1))
+  ))
+
+(package
  (name lwt)
  (version 6.0.0~beta00)
  (synopsis "Promises and event-driven I/O")
@@ -76,10 +85,10 @@ a single thread by default. This reduces the need for locks or other
 synchronization primitives. Code can be run in parallel on an opt-in basis.
 ")
  (depends
-  (ocaml (>= 5.1))
+  (ocaml (>= 4.14))
   (cppo (and :build (>= 1.1)))
   (ocamlfind (and :dev (>= 1.7.3-1)))
   (odoc (and :with-doc (>= 2.3)))
   dune-configurator
   ocplib-endian)
- (depopts base-threads base-unix conf-libev))
+ (depopts base-threads base-unix conf-libev lwt_runtime_events))

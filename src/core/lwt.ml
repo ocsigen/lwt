@@ -3240,6 +3240,4 @@ end
 module Private = struct
   type nonrec storage = storage
   module Sequence_associated_storage = Sequence_associated_storage
-  type Runtime_events.User.tag += Paused_count
-  let paused_count = Runtime_events.User.register "lwt-paused-count" Paused_count Runtime_events.Type.int
 end

@@ -129,11 +129,3 @@ module Exit_hooks :
 val at_exit : (unit -> unit Lwt.t) -> unit
 (** [Lwt_main.at_exit hook] is the same as
     [ignore (Lwt_main.Exit_hooks.add_first hook)]. *)
-
-(** scheduler call span event: spanning the execution of [Lwt_main.run] *)
-type Runtime_events.User.tag += Scheduler_call
-val sch_call : Runtime_events.Type.span Runtime_events.User.t
-
-(** scheduler lap event: once per iteration of the scheduler *)
-type Runtime_events.User.tag += Scheduler_lap
-val sch_lap : unit Runtime_events.User.t

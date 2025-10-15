@@ -2071,6 +2071,4 @@ module Private : sig
     val empty_storage : storage
     val current_storage : storage ref
   end
-
-  val paused_count : int Runtime_events.User.t
 end [@@alert trespassing "for internal use only, keep away"]

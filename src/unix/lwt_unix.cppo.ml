@@ -2555,6 +2555,4 @@ struct
   let send_msg_2 = send_msg
 end
 
-type Runtime_events.User.tag += Unix_job_count
-let unix_job_count = Runtime_events.User.register "lwt-unix-job-count" Unix_job_count Runtime_events.Type.int
-let write_job_count_runtimte_event () = Runtime_events.User.write unix_job_count !job_count
+let write_job_count_runtimte_event () = Lwt_rte.emit_job_count !job_count

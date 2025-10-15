@@ -6,9 +6,9 @@
 (executable
   (name detector)
   (enabled_if (>= %{ocaml_version} 5.4))
-  (libraries lwt lwt.unix runtime_events))
+  (libraries lwt lwt.unix runtime_events lwt_runtime_events))
 
 (executable
   (name selfdetector)
   (enabled_if (>= %{ocaml_version} 5.4))
-  (libraries unix lwt lwt.unix runtime_events))
+  (libraries unix lwt lwt.unix runtime_events lwt_runtime_events))

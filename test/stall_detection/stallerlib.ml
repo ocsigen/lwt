@@ -48,7 +48,7 @@ let detect ?ringopt () =
         Runtime_events.Type.unit
         (fun _ t e () ->
           match Runtime_events.User.tag e with
-          | Lwt_main.Scheduler_lap ->
+          | Lwt_runtime_events.Scheduler_lap ->
               alarmed := false;
               last_lap := Runtime_events.Timestamp.to_int64 t
           | _ -> ())
