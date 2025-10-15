@@ -18,8 +18,6 @@ let rec stall d =
 
 (* DETECTING *)
 
-let () = Runtime_events.start ()
-
 (* set to maxint to avoid the first hit being a false positive *)
 let last_lap = ref Int64.max_int
 let alarmed = ref false

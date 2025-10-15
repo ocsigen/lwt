@@ -12,6 +12,8 @@ STALLER_PID=$!
 
 echo "staller started"
 
+sleep 0.1
+
 "$PROJECT_ROOT/_build/default/test/stall_detection/detector.exe" "$RING_DIR" "$STALLER_PID"
 
 echo "detector started"

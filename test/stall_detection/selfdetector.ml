@@ -1,3 +1,5 @@
+let () = Runtime_events.start ()
+
 let _ : _ Domain.t = Domain.spawn (fun () -> Stallerlib.detect ())
 
 let () =
