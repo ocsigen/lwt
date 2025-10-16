@@ -469,6 +469,9 @@ struct
       ('a, _, _) promise Lwt_sequence.node ->
         'a cancel_callback_list
 
+  let[@inline] get_pending : ('a, underlying, pending) state -> 'a callbacks = function
+    | Pending callbacks -> callbacks
+
   (* Notes:
 
      These type definitions are guilty of performing several optimizations,
@@ -1291,7 +1294,7 @@ struct
         run_callbacks callbacks result)
 
   let resolve ?allow_deferring ?maximum_callback_nesting_depth p result =
-    let Pending callbacks = p.state in
+    let callbacks = get_pending p.state in
     let p = set_promise_state p result in
 
     run_callbacks_or_defer_them
@@ -1574,7 +1577,7 @@ struct
     let node = Lwt_sequence.add_r (to_public_resolver p) sequence in
     let node = cast_sequence_node node p in
 
-    let Pending callbacks = p.state in
+    let callbacks = get_pending p.state in
     callbacks.cancel_callbacks <-
       Cancel_callback_list_remove_sequence_node node;
 
@@ -1585,7 +1588,7 @@ struct
     let node = Lwt_sequence.add_l (to_public_resolver p) sequence in
     let node = cast_sequence_node node p in
 
-    let Pending callbacks = p.state in
+    let callbacks = get_pending p.state in
     callbacks.cancel_callbacks <-
       Cancel_callback_list_remove_sequence_node node;
 
@@ -1629,7 +1632,7 @@ struct
           [p] callback
       in
 
-      let Pending p'_callbacks = p'.state in
+      let p'_callbacks = get_pending p'.state in
       add_cancel_callback p'_callbacks remove_the_callback;
 
       to_public_promise p'
@@ -1773,7 +1776,7 @@ struct
         resolve ~allow_deferring:false outer_promise p'.state
 
       | Pending p'_callbacks ->
-        let Pending outer_callbacks = outer_promise.state in
+        let outer_callbacks = get_pending outer_promise.state in
 
         merge_callbacks ~from:p'_callbacks ~into:outer_callbacks;
         outer_callbacks.how_to_cancel <- p'_callbacks.how_to_cancel;
