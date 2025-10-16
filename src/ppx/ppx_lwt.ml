@@ -52,11 +52,43 @@ let no_strict_sequence_option () =
 
 let gen_name i = lwt_prefix ^ string_of_int i
 
+let trace_str_of_pattern loc p =
+  let rec gets p =
+  match p.Parsetree.ppat_desc with
+  | Ppat_any -> "_"
+  | Ppat_var { txt; _ } -> txt
+  | Ppat_alias (_, { txt; _ }) -> txt
+  | Ppat_constraint (p, _) -> gets p
+  | Ppat_constant _
+  | Ppat_interval (_, _)
+  | Ppat_tuple _
+  | Ppat_construct (_, _)
+  | Ppat_variant (_, _)
+  | Ppat_record (_, _)
+  | Ppat_array _
+  | Ppat_or (_, _)
+  | Ppat_type _
+  | Ppat_lazy _
+  | Ppat_unpack _
+  | Ppat_exception _
+  | Ppat_extension _
+  | Ppat_open (_, _) -> "?"
+  in
+  Ast_builder.Default.estring ~loc (gets p)
+
 (** [p = x] ≡ [__ppx_lwt_$i = x] *)
 let gen_bindings l =
   let aux i binding =
+    let new_expr =
+      let loc = binding.pvb_expr.pexp_loc in
+      [%expr
+        Lwt_rte.emit_trace __FILE__ __LINE__ [%e trace_str_of_pattern loc binding.pvb_pat];
+        [%e binding.pvb_expr]
+      ]
+    in
     { binding with
-      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i)
+      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i);
+      pvb_expr = new_expr
     }
   in
   List.mapi aux l

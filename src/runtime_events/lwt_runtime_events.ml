@@ -14,3 +14,14 @@ let emit_sch_lap v = Runtime_events.User.write sch_lap v
 type Runtime_events.User.tag += Unix_job_count
 let unix_job_count = Runtime_events.User.register "lwt-unix-job-count" Unix_job_count Runtime_events.Type.int
 let emit_job_count v = Runtime_events.User.write unix_job_count v
+
+(* TODO: optimise to not require allocation of the string *)
+type Runtime_events.User.tag += Trace
+let ss = Runtime_events.Type.register
+  ~encode:(fun b s ->
+    let l = min (String.length s) (Bytes.length b) in
+    Bytes.blit_string s 0 b 0 l;
+    l)
+  ~decode:(fun b i -> Bytes.sub_string b 0 i)
+let trace = Runtime_events.User.register "lwt-trace" Trace ss
+let emit_trace s = Runtime_events.User.write trace s

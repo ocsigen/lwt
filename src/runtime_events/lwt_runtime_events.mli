@@ -14,3 +14,8 @@ val emit_sch_lap : unit -> unit
 type Runtime_events.User.tag += Unix_job_count
 val unix_job_count : int Runtime_events.User.t
 val emit_job_count : int -> unit
+
+type Runtime_events.User.tag += Trace
+val ss : string Runtime_events.Type.t
+val trace : string Runtime_events.User.t
+val emit_trace : string -> unit
