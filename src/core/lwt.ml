@@ -392,8 +392,7 @@ struct
   }
 
   and (_, _, _) state =
-    | Fulfilled : 'a                  -> ('a, underlying, resolved) state
-    | Rejected  : exn                 -> ( _, underlying, resolved) state
+    | Resolved  : 'a resolved_state   -> ('a, underlying, resolved) state
     | Pending   : 'a callbacks        -> ('a, underlying, pending)  state
     | Proxy     : ('a, _, 'c) promise -> ('a, proxy,      'c)       state
 
@@ -439,7 +438,7 @@ struct
 
   and cancel_callback = unit -> unit
 
-  and 'a resolved_state = ('a, underlying, resolved) state
+  and 'a resolved_state = ('a, exn) result
 
   and how_to_cancel =
     | Not_cancelable              :                           how_to_cancel
@@ -476,11 +475,6 @@ struct
 
      These type definitions are guilty of performing several optimizations,
      without which they would be much easier to understand.
-
-     - The type parameters of ['a resolved_state] guarantee that it is either
-       [Fulfilled _] or [Rejected _]. So, it is equivalent to
-       [('a, exn) Stdlib.result], and, indeed, should have an identical
-       memory representation.
 
      - As per the Overview, there are regular callbacks and cancel callbacks.
        Cancel callbacks are called only on cancellation, and, then, before any
@@ -565,11 +559,6 @@ struct
      type. The introduction and immediate elimination of [Internal _] seems to
      be optimized away even on older versions of OCaml that don't have Flambda
      and don't support [[@@ocaml.unboxed]]. *)
-
-  (* This could probably save an allocation by using [Obj.magic]. *)
-  let state_of_result = function
-    | Ok x -> Fulfilled x
-    | Error exn -> Rejected exn
 end
 include Public_types
 
@@ -608,8 +597,7 @@ struct
     fun p ->
 
     match p.state with
-    | Fulfilled _ -> (p : (_, underlying, _) promise)
-    | Rejected _ -> p
+    | Resolved _ -> (p : (_, underlying, _) promise)
     | Pending _ -> p
     | Proxy p' ->
       let p'' = underlying p' in
@@ -656,8 +644,6 @@ struct
      by making type [promise] private. However, that seems to require writing a
      signature that is a near-duplicate of [Main_internal_types], or some abuse
      of functors. *)
-
-
 
   type 'a may_now_be_proxy =
     | State_may_now_be_pending_proxy :
@@ -710,6 +696,9 @@ struct
      of OCaml. *)
 end
 open Basic_helpers
+
+let set_promise_state_resolved p result =
+  set_promise_state p (Resolved result)
 
 (* Small helpers to avoid catching ocaml-runtime exceptions *)
 module Exception_filter = struct
@@ -888,8 +877,7 @@ struct
       match (underlying p).state with
       (* Some of the promises may already have been resolved at the time this
          function is called. *)
-      | Fulfilled _ -> ()
-      | Rejected _ -> ()
+      | Resolved _ -> ()
 
       | Pending callbacks ->
         match callbacks.regular_callbacks with
@@ -978,8 +966,8 @@ struct
       let Internal p = to_internal_promise p in
       match (underlying p).state with
       | Pending callbacks -> add_regular_callback_list_node callbacks node
-      | Fulfilled _ -> assert false
-      | Rejected _ -> assert false);
+      | Resolved _ -> assert false
+    );
 
     cell
 
@@ -1216,9 +1204,9 @@ struct
     (* Pattern matching is much faster than polymorphic comparison. *)
     let is_canceled =
       match result with
-      | Rejected Canceled -> true
-      | Rejected _ -> false
-      | Fulfilled _ -> false
+      | Error Canceled -> true
+      | Error _ -> false
+      | Ok _ -> false
     in
     if is_canceled then
       run_cancel_callbacks callbacks.cancel_callbacks;
@@ -1291,7 +1279,7 @@ struct
 
   let resolve ?allow_deferring ?maximum_callback_nesting_depth p result =
     let callbacks = get_pending p.state in
-    let p = set_promise_state p result in
+    let p = set_promise_state_resolved p result in
 
     run_callbacks_or_defer_them
       ?allow_deferring ?maximum_callback_nesting_depth callbacks result;
@@ -1325,15 +1313,16 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Rejected Canceled ->
-      ()
-    | Fulfilled _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
-    | Rejected _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+    | Resolved result ->
+      begin match result with
+        | Error Canceled -> ()
+        | Ok _ ->
+          Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+        | Error _ ->
+          Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+      end
 
     | Pending _ ->
-      let result = state_of_result result in
       let State_may_have_changed p = resolve ~allow_deferring:false p result in
       ignore p
 
@@ -1346,15 +1335,16 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Rejected Canceled ->
-      ()
-    | Fulfilled _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
-    | Rejected _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+    | Resolved result ->
+      begin match result with
+        | Error Canceled -> ()
+        | Ok _ ->
+          Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+        | Error _ ->
+          Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+      end
 
     | Pending _ ->
-      let result = state_of_result result in
       let State_may_have_changed p =
         resolve ~maximum_callback_nesting_depth:1 p result in
       ignore p
@@ -1376,7 +1366,7 @@ struct
      behavior: it runs callbacks directly on the current stack. It should
      therefore be possible to cause a stack overflow using this function. *)
   let cancel p =
-    let canceled_result = Rejected Canceled in
+    let canceled_result = Error Canceled in
 
     (* Walks the promise dependency graph backwards, looking for cancelable
        initial promises, and cancels (only) them.
@@ -1399,9 +1389,7 @@ struct
         let p = underlying p in
         match p.state with
         (* If the promise is not still pending, it can't be canceled. *)
-        | Fulfilled _ ->
-          callbacks_accumulator
-        | Rejected _ ->
+        | Resolved _ ->
           callbacks_accumulator
 
         | Pending callbacks ->
@@ -1410,7 +1398,7 @@ struct
             callbacks_accumulator
           | Cancel_this_promise ->
             let State_may_have_changed p =
-              set_promise_state p canceled_result in
+              set_promise_state_resolved p canceled_result in
             ignore p;
             (Packed callbacks)::callbacks_accumulator
           | Propagate_cancel_to_one p' ->
@@ -1452,13 +1440,13 @@ sig
 end =
 struct
   let return v =
-    to_public_promise {state = Fulfilled v}
+    to_public_promise {state = Resolved (Ok v)}
 
   let of_result result =
-    to_public_promise {state = state_of_result result}
+    to_public_promise {state = Resolved result}
 
   let fail exn =
-    to_public_promise {state = Rejected exn}
+    to_public_promise {state = Resolved (Error exn)}
 
   let return_unit = return ()
   let return_none = return None
@@ -1470,10 +1458,10 @@ struct
   let return_error x = return (Error x)
 
   let fail_with msg =
-    to_public_promise {state = Rejected (Failure msg)}
+    to_public_promise {state = Resolved (Error (Failure msg))}
 
   let fail_invalid_arg msg =
-    to_public_promise {state = Rejected (Invalid_argument msg)}
+    to_public_promise {state = Resolved (Error (Invalid_argument msg))}
 end
 include Trivial_promises
 
@@ -1562,8 +1550,7 @@ struct
   let protected p =
     let Internal p_internal = to_internal_promise p in
     match (underlying p_internal).state with
-    | Fulfilled _ -> p
-    | Rejected _ -> p
+    | Resolved _ -> p
 
     | Pending _ ->
       let p' = new_pending ~how_to_cancel:Cancel_this_promise in
@@ -1603,8 +1590,7 @@ struct
   let no_cancel p =
     let Internal p_internal = to_internal_promise p in
     match (underlying p_internal).state with
-    | Fulfilled _ -> p
-    | Rejected _ -> p
+    | Resolved _ -> p
 
     | Pending p_callbacks ->
       let p' = new_pending ~how_to_cancel:Not_cancelable in
@@ -1733,10 +1719,8 @@ struct
 
     else
       match p'.state with
-      | Fulfilled _ ->
-        resolve ~allow_deferring:false outer_promise p'.state
-      | Rejected _ ->
-        resolve ~allow_deferring:false outer_promise p'.state
+      | Resolved result ->
+        resolve ~allow_deferring:false outer_promise result
 
       | Pending p'_callbacks ->
         let outer_callbacks = get_pending outer_promise.state in
@@ -1801,7 +1785,7 @@ struct
 
       let callback p_result =
         match p_result with
-        | Fulfilled v ->
+        | Ok v ->
           current_storage := saved_storage;
 
           let p' =
@@ -1826,7 +1810,7 @@ struct
           (* Make the outer promise [p''] behaviorally identical to the promise
              [p'] returned by [f] by making [p'] into a proxy of [p'']. *)
 
-        | Rejected _ as p_result ->
+        | Error _ as p_result ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying p'' in
 
@@ -1839,11 +1823,11 @@ struct
     in
 
     match p.state with
-    | Fulfilled v ->
+    | Resolved (Ok v) ->
       run_callback f v
 
-    | Rejected _ as result ->
-      to_public_promise {state = result}
+    | Resolved (Error _) as error_state ->
+      to_public_promise {state = error_state}
 
     | Pending p_callbacks ->
       let (p'', callback) = create_result_promise_and_callback_if_deferred () in
@@ -1861,7 +1845,7 @@ struct
 
       let callback p_result =
         match p_result with
-        | Fulfilled v ->
+        | Ok v ->
           current_storage := saved_storage;
 
           let p' =
@@ -1877,12 +1861,12 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
-        | Rejected exn ->
+        | Error exn ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
-            resolve ~allow_deferring:false p'' (Rejected (add_loc exn)) in
+            resolve ~allow_deferring:false p'' (Error (add_loc exn)) in
           ignore p''
       in
 
@@ -1890,11 +1874,11 @@ struct
     in
 
     match p.state with
-    | Fulfilled v ->
+    | Resolved (Ok v) ->
       run_callback f v
 
-    | Rejected exn ->
-      to_public_promise {state = Rejected (add_loc exn)}
+    | Resolved (Error exn) ->
+      to_public_promise {state = Resolved (Error (add_loc exn))}
 
     | Pending p_callbacks ->
       let (p'', callback) = create_result_promise_and_callback_if_deferred () in
@@ -1912,12 +1896,12 @@ struct
 
       let callback p_result =
         match p_result with
-        | Fulfilled v ->
+        | Ok v ->
           current_storage := saved_storage;
 
           let p''_result =
-            try Fulfilled (f v) with exn
-            when Exception_filter.run exn -> Rejected exn
+            try Ok (f v) with exn
+            when Exception_filter.run exn -> Error exn
           in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -1927,12 +1911,12 @@ struct
             resolve ~allow_deferring:false p'' p''_result in
           ignore p''
 
-        | Rejected _ as p_result ->
+        | Error _ as p''_result ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
-            resolve ~allow_deferring:false p'' p_result in
+            resolve ~allow_deferring:false p'' p''_result in
           ignore p''
       in
 
@@ -1940,17 +1924,17 @@ struct
     in
 
     match p.state with
-    | Fulfilled v ->
+    | Resolved (Ok v) ->
       run_callback
         (fun () ->
           to_public_promise
-            {state =
-              try Fulfilled (f v)
-              with exn when Exception_filter.run exn -> Rejected exn})
+            {state = Resolved (
+              try Ok (f v)
+              with exn when Exception_filter.run exn -> Error exn)})
         ()
 
-    | Rejected _ as result ->
-      to_public_promise {state = result}
+    | Resolved (Error _) as resolved_state ->
+      to_public_promise {state = resolved_state}
 
     | Pending p_callbacks ->
       let (p'', callback) = create_result_promise_and_callback_if_deferred () in
@@ -1974,7 +1958,7 @@ struct
 
       let callback p_result =
         match p_result with
-        | Fulfilled _ as p_result ->
+        | Ok _ ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying p'' in
 
@@ -1982,7 +1966,7 @@ struct
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
 
-        | Rejected exn ->
+        | Error exn ->
           current_storage := saved_storage;
 
           let p' =
@@ -2003,10 +1987,10 @@ struct
     in
 
     match p.state with
-    | Fulfilled _ ->
+    | Resolved (Ok _) ->
       to_public_promise p
 
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       run_callback h exn
 
     | Pending p_callbacks ->
@@ -2029,7 +2013,7 @@ struct
 
       let callback p_result =
         match p_result with
-        | Fulfilled _ as p_result ->
+        | Ok _ ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying p'' in
 
@@ -2037,7 +2021,7 @@ struct
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
 
-        | Rejected exn ->
+        | Error exn ->
           current_storage := saved_storage;
 
           let p' =
@@ -2059,10 +2043,10 @@ struct
     in
 
     match p.state with
-    | Fulfilled _ ->
+    | Resolved (Ok _) ->
       to_public_promise p
 
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       run_callback h (add_loc exn)
 
     | Pending p_callbacks ->
@@ -2085,7 +2069,7 @@ struct
 
       let callback p_result =
         match p_result with
-        | Fulfilled v ->
+        | Ok v ->
           current_storage := saved_storage;
 
           let p' =
@@ -2101,7 +2085,7 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
-        | Rejected exn ->
+        | Error exn ->
           current_storage := saved_storage;
 
           let p' =
@@ -2122,10 +2106,10 @@ struct
     in
 
     match p.state with
-    | Fulfilled v ->
+    | Resolved (Ok v) ->
       run_callback f' v
 
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       run_callback h exn
 
     | Pending p_callbacks ->
@@ -2148,7 +2132,7 @@ struct
 
       let callback p_result =
         match p_result with
-        | Fulfilled v ->
+        | Ok v ->
           current_storage := saved_storage;
 
           let p' =
@@ -2165,7 +2149,7 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
-        | Rejected exn ->
+        | Error exn ->
           current_storage := saved_storage;
 
           let p' =
@@ -2187,10 +2171,10 @@ struct
     in
 
     match p.state with
-    | Fulfilled v ->
+    | Resolved (Ok v) ->
       run_callback f' v
 
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       run_callback h (add_loc exn)
 
     | Pending p_callbacks ->
@@ -2215,13 +2199,10 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Rejected Canceled ->
+    | Resolved (Error Canceled) ->
       run_callback (handle_with_async_exception_hook f) ()
 
-    | Rejected _ ->
-      ()
-
-    | Fulfilled _ ->
+    | Resolved _ ->
       ()
 
     | Pending callbacks ->
@@ -2238,19 +2219,19 @@ struct
 
       fun result ->
         match result with
-        | Fulfilled v ->
+        | Ok v ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f v
 
-        | Rejected _ ->
+        | Error _ ->
           ()
     in
 
     match p.state with
-    | Fulfilled v ->
+    | Resolved (Ok v) ->
       run_callback (handle_with_async_exception_hook f) v
 
-    | Rejected _ ->
+    | Resolved (Error _) ->
       ()
 
     | Pending p_callbacks ->
@@ -2266,19 +2247,19 @@ struct
 
       fun result ->
         match result with
-        | Fulfilled _ ->
+        | Ok _ ->
           ()
 
-        | Rejected exn ->
+        | Error exn ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f exn
     in
 
     match p.state with
-    | Fulfilled _ ->
+    | Resolved (Ok _) ->
       ()
 
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       run_callback (handle_with_async_exception_hook f) exn
 
     | Pending p_callbacks ->
@@ -2298,10 +2279,10 @@ struct
     in
 
     match p.state with
-    | Fulfilled _ ->
+    | Resolved (Ok _) ->
       run_callback (handle_with_async_exception_hook f) ()
 
-    | Rejected _ ->
+    | Resolved (Error _) ->
       run_callback (handle_with_async_exception_hook f) ()
 
     | Pending p_callbacks ->
@@ -2317,20 +2298,20 @@ struct
 
       fun result ->
         match result with
-        | Fulfilled v ->
+        | Ok v ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f v
 
-        | Rejected exn ->
+        | Error exn ->
           current_storage := saved_storage;
           handle_with_async_exception_hook g exn
     in
 
     match p.state with
-    | Fulfilled v ->
+    | Resolved (Ok v) ->
       run_callback (handle_with_async_exception_hook f) v
 
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       run_callback (handle_with_async_exception_hook g) exn
 
     | Pending p_callbacks ->
@@ -2346,8 +2327,7 @@ let wrap_in_cancelable p =
  let Internal p_internal = to_internal_promise p in
  let p_underlying = underlying p_internal in
  match p_underlying.state with
- | Fulfilled _ -> p
- | Rejected _ -> p
+ | Resolved _ -> p
  | Pending _ ->
    let p', r = task () in
    on_cancel p' (fun () -> cancel p);
@@ -2384,17 +2364,17 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Fulfilled _ ->
+    | Resolved (Ok _) ->
       ()
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       h exn
 
     | Pending p_callbacks ->
       let callback result =
         match result with
-        | Fulfilled _ ->
+        | Ok _ ->
           ()
-        | Rejected exn ->
+        | Error exn ->
           h exn
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -2407,17 +2387,17 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Fulfilled _ ->
+    | Resolved (Ok _) ->
       ()
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       !async_exception_hook exn
 
     | Pending p_callbacks ->
       let callback result =
         match result with
-        | Fulfilled _ ->
+        | Ok _ ->
           ()
-        | Rejected exn ->
+        | Error exn ->
           !async_exception_hook exn
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -2426,17 +2406,17 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Fulfilled _ ->
+    | Resolved (Ok _) ->
       ()
-    | Rejected exn ->
+    | Resolved (Error exn) ->
       reraise exn
 
     | Pending p_callbacks ->
       let callback result =
         match result with
-        | Fulfilled _ ->
+        | Ok _ ->
           ()
-        | Rejected exn ->
+        | Error exn ->
           !async_exception_hook exn
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -2447,7 +2427,7 @@ struct
     let p' = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
     let number_pending_in_ps = ref 0 in
-    let join_result = ref (Fulfilled ()) in
+    let join_result = ref (Ok ()) in
 
     (* Callback attached to each promise in [ps] that is still pending at the
        time [join] is called. *)
@@ -2455,13 +2435,13 @@ struct
       let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
 
       begin match new_result with
-      | Fulfilled () -> ()
-      | Rejected _ ->
+      | Ok () -> ()
+      | Error _ ->
       (* For the first promise in [ps] to be rejected, set the result of the
          [join] to rejected with the same exception.. *)
         match !join_result with
-        | Fulfilled () -> join_result := new_result
-        | Rejected _ -> ()
+        | Ok () -> join_result := new_result
+        | Error _ -> ()
       end;
 
       (* In all cases, decrement the number of promises still pending, and
@@ -2482,7 +2462,7 @@ struct
       match ps with
       | [] ->
         if !number_pending_in_ps = 0 then
-          to_public_promise {state = !join_result}
+          to_public_promise {state = Resolved !join_result}
         else
           to_public_promise p'
 
@@ -2495,18 +2475,18 @@ struct
           add_implicitly_removed_callback p_callbacks callback;
           attach_callback_or_resolve_immediately ps
 
-        | Rejected _ as p_result ->
+        | Resolved (Error _ as p_result) ->
           (* As in the callback above, but for already-resolved promises in
              [ps]: reject the [join] with the same exception as in the first
              rejected promise found. [join] still waits for any pending promises
              before actually resolving, though. *)
           begin match !join_result with
-          | Fulfilled () -> join_result := p_result;
-          | Rejected _ -> ()
+          | Ok () -> join_result := p_result;
+          | Error _ -> ()
           end;
           attach_callback_or_resolve_immediately ps
 
-        | Fulfilled () ->
+        | Resolved (Ok ()) ->
           attach_callback_or_resolve_immediately ps
     in
 
@@ -2562,8 +2542,8 @@ struct
        | p :: ps ->
             let Internal q = to_internal_promise p in
             match (underlying q).state with
-            | Fulfilled _ -> count_and_gather_rejected total rejected ps
-            | Rejected _ -> count_and_gather_rejected (total + 1) (p :: rejected) ps
+            | Resolved (Ok _) -> count_and_gather_rejected total rejected ps
+            | Resolved (Error _) -> count_and_gather_rejected (total + 1) (p :: rejected) ps
             | Pending _ -> count_and_gather_rejected total rejected ps
     in
     let rec count_fulfilled total ps =
@@ -2572,8 +2552,8 @@ struct
        | p :: ps ->
             let Internal q = to_internal_promise p in
             match (underlying q).state with
-            | Fulfilled _ -> count_fulfilled (total + 1) ps
-            | Rejected _ -> count_and_gather_rejected 1 [p] ps
+            | Resolved (Ok _) -> count_fulfilled (total + 1) ps
+            | Resolved (Error _) -> count_and_gather_rejected 1 [p] ps
             | Pending _ -> count_fulfilled total ps
     in
     count_fulfilled 0 ps
@@ -2592,10 +2572,10 @@ struct
       | Pending _ ->
         nth_resolved ps n
 
-      | Fulfilled _ ->
+      | Resolved (Ok _) ->
         if n <= 0 then p
         else nth_resolved ps (n - 1)
-      | Rejected _ ->
+      | Resolved (Error _) ->
         if n <= 0 then p
         else nth_resolved ps (n - 1)
 
@@ -2613,10 +2593,10 @@ struct
         cancel p;
         nth_resolved_and_cancel_pending ps n
 
-      | Fulfilled _ ->
+      | Resolved (Ok _) ->
         if n <= 0 then (List.iter cancel ps; p)
         else nth_resolved_and_cancel_pending ps (n - 1)
-      | Rejected _ ->
+      | Resolved (Error _) ->
         if n <= 0 then (List.iter cancel ps; p)
         else nth_resolved_and_cancel_pending ps (n - 1)
 
@@ -2698,16 +2678,16 @@ struct
 
     match ps with
     | [] ->
-      Fulfilled (List.rev results)
+      Ok (List.rev results)
 
     | p::ps ->
       let Internal p = to_internal_promise p in
 
       match (underlying p).state with
-      | Fulfilled v ->
+      | Resolved (Ok v) ->
         collect_fulfilled_promises_after_pending (v::results) ps
 
-      | Rejected _ as result ->
+      | Resolved (Error _ as result) ->
         result
 
       | Pending _ ->
@@ -2727,11 +2707,11 @@ struct
       | p::ps ->
         let Internal p = to_internal_promise p in
         match (underlying p).state with
-        | Fulfilled v ->
+        | Resolved (Ok v) ->
           collect_already_fulfilled_promises_or_find_rejected (v::acc) ps
 
-        | Rejected _ as result ->
-          to_public_promise {state = result}
+        | Resolved (Error _) as error_state ->
+          to_public_promise {state = error_state}
 
         | Pending _ ->
           collect_already_fulfilled_promises_or_find_rejected acc ps
@@ -2760,11 +2740,11 @@ struct
       | p::ps ->
         let Internal p = to_internal_promise p in
         match (underlying p).state with
-        | Fulfilled v ->
+        | Resolved (Ok v) ->
           collect_already_fulfilled_promises_or_find_rejected [v] ps
 
-        | Rejected _ as result ->
-          to_public_promise {state = result}
+        | Resolved (Error _) as error_state ->
+          to_public_promise {state = error_state}
 
         | Pending _ ->
           check_for_already_resolved_promises ps
@@ -2787,12 +2767,12 @@ struct
       | p::ps' ->
         let Internal p = to_internal_promise p in
         match (underlying p).state with
-        | Fulfilled v ->
+        | Resolved (Ok v) ->
           collect_already_fulfilled_promises_or_find_rejected (v::acc) ps'
 
-        | Rejected _ as result ->
+        | Resolved (Error _) as error_state ->
           List.iter cancel ps;
-          to_public_promise {state = result}
+          to_public_promise {state = error_state}
 
         | Pending _ ->
           collect_already_fulfilled_promises_or_find_rejected acc ps'
@@ -2819,12 +2799,12 @@ struct
       | p::ps' ->
         let Internal p = to_internal_promise p in
         match (underlying p).state with
-        | Fulfilled v ->
+        | Resolved (Ok v) ->
           collect_already_fulfilled_promises_or_find_rejected [v] ps'
 
-        | Rejected _ as result ->
+        | Resolved (Error _) as error_state ->
           List.iter cancel ps;
-          to_public_promise {state = result}
+          to_public_promise {state = error_state}
 
         | Pending _ ->
           check_for_already_resolved_promises ps'
@@ -2850,15 +2830,15 @@ struct
       match ps with
       | [] ->
         resolve ~allow_deferring:false to_resolve
-          (Fulfilled (List.rev fulfilled, List.rev pending))
+          (Ok (List.rev fulfilled, List.rev pending))
 
       | p::ps ->
         let Internal p_internal = to_internal_promise p in
         match (underlying p_internal).state with
-        | Fulfilled v ->
+        | Resolved (Ok v) ->
           finish to_resolve (v::fulfilled) pending ps
 
-        | Rejected _ as result ->
+        | Resolved (Error _ as result) ->
           resolve ~allow_deferring:false to_resolve result
 
         | Pending _ ->
@@ -2875,11 +2855,11 @@ struct
       | p::ps ->
         let Internal p_internal = to_internal_promise p in
         match (underlying p_internal).state with
-        | Fulfilled v ->
+        | Resolved (Ok v) ->
           collect_already_resolved_promises (v::results) pending ps
 
-        | Rejected _ as result ->
-          to_public_promise {state = result}
+        | Resolved (Error _) as error_state ->
+          to_public_promise {state = error_state}
 
         | Pending _ ->
           collect_already_resolved_promises results (p::pending) ps
@@ -2903,11 +2883,11 @@ struct
       | p::ps' ->
         let Internal p_internal = to_internal_promise p in
         match (underlying p_internal).state with
-        | Fulfilled v ->
+        | Resolved (Ok v) ->
           collect_already_resolved_promises [v] pending_acc ps'
 
-        | Rejected _ as result ->
-          to_public_promise {state = result}
+        | Resolved (Error _) as error_state ->
+          to_public_promise {state = error_state}
 
         | Pending _ ->
           check_for_already_resolved_promises (p::pending_acc) ps'
@@ -2981,8 +2961,8 @@ struct
   let state p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Fulfilled v -> Return v
-    | Rejected exn -> Fail exn
+    | Resolved (Ok v) -> Return v
+    | Resolved (Error exn) -> Fail exn
     | Pending _ -> Sleep
 
   let debug_state_is expected_state p =
@@ -2991,15 +2971,14 @@ struct
   let is_sleeping p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Fulfilled _ -> false
-    | Rejected _ -> false
+    | Resolved _ -> false
     | Pending _ -> true
 
   let poll p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Rejected e -> reraise e
-    | Fulfilled v -> Some v
+    | Resolved (Error e) -> reraise e
+    | Resolved (Ok v) -> Some v
     | Pending _ -> None
 
 
