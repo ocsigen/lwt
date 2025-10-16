@@ -520,29 +520,8 @@ struct
   let to_public_promise : 'a promise -> 'a t = Obj.magic
   let to_public_resolver : 'a promise -> 'a u = Obj.magic
 
-  type _ packed_promise = (* TODO erase this now-unnecessary abstraction *)
-    | Internal : 'a promise -> 'a packed_promise
-    [@@ocaml.unboxed]
-
-  let to_internal_promise (p : 'a t) : 'a packed_promise =
-    Internal (Obj.magic p)
-  let to_internal_resolver (r : 'a u) : 'a packed_promise =
-    Internal (Obj.magic r)
-
-  (* Most functions that take a public promise (['a t]) convert it to an
-     internal promise as follows:
-
-       (* p : 'a t *)
-
-       let Internal p = to_internal_promise p in
-
-       (* p : ('a, u, c) promise, where u and c are fresh types, i.e. the
-          invariants on p are unknown. *)
-
-     This cast is a no-op cast. It only produces a reference with a different
-     type. The introduction and immediate elimination of [Internal _] seems to
-     be optimized away even on older versions of OCaml that don't have Flambda
-     and don't support [[@@ocaml.unboxed]]. *)
+  let to_internal_promise : 'a t -> 'a promise = Obj.magic
+  let to_internal_resolver : 'a u -> 'a promise = Obj.magic
 end
 include Public_types
 
@@ -876,7 +855,7 @@ struct
     (* Go through the promises the cell had originally been added to, and either
        defer a cleanup, or actually clean up their callback lists. *)
     ps |> List.iter (fun p ->
-      let Internal p = to_internal_promise p in
+      let p = to_internal_promise p in
       match underlying_state p with
       (* Some of the promises may already have been resolved at the time this
          function is called. *)
@@ -966,7 +945,7 @@ struct
 
     let node = Regular_callback_list_explicitly_removable_callback cell in
     ps |> List.iter (fun p ->
-      let Internal p = to_internal_promise p in
+      let p = to_internal_promise p in
       match underlying_state p with
       | Pending callbacks -> add_regular_callback_list_node callbacks node
       | Resolved _ -> assert false
@@ -1312,7 +1291,7 @@ struct
      behavior: it runs callbacks directly on the current stack. It should
      therefore be possible to cause a stack overflow using this function. *)
   let wakeup_general api_function_name r result =
-    let Internal p = to_internal_resolver r in
+    let p = to_internal_resolver r in
     let state, p = underlying p in
 
     match state with
@@ -1334,7 +1313,7 @@ struct
   let wakeup_exn r exn = wakeup_general "wakeup_exn" r (Error exn)
 
   let wakeup_later_general api_function_name r result =
-    let Internal p = to_internal_resolver r in
+    let p = to_internal_resolver r in
     let state, p = underlying p in
 
     match state with
@@ -1412,7 +1391,7 @@ struct
       cancel_and_collect_callbacks [] p
     in
 
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let callbacks = propagate_cancel p in
 
     callbacks |> List.iter (fun (Packed callbacks) ->
@@ -1550,7 +1529,7 @@ struct
 
 
   let protected p =
-    let Internal p_internal = to_internal_promise p in
+    let p_internal = to_internal_promise p in
     match underlying_state p_internal with
     | Resolved _ -> p
 
@@ -1590,7 +1569,7 @@ struct
       to_public_promise p'
 
   let no_cancel p =
-    let Internal p_internal = to_internal_promise p in
+    let p_internal = to_internal_promise p in
     match underlying_state p_internal with
     | Resolved _ -> p
 
@@ -1750,7 +1729,7 @@ struct
      some way, especially if assuming Flambda. *)
 
   let bind p f =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state, p = underlying p in
 
     (* In case [Lwt.bind] needs to defer the call to [f], this function will be
@@ -1793,7 +1772,7 @@ struct
             try f v with exn
             when Exception_filter.run exn -> fail exn
           in
-          let Internal p' = to_internal_promise p' in
+          let p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -1836,7 +1815,7 @@ struct
       p''
 
   let backtrace_bind add_loc p f =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state, p = underlying p in
 
     let create_result_promise_and_callback_if_deferred () =
@@ -1853,7 +1832,7 @@ struct
             try f v
             with exn when Exception_filter.run exn ->
               fail (add_loc exn) in
-          let Internal p' = to_internal_promise p' in
+          let p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let _state, p'' = underlying p'' in
@@ -1887,7 +1866,7 @@ struct
       p''
 
   let map f p =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state, p = underlying p in
 
     let create_result_promise_and_callback_if_deferred () =
@@ -1949,7 +1928,7 @@ struct
       try f ()
       with exn when Exception_filter.run exn -> fail exn
     in
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state, p = underlying p in
 
     let create_result_promise_and_callback_if_deferred () =
@@ -1974,7 +1953,7 @@ struct
             try h exn
             with exn when Exception_filter.run exn -> fail exn
           in
-          let Internal p' = to_internal_promise p' in
+          let p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying_promise p'' in
@@ -2004,7 +1983,7 @@ struct
       try f ()
       with exn when Exception_filter.run exn -> fail exn
     in
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state, p = underlying p in
 
     let create_result_promise_and_callback_if_deferred () =
@@ -2030,7 +2009,7 @@ struct
             with exn when Exception_filter.run exn ->
               fail (add_loc exn)
           in
-          let Internal p' = to_internal_promise p' in
+          let p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying_promise p'' in
@@ -2060,7 +2039,7 @@ struct
       try f ()
       with exn when Exception_filter.run exn -> fail exn
     in
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state, p = underlying p in
 
     let create_result_promise_and_callback_if_deferred () =
@@ -2077,7 +2056,7 @@ struct
             try f' v
             with exn when Exception_filter.run exn -> fail exn
           in
-          let Internal p' = to_internal_promise p' in
+          let p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying_promise p'' in
@@ -2093,7 +2072,7 @@ struct
             try h exn
             with exn when Exception_filter.run exn -> fail exn
           in
-          let Internal p' = to_internal_promise p' in
+          let p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying_promise p'' in
@@ -2123,7 +2102,7 @@ struct
       try f ()
       with exn when Exception_filter.run exn -> fail exn
     in
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state, p = underlying p in
 
     let create_result_promise_and_callback_if_deferred () =
@@ -2141,7 +2120,7 @@ struct
             with exn when Exception_filter.run exn ->
               fail (add_loc exn)
           in
-          let Internal p' = to_internal_promise p' in
+          let p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying_promise p'' in
@@ -2158,7 +2137,7 @@ struct
             with exn when Exception_filter.run exn ->
               fail (add_loc exn)
           in
-          let Internal p' = to_internal_promise p' in
+          let p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying_promise p'' in
@@ -2196,7 +2175,7 @@ struct
 
 
   let on_cancel p f =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state = underlying_state p in
 
     match state with
@@ -2212,7 +2191,7 @@ struct
 
 
   let on_success p f =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state = underlying_state p in
 
     let callback_if_deferred () =
@@ -2240,7 +2219,7 @@ struct
       add_implicitly_removed_callback p_callbacks callback
 
   let on_failure p f =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state = underlying_state p in
 
     let callback_if_deferred () =
@@ -2268,7 +2247,7 @@ struct
       add_implicitly_removed_callback p_callbacks callback
 
   let on_termination p f =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state = underlying_state p in
 
     let callback_if_deferred () =
@@ -2291,7 +2270,7 @@ struct
       add_implicitly_removed_callback p_callbacks callback
 
   let on_any p f g =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     let state = underlying_state p in
 
     let callback_if_deferred () =
@@ -2325,7 +2304,7 @@ include Sequential_composition
 (* This belongs with the [protected] and such, but it depends on primitives from
    [Sequential_composition]. *)
 let wrap_in_cancelable p =
- let Internal p_internal = to_internal_promise p in
+ let p_internal = to_internal_promise p in
  match underlying_state p_internal with
  | Resolved _ -> p
  | Pending _ ->
@@ -2361,7 +2340,7 @@ struct
       try f ()
       with exn when Exception_filter.run exn -> fail exn
     in
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
 
     match underlying_state p with
     | Resolved (Ok _) ->
@@ -2384,7 +2363,7 @@ struct
       try f ()
       with exn when Exception_filter.run exn -> fail exn
     in
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
 
     match underlying_state p with
     | Resolved (Ok _) ->
@@ -2403,7 +2382,7 @@ struct
       add_implicitly_removed_callback p_callbacks callback
 
   let ignore_result p =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
 
     match underlying_state p with
     | Resolved (Ok _) ->
@@ -2467,7 +2446,7 @@ struct
           to_public_promise p'
 
       | p::ps ->
-        let Internal p = to_internal_promise p in
+        let p = to_internal_promise p in
 
         match underlying_state p with
         | Pending p_callbacks ->
@@ -2540,7 +2519,7 @@ struct
        match ps with
        | [] -> Error (total, rejected)
        | p :: ps ->
-            let Internal q = to_internal_promise p in
+            let q = to_internal_promise p in
             match underlying_state q with
             | Resolved (Ok _) -> count_and_gather_rejected total rejected ps
             | Resolved (Error _) -> count_and_gather_rejected (total + 1) (p :: rejected) ps
@@ -2550,7 +2529,7 @@ struct
        match ps with
        | [] -> Ok total
        | p :: ps ->
-            let Internal q = to_internal_promise p in
+            let q = to_internal_promise p in
             match underlying_state q with
             | Resolved (Ok _) -> count_fulfilled (total + 1) ps
             | Resolved (Error _) -> count_and_gather_rejected 1 [p] ps
@@ -2567,7 +2546,7 @@ struct
       assert false
 
     | p::ps ->
-      let Internal p' = to_internal_promise p in
+      let p' = to_internal_promise p in
       match underlying_state p' with
       | Pending _ ->
         nth_resolved ps n
@@ -2587,7 +2566,7 @@ struct
       assert false
 
     | p::ps ->
-      let Internal p' = to_internal_promise p in
+      let p' = to_internal_promise p in
       match underlying_state p' with
       | Pending _ ->
         cancel p;
@@ -2681,7 +2660,7 @@ struct
       Ok (List.rev results)
 
     | p::ps ->
-      let Internal p = to_internal_promise p in
+      let p = to_internal_promise p in
 
       match underlying_state p with
       | Resolved (Ok v) ->
@@ -2705,7 +2684,7 @@ struct
         return (List.rev acc)
 
       | p::ps ->
-        let Internal p = to_internal_promise p in
+        let p = to_internal_promise p in
         match underlying_state p with
         | Resolved (Ok v) ->
           collect_already_fulfilled_promises_or_find_rejected (v::acc) ps
@@ -2738,7 +2717,7 @@ struct
         to_public_promise p
 
       | p::ps ->
-        let Internal p = to_internal_promise p in
+        let p = to_internal_promise p in
         match underlying_state p with
         | Resolved (Ok v) ->
           collect_already_fulfilled_promises_or_find_rejected [v] ps
@@ -2765,7 +2744,7 @@ struct
         return (List.rev acc)
 
       | p::ps' ->
-        let Internal p = to_internal_promise p in
+        let p = to_internal_promise p in
         match underlying_state p with
         | Resolved (Ok v) ->
           collect_already_fulfilled_promises_or_find_rejected (v::acc) ps'
@@ -2797,7 +2776,7 @@ struct
         to_public_promise p
 
       | p::ps' ->
-        let Internal p = to_internal_promise p in
+        let p = to_internal_promise p in
         match underlying_state p with
         | Resolved (Ok v) ->
           collect_already_fulfilled_promises_or_find_rejected [v] ps'
@@ -2833,7 +2812,7 @@ struct
           (Ok (List.rev fulfilled, List.rev pending))
 
       | p::ps ->
-        let Internal p_internal = to_internal_promise p in
+        let p_internal = to_internal_promise p in
         match underlying_state p_internal with
         | Resolved (Ok v) ->
           finish to_resolve (v::fulfilled) pending ps
@@ -2853,7 +2832,7 @@ struct
         return (List.rev results, pending)
 
       | p::ps ->
-        let Internal p_internal = to_internal_promise p in
+        let p_internal = to_internal_promise p in
         match underlying_state p_internal with
         | Resolved (Ok v) ->
           collect_already_resolved_promises (v::results) pending ps
@@ -2881,7 +2860,7 @@ struct
         to_public_promise p
 
       | p::ps' ->
-        let Internal p_internal = to_internal_promise p in
+        let p_internal = to_internal_promise p in
         match underlying_state p_internal with
         | Resolved (Ok v) ->
           collect_already_resolved_promises [v] pending_acc ps'
@@ -2959,7 +2938,7 @@ struct
   external reraise : exn -> 'a = "%reraise"
 
   let state p =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     match underlying_state p with
     | Resolved (Ok v) -> Return v
     | Resolved (Error exn) -> Fail exn
@@ -2969,13 +2948,13 @@ struct
     return (state p = expected_state)
 
   let is_sleeping p =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     match underlying_state p with
     | Resolved _ -> false
     | Pending _ -> true
 
   let poll p =
-    let Internal p = to_internal_promise p in
+    let p = to_internal_promise p in
     match underlying_state p with
     | Resolved (Error e) -> reraise e
     | Resolved (Ok v) -> Some v
