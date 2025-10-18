@@ -52,43 +52,11 @@ let no_strict_sequence_option () =
 
 let gen_name i = lwt_prefix ^ string_of_int i
 
-let trace_str_of_pattern loc p =
-  let rec gets p =
-  match p.Parsetree.ppat_desc with
-  | Ppat_any -> "_"
-  | Ppat_var { txt; _ } -> txt
-  | Ppat_alias (_, { txt; _ }) -> txt
-  | Ppat_constraint (p, _) -> gets p
-  | Ppat_constant _
-  | Ppat_interval (_, _)
-  | Ppat_tuple _
-  | Ppat_construct (_, _)
-  | Ppat_variant (_, _)
-  | Ppat_record (_, _)
-  | Ppat_array _
-  | Ppat_or (_, _)
-  | Ppat_type _
-  | Ppat_lazy _
-  | Ppat_unpack _
-  | Ppat_exception _
-  | Ppat_extension _
-  | Ppat_open (_, _) -> "?"
-  in
-  Ast_builder.Default.estring ~loc (gets p)
-
 (** [p = x] ≡ [__ppx_lwt_$i = x] *)
 let gen_bindings l =
   let aux i binding =
-    let new_expr =
-      let loc = binding.pvb_expr.pexp_loc in
-      [%expr
-        Lwt_rte.emit_trace __FILE__ __LINE__ [%e trace_str_of_pattern loc binding.pvb_pat];
-        [%e binding.pvb_expr]
-      ]
-    in
     { binding with
-      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i);
-      pvb_expr = new_expr
+      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i)
     }
   in
   List.mapi aux l
@@ -110,6 +78,7 @@ let gen_binds e_loc l e =
           let loc = e_loc in
           [%expr
             Lwt.backtrace_bind
+              __POS__
               (fun exn -> try Lwt.reraise exn with exn -> exn)
               [%e name]
               [%e fun_]
@@ -124,6 +93,7 @@ let lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc =
   let loc = exp.pexp_loc in
     [%expr
       Lwt.backtrace_bind
+        __POS__
         (fun exn -> try Lwt.reraise exn with exn -> exn)
         [%e lhs]
         (fun [%p pat] -> [%e rhs])
@@ -253,6 +223,7 @@ let lwt_expression mapper exp attributes ext_loc =
       let loc = !default_loc in
         [%expr
           Lwt.backtrace_catch
+            __POS__
             (fun exn -> try Lwt.reraise exn with exn -> exn)
             (fun () -> [%e expr])
             [%e pexp_function_cases ~loc cases]
@@ -338,6 +309,7 @@ class mapper = object (self)
           let loc = !default_loc in
             [%expr
               Lwt.backtrace_finalize
+                __POS__
                 (fun exn -> try Lwt.reraise exn with exn -> exn)
                 (fun () -> [%e exp])
                 (fun () -> [%e finally])

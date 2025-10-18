@@ -30,12 +30,37 @@ let () =
   let cb =
     Runtime_events.Callbacks.create ()
     |> Runtime_events.Callbacks.add_user_event
-        Lwt_runtime_events.ss
+        Lwt_runtime_events.Trace.labelled_span
         (fun _ t u x ->
           match Runtime_events.User.tag u with
-          | Lwt_runtime_events.Trace ->
-              Trace_fuchsia.Writer.Event.Instant.encode buf ~name:"bind"
-              ~t_ref:(Ref 1) ~time_ns:(Runtime_events.Timestamp.to_int64 t) ~args:["location",A_string x] ()
+            | Lwt_runtime_events.Trace.LabelledSpan -> begin
+                match x with
+                | Begin, s ->
+                    Trace_fuchsia.Writer.Event.Duration_begin.encode buf ~name:s
+                    ~t_ref:(Ref 1)
+                    ~time_ns:(Runtime_events.Timestamp.to_int64 t)
+                    ~args:[]
+                    ()
+                | End, s ->
+                    Trace_fuchsia.Writer.Event.Duration_end.encode buf ~name:s
+                    ~t_ref:(Ref 1)
+                    ~time_ns:(Runtime_events.Timestamp.to_int64 t)
+                    ~args:[]
+                    ()
+            end
+          | _ -> ())
+    |> Runtime_events.Callbacks.add_user_event
+        Runtime_events.Type.int
+        (fun _ t u x ->
+          match Runtime_events.User.tag u with
+          | Lwt_runtime_events.Paused_count ->
+              Trace_fuchsia.Writer.Event.Counter.encode buf ~name:"paused"
+              ~t_ref:(Ref 1) ~time_ns:(Runtime_events.Timestamp.to_int64 t)
+              ~args:["n",A_int x] ()
+          | Lwt_runtime_events.Unix_job_count ->
+              Trace_fuchsia.Writer.Event.Counter.encode buf ~name:"jobs"
+              ~t_ref:(Ref 1) ~time_ns:(Runtime_events.Timestamp.to_int64 t)
+              ~args:["n",A_int x] ()
           | _ -> ())
   in
   let _ : int = Runtime_events.read_poll cursor cb None in

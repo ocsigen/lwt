@@ -15,7 +15,11 @@ type Runtime_events.User.tag += Unix_job_count
 val unix_job_count : int Runtime_events.User.t
 val emit_job_count : int -> unit
 
-type Runtime_events.User.tag += Trace
-val ss : string Runtime_events.Type.t
-val trace : string Runtime_events.User.t
-val emit_trace : string -> unit
+module Trace : sig
+  type labelled_span = Runtime_events.Type.span * string
+  val labelled_span : labelled_span Runtime_events.Type.t
+
+  type Runtime_events.User.tag += LabelledSpan
+  val span : labelled_span Runtime_events.User.t
+  val emit_span : labelled_span -> unit
+end

@@ -2050,12 +2050,16 @@ val poll : 'a t -> 'a option
 val apply : ('a -> 'b t) -> 'a -> 'b t
 
 val backtrace_bind :
+  string * int * int * int ->
   (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
 val backtrace_catch :
+  string * int * int * int ->
   (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 val backtrace_finalize :
+  string * int * int * int ->
   (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
 val backtrace_try_bind :
+  string * int * int * int ->
   (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
 val abandon_wakeups : unit -> unit

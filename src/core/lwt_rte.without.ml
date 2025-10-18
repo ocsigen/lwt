@@ -3,4 +3,5 @@ let emit_sch_call_begin () = ()
 let emit_sch_call_end () = ()
 let emit_sch_lap _v = ()
 let emit_job_count _v = ()
-let emit_trace _f _l _n = ()
+type span = Begin | End
+let emit_trace _k _f _l = ()
