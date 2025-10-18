@@ -19,9 +19,27 @@ let cursor =
 
 let (_, _) = Unix.waitpid [WUNTRACED] pid
 
+let simplify_fname fname =
+  String.split_on_char '/' fname
+  |> List.rev
+  |> function
+    | [] -> assert false
+    | hd :: tl ->
+        (hd :: "/" :: List.map (fun s -> String.make 1 s.[0]) tl)
+    |> List.rev
+    |> String.concat ""
+
+let name_of { Lwt_runtime_events.Trace.context; count; filename; line; kind=_ } =
+  let base =
+    match context with
+    | None -> simplify_fname filename ^ ":" ^ string_of_int line
+    | Some c -> c
+  in
+  base ^ string_of_int count
+
 let () = Printf.printf "crash! writing trace file %s/%d.tail\n" tmpdir pid
 let () =
-  let buf_pool = Trace_fuchsia.Buf_pool.create () in
+  let buf_pool = Trace_fuchsia.Buf_pool.create ~max_size:1024 () in
   let buf = Trace_fuchsia.Buf_chain.create ~sharded:false ~buf_pool () in
   let oc = open_out_bin (Printf.sprintf "%s/%d.tail" tmpdir pid) in
   let { Trace_fuchsia.Exporter.write_bufs; flush; close } as exporter = Trace_fuchsia.Exporter.of_out_channel ~close_channel:true oc in
@@ -30,24 +48,35 @@ let () =
   let cb =
     Runtime_events.Callbacks.create ()
     |> Runtime_events.Callbacks.add_user_event
-        Lwt_runtime_events.Trace.labelled_span
+        Lwt_runtime_events.Trace.t
         (fun _ t u x ->
           match Runtime_events.User.tag u with
-            | Lwt_runtime_events.Trace.LabelledSpan -> begin
+            | Lwt_runtime_events.Trace.T -> begin
                 match x with
-                | Begin, s ->
-                    Trace_fuchsia.Writer.Event.Duration_begin.encode buf ~name:s
+                | { kind = Begin; context=_; count=_; filename; line } ->
+                    Trace_fuchsia.Writer.Event.Duration_begin.encode buf
+                    ~name:(name_of x)
                     ~t_ref:(Ref 1)
                     ~time_ns:(Runtime_events.Timestamp.to_int64 t)
-                    ~args:[]
+                    ~args:["file", A_string filename; "line", A_int line]
                     ()
-                | End, s ->
-                    Trace_fuchsia.Writer.Event.Duration_end.encode buf ~name:s
+                | { kind = End; context=_; count=_; filename; line } ->
+                    Trace_fuchsia.Writer.Event.Duration_end.encode buf
+                    ~name:(name_of x)
                     ~t_ref:(Ref 1)
                     ~time_ns:(Runtime_events.Timestamp.to_int64 t)
-                    ~args:[]
+                    ~args:["file", A_string filename; "line", A_int line]
                     ()
             end
+          | _ -> ())
+    |> Runtime_events.Callbacks.add_user_event
+        Runtime_events.Type.unit
+        (fun _ t e () ->
+          match Runtime_events.User.tag e with
+          | Lwt_runtime_events.Scheduler_lap ->
+              Trace_fuchsia.Writer.Event.Instant.encode buf ~name:"lap"
+              ~t_ref:(Ref 1) ~time_ns:(Runtime_events.Timestamp.to_int64 t)
+              ~args:[] ()
           | _ -> ())
     |> Runtime_events.Callbacks.add_user_event
         Runtime_events.Type.int

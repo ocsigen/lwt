@@ -16,10 +16,10 @@ val unix_job_count : int Runtime_events.User.t
 val emit_job_count : int -> unit
 
 module Trace : sig
-  type labelled_span = Runtime_events.Type.span * string
-  val labelled_span : labelled_span Runtime_events.Type.t
+  type t = { kind: Runtime_events.Type.span; context: string option; count: int; filename: string; line: int; }
+  val t : t Runtime_events.Type.t
 
-  type Runtime_events.User.tag += LabelledSpan
-  val span : labelled_span Runtime_events.User.t
-  val emit_span : labelled_span -> unit
+  type Runtime_events.User.tag += T
+  val span : t Runtime_events.User.t
+  val emit : t -> unit
 end

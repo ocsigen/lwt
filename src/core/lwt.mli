@@ -2076,3 +2076,5 @@ module Private : sig
     val current_storage : storage ref
   end
 end [@@alert trespassing "for internal use only, keep away"]
+
+val tracing_context : string key

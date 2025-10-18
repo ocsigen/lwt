@@ -17,29 +17,65 @@ let emit_job_count v = Runtime_events.User.write unix_job_count v
 
 module Trace = struct
 
-  type labelled_span = Runtime_events.Type.span * string
-  let labelled_span : labelled_span Runtime_events.Type.t =
-    Runtime_events.Type.register
-      ~encode:(fun b (k, s) ->
-        let () = match k with
-          | Runtime_events.Type.Begin -> Bytes.set b 0 'B'
-          | End -> Bytes.set b 0 'E'
-        in
-        let l = min (String.length s) (Bytes.length b - 1) in
-        Bytes.blit_string s 0 b 1 l;
-        (l + 1))
-      ~decode:(fun b i ->
-        if i < 1 then failwith "unreadable tag for labelled_span";
-        let k = match Bytes.get b 0 with
-          | 'B' -> Runtime_events.Type.Begin
-          | 'E' -> End
-          | _ -> failwith "unreadable tag for labelled_span";
-        in
-        let s = Bytes.sub_string b 1 (i - 1) in
-        (k, s))
+  type t =
+    { kind: Runtime_events.Type.span;
+      context: string option;
+      count: int;
+      filename: string;
+      line: int; }
 
-  type Runtime_events.User.tag += LabelledSpan
-  let span = Runtime_events.User.register "lwt-trace" LabelledSpan labelled_span
-  let emit_span labelled_span = Runtime_events.User.write span labelled_span
+  let decode b i =
+    let offset = 0 in
+    let kind = match Bytes.get b offset with
+      | 'B' -> Runtime_events.Type.Begin
+      | 'E' -> End
+      | _ -> failwith "unreadable tag for labelled_span";
+    in
+    let offset = offset + 1 in
+    let context_size = Bytes.get_uint8 b offset in
+    let offset = offset + 1 in
+    let context = if context_size = 0 then None else Some (Bytes.sub_string b offset context_size) in
+    let offset = offset + context_size in
+    let count = BytesLabels.get_uint16_be b offset in
+    let offset = offset + 2 in
+    let line = Bytes.get_uint16_be b offset in
+    let offset = offset + 2 in
+    let filename_size = Bytes.get_uint8 b offset in
+    let offset = offset + 1 in
+    let filename = Bytes.sub_string b offset filename_size in
+    let offset = offset + filename_size in
+    assert (offset = i);
+    { kind; context; count; filename; line }
+
+  let encode b { kind; context; count; filename; line } =
+    let offset = 0 in
+    Bytes.set b offset (match kind with Begin -> 'B' | End -> 'E');
+    let offset = offset + 1 in
+    let offset = 
+      match context with
+      | None -> Bytes.set_uint8 b offset 0; offset + 1
+      | Some context ->
+          Bytes.set_uint8 b offset (String.length context);
+          let offset = offset + 1 in
+          Bytes.blit_string context 0 b offset (String.length context);
+          offset + String.length context
+    in
+    Bytes.set_uint16_be b offset count;
+    let offset = offset + 2 in
+    Bytes.set_uint16_be b offset line;
+    let offset = offset + 2 in
+    let filename_truncated_length = min (String.length filename) (Bytes.length b - offset) in
+    Bytes.set_uint8 b offset filename_truncated_length;
+    let offset = offset + 1 in
+    Bytes.blit_string filename 0 b offset filename_truncated_length;
+    let offset = offset + filename_truncated_length in
+    assert (offset <= Bytes.length b);
+    offset
+
+  let t : t Runtime_events.Type.t = Runtime_events.Type.register ~encode ~decode
+
+  type Runtime_events.User.tag += T
+  let span = Runtime_events.User.register "lwt-trace" T t
+  let emit t = Runtime_events.User.write span t
 
 end
