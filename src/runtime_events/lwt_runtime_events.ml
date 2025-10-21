@@ -26,20 +26,25 @@ module Trace = struct
 
   let decode b i =
     let offset = 0 in
+    (* BEGIN|END *)
     let kind = match Bytes.get b offset with
       | 'B' -> Runtime_events.Type.Begin
       | 'E' -> End
       | _ -> failwith "unreadable tag for labelled_span";
     in
     let offset = offset + 1 in
+    (* context *)
     let context_size = Bytes.get_uint8 b offset in
     let offset = offset + 1 in
     let context = if context_size = 0 then None else Some (Bytes.sub_string b offset context_size) in
     let offset = offset + context_size in
+    (* count *)
     let count = BytesLabels.get_uint16_be b offset in
     let offset = offset + 2 in
+    (* line *)
     let line = Bytes.get_uint16_be b offset in
     let offset = offset + 2 in
+    (* fname *)
     let filename_size = Bytes.get_uint8 b offset in
     let offset = offset + 1 in
     let filename = Bytes.sub_string b offset filename_size in
@@ -49,8 +54,10 @@ module Trace = struct
 
   let encode b { kind; context; count; filename; line } =
     let offset = 0 in
+    (* BEGIN|END *)
     Bytes.set b offset (match kind with Begin -> 'B' | End -> 'E');
     let offset = offset + 1 in
+    (* context *)
     let offset = 
       match context with
       | None -> Bytes.set_uint8 b offset 0; offset + 1
@@ -60,10 +67,13 @@ module Trace = struct
           Bytes.blit_string context 0 b offset (String.length context);
           offset + String.length context
     in
+    (* count *)
     Bytes.set_uint16_be b offset count;
     let offset = offset + 2 in
+    (* line *)
     Bytes.set_uint16_be b offset line;
     let offset = offset + 2 in
+    (* filename *)
     let filename_truncated_length = min (String.length filename) (Bytes.length b - offset) in
     Bytes.set_uint8 b offset filename_truncated_length;
     let offset = offset + 1 in

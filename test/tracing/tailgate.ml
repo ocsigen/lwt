@@ -9,15 +9,19 @@ let pid =
     [|"OCAML_RUNTIME_EVENTS_DIR="^tmpdir|]
     Unix.stdin Unix.stdout Unix.stderr
 
+let () = Printf.printf "started %s (pid: %d)\n" command pid
+
+let () = Unix.sleepf 0.001
 let cursor =
   let rec get n =
     if n < 0 then exit 2 else
       try Runtime_events.create_cursor (Some (tmpdir, pid))
       with _ -> begin Unix.sleepf 0.005; get (n - 1) end
   in
-  get 10
+  get 100
 
-let (_, _) = Unix.waitpid [WUNTRACED] pid
+let (code, _) = Unix.waitpid [WUNTRACED] pid
+let () = Printf.printf "crash! (%d)\n" code
 
 let simplify_fname fname =
   String.split_on_char '/' fname
@@ -30,74 +34,79 @@ let simplify_fname fname =
     |> String.concat ""
 
 let name_of { Lwt_runtime_events.Trace.context; count; filename; line; kind=_ } =
-  let base =
-    match context with
-    | None -> simplify_fname filename ^ ":" ^ string_of_int line
-    | Some c -> c
-  in
-  base ^ string_of_int count
+  match context with
+  | Some c -> c ^ "#" ^ string_of_int count
+  | None -> simplify_fname filename ^ ":" ^ string_of_int line ^ "#" ^ string_of_int count
 
-let () = Printf.printf "crash! writing trace file %s/%d.tail\n" tmpdir pid
+let ts_to_us ts = Int64.(div ts (of_int 1000))
+
+let oc = open_out_bin (Printf.sprintf "%s/tailtrace-%d.json" tmpdir pid)
 let () =
-  let buf_pool = Trace_fuchsia.Buf_pool.create ~max_size:1024 () in
-  let buf = Trace_fuchsia.Buf_chain.create ~sharded:false ~buf_pool () in
-  let oc = open_out_bin (Printf.sprintf "%s/%d.tail" tmpdir pid) in
-  let { Trace_fuchsia.Exporter.write_bufs; flush; close } as exporter = Trace_fuchsia.Exporter.of_out_channel ~close_channel:true oc in
-  let subscriber = Trace_fuchsia.Subscriber.create ~buf_pool ~pid:0 ~exporter () in
-  Trace_fuchsia.Subscriber.Callbacks.on_init subscriber ~time_ns:0L;
+  Printf.fprintf oc "[";
   let cb =
     Runtime_events.Callbacks.create ()
     |> Runtime_events.Callbacks.add_user_event
         Lwt_runtime_events.Trace.t
-        (fun _ t u x ->
+        (fun rid t u x ->
           match Runtime_events.User.tag u with
             | Lwt_runtime_events.Trace.T -> begin
-                match x with
-                | { kind = Begin; context=_; count=_; filename; line } ->
-                    Trace_fuchsia.Writer.Event.Duration_begin.encode buf
-                    ~name:(name_of x)
-                    ~t_ref:(Ref 1)
-                    ~time_ns:(Runtime_events.Timestamp.to_int64 t)
-                    ~args:["file", A_string filename; "line", A_int line]
-                    ()
-                | { kind = End; context=_; count=_; filename; line } ->
-                    Trace_fuchsia.Writer.Event.Duration_end.encode buf
-                    ~name:(name_of x)
-                    ~t_ref:(Ref 1)
-                    ~time_ns:(Runtime_events.Timestamp.to_int64 t)
-                    ~args:["file", A_string filename; "line", A_int line]
-                    ()
+                let { Lwt_runtime_events.Trace.kind; context=_; count=_; filename; line } = x in
+                    Printf.fprintf oc
+                      "{\"name\": \"%s\", \"cat\": \"PERF\", \"ph\":\"%s\", \"ts\":%Ld, \"pid\": %d, \"tid\": %d, \"args\": {\"location\": \"%s:%d\"}},\n"
+
+                      (name_of x)
+                      (match kind with Begin -> "B" | End -> "E")
+                      (ts_to_us (Runtime_events.Timestamp.to_int64 t))
+                      rid
+                      rid
+                      filename
+                      line
             end
           | _ -> ())
     |> Runtime_events.Callbacks.add_user_event
         Runtime_events.Type.unit
-        (fun _ t e () ->
+        (fun rid t e () ->
           match Runtime_events.User.tag e with
           | Lwt_runtime_events.Scheduler_lap ->
-              Trace_fuchsia.Writer.Event.Instant.encode buf ~name:"lap"
-              ~t_ref:(Ref 1) ~time_ns:(Runtime_events.Timestamp.to_int64 t)
-              ~args:[] ()
+              Printf.fprintf oc
+                "{\"name\": \"%s\", \"cat\": \"PERF\", \"ph\":\"%s\", \"ts\":%Ld, \"pid\": %d, \"tid\": %d},\n"
+
+                "lap"
+                "i"
+                (ts_to_us (Runtime_events.Timestamp.to_int64 t))
+                rid
+                rid
           | _ -> ())
     |> Runtime_events.Callbacks.add_user_event
         Runtime_events.Type.int
-        (fun _ t u x ->
+        (fun rid t u x ->
           match Runtime_events.User.tag u with
           | Lwt_runtime_events.Paused_count ->
-              Trace_fuchsia.Writer.Event.Counter.encode buf ~name:"paused"
-              ~t_ref:(Ref 1) ~time_ns:(Runtime_events.Timestamp.to_int64 t)
-              ~args:["n",A_int x] ()
+                    Printf.fprintf oc
+                      "{\"name\": \"%s\", \"cat\": \"PERF\", \"ph\":\"%s\", \"ts\":%Ld, \"pid\": %d, \"tid\": %d, \"args\": {\"%s\": %d}},\n"
+                      "paused"
+                      "C"
+                     (ts_to_us (Runtime_events.Timestamp.to_int64 t))
+                      rid
+                      rid
+                      "paused"
+                      x
           | Lwt_runtime_events.Unix_job_count ->
-              Trace_fuchsia.Writer.Event.Counter.encode buf ~name:"jobs"
-              ~t_ref:(Ref 1) ~time_ns:(Runtime_events.Timestamp.to_int64 t)
-              ~args:["n",A_int x] ()
+                    Printf.fprintf oc
+                      "{\"name\": \"%s\", \"cat\": \"PERF\", \"ph\":\"%s\", \"ts\":%Ld, \"pid\": %d, \"tid\": %d, \"args\": {\"%s\": %d}},\n"
+                      "jobs"
+                      "C"
+                      (ts_to_us (Runtime_events.Timestamp.to_int64 t))
+                      rid
+                      rid
+                      "jobs"
+                      x
           | _ -> ())
   in
   let _ : int = Runtime_events.read_poll cursor cb None in
-  Trace_fuchsia.Buf_chain.ready_all_non_empty buf;
-  Trace_fuchsia.Buf_chain.pop_ready ~f:write_bufs buf;
-  flush ();
-  Trace_fuchsia.Subscriber.close subscriber;
-  close ();
+  Printf.fprintf oc "]";
   ()
 
+let () = Printf.printf "writing trace file %s/%d.tail\n" tmpdir pid
+let () = flush_all ()
 let () = exit 0

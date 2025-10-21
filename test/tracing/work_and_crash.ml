@@ -1,3 +1,4 @@
+let () = Unix.sleepf 0.05
 let () = Runtime_events.start ()
 
 let rec ping () =
@@ -12,27 +13,47 @@ and pong p =
 ;;
 
 let fibobo () =
+  let%lwt store = Lwt_io.create_temp_dir ~parent:"/tmp" ~prefix:"fibobo" () in
   let rec fibobo n =
     if n <= 0 then Lwt.return 1 else
-    let%lwt left =
-      Lwt.with_value Lwt.tracing_context (Some "left") (fun () ->
-        Lwt.bind (Lwt_unix.sleep 0.001) (fun () -> Lwt.bind (Lwt.pause ()) (fun () -> fibobo (n - 1))))
-    and right =
-      Lwt.with_value Lwt.tracing_context (Some "right") (fun () ->
-        Lwt.bind (Lwt_unix.sleep 0.002) (fun () -> Lwt.bind (Lwt.pause ()) (fun () -> fibobo (n - 2))))
-    in
-    Lwt.return (left + right)
+    match%lwt
+      let%lwt fd = Lwt_unix.openfile (store ^ "/" ^ (string_of_int n)) [O_RDONLY; O_NONBLOCK] 0o775 in
+      let ic = Lwt_io.of_fd ~mode:Input fd in
+      let%lwt v = Lwt_io.read ic in
+      let%lwt () = Lwt_unix.close fd in
+      Lwt.return (int_of_string v)
+    with
+    | v -> Lwt.return v
+    | exception _ ->
+        let%lwt left =
+          let open Lwt.Syntax in
+          let* () = Lwt_unix.sleep 0.002 in
+          let* () = Lwt.pause () in
+          fibobo (n - 1)
+        and right =
+          let open Lwt.Syntax in
+          let* () = Lwt_unix.sleep 0.0001 in
+          let* () = Lwt.pause () in
+          fibobo (n - 2)
+        in
+        let v = left + right in
+        let%lwt fd = Lwt_unix.openfile (store ^ "/" ^ (string_of_int n)) [O_WRONLY; O_CREAT; O_TRUNC] 0o775 in
+        let oc = Lwt_io.of_fd ~mode:Output fd in
+        let%lwt () = Lwt_io.write oc (string_of_int v) in
+        Lwt.return v
   in
   let%lwt () = Lwt_unix.sleep 0.02 in
-  let%lwt _ = Lwt_list.map_s fibobo (List.init 6 (fun x -> x+2)) in
+  let%lwt _ = Lwt_list.map_s fibobo (List.init 4 (fun x -> 6*x+6)) in
   fst (Lwt.task ()) (* never resolve *)
 ;;
 
-let rec eventually_crash n =
-  if n < 0 then raise Exit else
+let eventually_crash n =
+  for%lwt i = 0 to n do
     let%lwt do_some_work = Lwt_unix.sleep 0.004 in
     ignore do_some_work;
-    eventually_crash (n - 1)
+    Lwt.return ()
+  done;%lwt
+  raise Exit
 ;;
 
 let eventually_crash n =
@@ -48,6 +69,6 @@ let () = Lwt_main.run begin
   Lwt.pick [
     (Lwt.with_value Lwt.tracing_context (Some "pingpong") ping);
     (Lwt.with_value Lwt.tracing_context (Some "fib") fibobo);
-    protek (fun () -> eventually_crash 20)
+    protek (fun () -> eventually_crash 50)
   ]
 end

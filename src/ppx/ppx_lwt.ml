@@ -78,7 +78,8 @@ let gen_binds e_loc l e =
           let loc = e_loc in
           [%expr
             Lwt.backtrace_bind
-              __POS__
+              [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+              [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))]
               (fun exn -> try Lwt.reraise exn with exn -> exn)
               [%e name]
               [%e fun_]
@@ -93,7 +94,8 @@ let lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc =
   let loc = exp.pexp_loc in
     [%expr
       Lwt.backtrace_bind
-        __POS__
+        [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+        [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))]
         (fun exn -> try Lwt.reraise exn with exn -> exn)
         [%e lhs]
         (fun [%p pat] -> [%e rhs])
@@ -146,12 +148,22 @@ let lwt_expression mapper exp attributes ext_loc =
       match exns with
       | [] ->
         let loc = !default_loc in
-        [%expr Lwt.bind [%e e] [%e pexp_function_cases ~loc cases]]
+        [%expr Lwt.backtrace_bind
+            [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+            [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))]
+            (fun exn -> try Lwt.reraise exn with exn -> exn)
+            [%e e]
+            [%e pexp_function_cases ~loc cases]]
       | _  ->
         let loc = !default_loc in
-        [%expr Lwt.try_bind (fun () -> [%e e])
-                                   [%e pexp_function_cases ~loc cases]
-                                   [%e pexp_function_cases ~loc exns]]
+        [%expr
+          Lwt.backtrace_try_bind
+            [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+            [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))]
+            (fun exn -> try Lwt.reraise exn with exn -> exn)
+            (fun () -> [%e e])
+            [%e pexp_function_cases ~loc cases]
+            [%e pexp_function_cases ~loc exns]]
     in
     Some (mapper#expression { new_exp with pexp_attributes })
 
@@ -173,6 +185,7 @@ let lwt_expression mapper exp attributes ext_loc =
   | Pexp_while (cond, body) ->
     let new_exp =
       let loc = !default_loc in
+      (* TODO: trace here? *)
       [%expr
         let rec __ppx_lwt_loop () =
           if [%e cond] then Lwt.bind [%e body] __ppx_lwt_loop
@@ -201,6 +214,7 @@ let lwt_expression mapper exp attributes ext_loc =
     let exp_bound = let loc = bound.pexp_loc in [%expr __ppx_lwt_bound] in
     let pat_bound = let loc = bound.pexp_loc in [%pat? __ppx_lwt_bound] in
 
+    (* TODO: trace here? *)
     let new_exp =
       let loc = !default_loc in
       [%expr
@@ -223,7 +237,8 @@ let lwt_expression mapper exp attributes ext_loc =
       let loc = !default_loc in
         [%expr
           Lwt.backtrace_catch
-            __POS__
+            [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+            [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))]
             (fun exn -> try Lwt.reraise exn with exn -> exn)
             (fun () -> [%e expr])
             [%e pexp_function_cases ~loc cases]
@@ -251,7 +266,12 @@ let lwt_expression mapper exp attributes ext_loc =
     in
     let new_exp =
       let loc = !default_loc in
-      [%expr Lwt.bind [%e cond] [%e pexp_function_cases ~loc cases]]
+      [%expr Lwt.backtrace_bind
+        [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+        [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))]
+        (fun exn -> try Lwt.reraise exn with exn -> exn)
+        [%e cond]
+        [%e pexp_function_cases ~loc cases]]
     in
     Some (mapper#expression { new_exp with pexp_attributes })
 
@@ -309,7 +329,8 @@ class mapper = object (self)
           let loc = !default_loc in
             [%expr
               Lwt.backtrace_finalize
-                __POS__
+                [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+                [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))]
                 (fun exn -> try Lwt.reraise exn with exn -> exn)
                 (fun () -> [%e exp])
                 (fun () -> [%e finally])

@@ -1696,16 +1696,16 @@ sig
 
   (* Backtrace support (internal; for use by the PPX) *)
   val backtrace_bind :
-    string * int * int * int ->
+    string -> int ->
     (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
   val backtrace_catch :
-    string * int * int * int ->
+    string -> int ->
     (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
   val backtrace_finalize :
-    string * int * int * int ->
+    string -> int ->
     (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
   val backtrace_try_bind :
-    string * int * int * int ->
+    string -> int ->
     (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 end =
 struct
@@ -1906,19 +1906,19 @@ struct
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
-  let backtrace_bind (loc_f, loc_l, _, _) add_loc p f =
+  let backtrace_bind loc_f loc_l add_loc p f =
     let trace_context = Sequence_associated_storage.get tracing_context in
     let trace_counter = tracing_counter () in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred trace () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
 
       let callback p_result =
-        Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
+        if trace then Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -1955,7 +1955,7 @@ struct
         ~callback:(fun () -> f v)
         ~if_deferred:(fun () ->
           let (p'', callback) =
-            create_result_promise_and_callback_if_deferred () in
+            create_result_promise_and_callback_if_deferred false () in
           (p'', callback, p.state))
 
     | Rejected exn ->
@@ -1963,7 +1963,7 @@ struct
 
     | Pending p_callbacks ->
       Lwt_rte.emit_trace Begin trace_context trace_counter loc_f loc_l;
-      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
@@ -2090,7 +2090,7 @@ struct
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
-  let backtrace_catch (loc_f, loc_l, _, _) add_loc f h =
+  let backtrace_catch loc_f loc_l add_loc f h =
     let trace_context = Sequence_associated_storage.get tracing_context in
     let trace_counter = tracing_counter () in
     let p =
@@ -2100,13 +2100,13 @@ struct
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred traced () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
 
       let callback p_result =
-        Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
+        if traced then Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
         match p_result with
         | Fulfilled _ as p_result ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2147,12 +2147,12 @@ struct
         ~callback:(fun () -> h (add_loc exn))
         ~if_deferred:(fun () ->
           let (p'', callback) =
-            create_result_promise_and_callback_if_deferred () in
+            create_result_promise_and_callback_if_deferred false () in
           (p'', callback, p.state))
 
     | Pending p_callbacks ->
       Lwt_rte.emit_trace Begin trace_context trace_counter loc_f loc_l;
-      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
@@ -2231,7 +2231,7 @@ struct
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
-  let backtrace_try_bind (loc_f, loc_l, _, _) add_loc f f' h =
+  let backtrace_try_bind loc_f loc_l add_loc f f' h =
     let trace_context = Sequence_associated_storage.get tracing_context in
     let trace_counter = tracing_counter () in
     let p =
@@ -2241,13 +2241,13 @@ struct
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred traced () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
 
       let callback p_result =
-        Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
+        if traced then Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -2294,7 +2294,7 @@ struct
         ~callback:(fun () -> f' v)
         ~if_deferred:(fun () ->
           let (p'', callback) =
-            create_result_promise_and_callback_if_deferred () in
+            create_result_promise_and_callback_if_deferred false () in
           (p'', callback, p.state))
 
     | Rejected exn ->
@@ -2303,12 +2303,12 @@ struct
         ~callback:(fun () -> h (add_loc exn))
         ~if_deferred:(fun () ->
           let (p'', callback) =
-            create_result_promise_and_callback_if_deferred () in
+            create_result_promise_and_callback_if_deferred false () in
           (p'', callback, p.state))
 
     | Pending p_callbacks ->
       Lwt_rte.emit_trace Begin trace_context trace_counter loc_f loc_l;
-      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
@@ -2317,8 +2317,8 @@ struct
       (fun x -> bind (f' ()) (fun () -> return x))
       (fun e -> bind (f' ()) (fun () -> fail e))
 
-  let backtrace_finalize loc add_loc f f' =
-    backtrace_try_bind loc add_loc f
+  let backtrace_finalize loc_f loc_l add_loc f f' =
+    backtrace_try_bind loc_f loc_l add_loc f
       (fun x -> bind (f' ()) (fun () -> return x))
       (fun e -> bind (f' ()) (fun () -> fail (add_loc e)))
 
