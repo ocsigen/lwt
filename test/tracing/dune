@@ -8,4 +8,4 @@
 (executable
   (name tailgate)
   (enabled_if (>= %{ocaml_version} 5.4))
-  (libraries unix runtime_events lwt_runtime_events trace-fuchsia))
+  (libraries unix runtime_events lwt_runtime_events))
