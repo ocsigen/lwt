@@ -1672,8 +1672,6 @@ include Pending_promises
 
 
 let tracing_context = new_key ()
-let tracing_counter = ref 0
-let tracing_counter () = incr tracing_counter; !tracing_counter
 
 module Sequential_composition :
 sig
@@ -1908,7 +1906,6 @@ struct
 
   let backtrace_bind loc_f loc_l add_loc p f =
     let trace_context = Sequence_associated_storage.get tracing_context in
-    let trace_counter = tracing_counter () in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
@@ -1918,7 +1915,7 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        if trace then Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
+        if trace then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -1962,7 +1959,7 @@ struct
       to_public_promise {state = Rejected (add_loc exn)}
 
     | Pending p_callbacks ->
-      Lwt_rte.emit_trace Begin trace_context trace_counter loc_f loc_l;
+      Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
       let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
@@ -2092,7 +2089,6 @@ struct
 
   let backtrace_catch loc_f loc_l add_loc f h =
     let trace_context = Sequence_associated_storage.get tracing_context in
-    let trace_counter = tracing_counter () in
     let p =
       try f ()
       with exn when Exception_filter.run exn -> fail exn
@@ -2106,7 +2102,7 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        if traced then Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
+        if traced then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
         | Fulfilled _ as p_result ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2151,7 +2147,7 @@ struct
           (p'', callback, p.state))
 
     | Pending p_callbacks ->
-      Lwt_rte.emit_trace Begin trace_context trace_counter loc_f loc_l;
+      Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
       let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
@@ -2233,7 +2229,6 @@ struct
 
   let backtrace_try_bind loc_f loc_l add_loc f f' h =
     let trace_context = Sequence_associated_storage.get tracing_context in
-    let trace_counter = tracing_counter () in
     let p =
       try f ()
       with exn when Exception_filter.run exn -> fail exn
@@ -2247,7 +2242,7 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        if traced then Lwt_rte.emit_trace End trace_context trace_counter loc_f loc_l;
+        if traced then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -2307,7 +2302,7 @@ struct
           (p'', callback, p.state))
 
     | Pending p_callbacks ->
-      Lwt_rte.emit_trace Begin trace_context trace_counter loc_f loc_l;
+      Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
       let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''

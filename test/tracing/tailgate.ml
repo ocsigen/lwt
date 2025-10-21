@@ -33,10 +33,11 @@ let simplify_fname fname =
     |> List.rev
     |> String.concat ""
 
-let name_of { Lwt_runtime_events.Trace.context; count; filename; line; kind=_ } =
+let name_of { Lwt_runtime_events.Trace.context; filename; line; kind=_ } =
+  let shortloc = simplify_fname filename ^ ":" ^ string_of_int line in
   match context with
-  | Some c -> c ^ "#" ^ string_of_int count
-  | None -> simplify_fname filename ^ ":" ^ string_of_int line ^ "#" ^ string_of_int count
+  | Some c -> c ^ "@" ^ shortloc
+  | None -> shortloc
 
 let ts_to_us ts = Int64.(div ts (of_int 1000))
 
@@ -50,7 +51,7 @@ let () =
         (fun rid t u x ->
           match Runtime_events.User.tag u with
             | Lwt_runtime_events.Trace.T -> begin
-                let { Lwt_runtime_events.Trace.kind; context=_; count=_; filename; line } = x in
+                let { Lwt_runtime_events.Trace.kind; context=_; filename; line } = x in
                     Printf.fprintf oc
                       "{\"name\": \"%s\", \"cat\": \"PERF\", \"ph\":\"%s\", \"ts\":%Ld, \"pid\": %d, \"tid\": %d, \"args\": {\"location\": \"%s:%d\"}},\n"
 

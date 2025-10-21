@@ -20,7 +20,6 @@ module Trace = struct
   type t =
     { kind: Runtime_events.Type.span;
       context: string option;
-      count: int;
       filename: string;
       line: int; }
 
@@ -38,9 +37,6 @@ module Trace = struct
     let offset = offset + 1 in
     let context = if context_size = 0 then None else Some (Bytes.sub_string b offset context_size) in
     let offset = offset + context_size in
-    (* count *)
-    let count = BytesLabels.get_uint16_be b offset in
-    let offset = offset + 2 in
     (* line *)
     let line = Bytes.get_uint16_be b offset in
     let offset = offset + 2 in
@@ -50,9 +46,9 @@ module Trace = struct
     let filename = Bytes.sub_string b offset filename_size in
     let offset = offset + filename_size in
     assert (offset = i);
-    { kind; context; count; filename; line }
+    { kind; context; filename; line }
 
-  let encode b { kind; context; count; filename; line } =
+  let encode b { kind; context; filename; line } =
     let offset = 0 in
     (* BEGIN|END *)
     Bytes.set b offset (match kind with Begin -> 'B' | End -> 'E');
@@ -67,9 +63,6 @@ module Trace = struct
           Bytes.blit_string context 0 b offset (String.length context);
           offset + String.length context
     in
-    (* count *)
-    Bytes.set_uint16_be b offset count;
-    let offset = offset + 2 in
     (* line *)
     Bytes.set_uint16_be b offset line;
     let offset = offset + 2 in

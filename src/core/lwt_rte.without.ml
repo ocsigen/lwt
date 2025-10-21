@@ -4,4 +4,4 @@ let emit_sch_call_end () = ()
 let emit_sch_lap _v = ()
 let emit_job_count _v = ()
 type span = Begin | End
-let emit_trace _ _ _ _ _ = ()
+let emit_trace _ _ _ _ = ()
