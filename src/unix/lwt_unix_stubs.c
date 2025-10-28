@@ -1152,7 +1152,7 @@ CAMLprim value lwt_unix_check_job(value val_job, value val_notification_id) {
       lwt_unix_mutex_lock(&job->mutex);
       /* We are not waiting anymore. */
       job->fast = 0;
-      /* Set the notification id for asynchronous wakeup. */
+      /* Set the notification id for asynchronous awaken. */
       job->notification_id = Long_val(val_notification_id);
       result = Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
       lwt_unix_mutex_unlock(&job->mutex);
