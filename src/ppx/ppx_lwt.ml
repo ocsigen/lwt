@@ -185,12 +185,21 @@ let lwt_expression mapper exp attributes ext_loc =
   | Pexp_while (cond, body) ->
     let new_exp =
       let loc = !default_loc in
-      (* TODO: trace here? *)
       [%expr
+        let trace_context = Lwt.get Lwt.tracing_context in
         let rec __ppx_lwt_loop () =
           if [%e cond] then Lwt.bind [%e body] __ppx_lwt_loop
-          else Lwt.return_unit
-        in __ppx_lwt_loop ()
+          else begin
+            Lwt_rte.emit_trace End trace_context
+              [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+              [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))];
+            Lwt.return_unit
+          end
+        in
+        Lwt_rte.emit_trace Begin trace_context
+          [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+          [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))];
+        __ppx_lwt_loop ()
       ]
     in
     Some (mapper#expression { new_exp with pexp_attributes })
@@ -214,15 +223,24 @@ let lwt_expression mapper exp attributes ext_loc =
     let exp_bound = let loc = bound.pexp_loc in [%expr __ppx_lwt_bound] in
     let pat_bound = let loc = bound.pexp_loc in [%pat? __ppx_lwt_bound] in
 
-    (* TODO: trace here? *)
     let new_exp =
       let loc = !default_loc in
       [%expr
+        let trace_context = Lwt.get Lwt.tracing_context in
         let [%p pat_bound] : int = [%e bound] in
         let rec __ppx_lwt_loop [%p p] =
-          if [%e comp] [%e p'] [%e exp_bound] then Lwt.return_unit
+          if [%e comp] [%e p'] [%e exp_bound] then begin
+            Lwt_rte.emit_trace End trace_context
+              [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+              [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))];
+            Lwt.return_unit
+          end
           else Lwt.bind [%e body] (fun () -> __ppx_lwt_loop ([%e op] [%e p'] 1))
-        in __ppx_lwt_loop [%e start]
+        in
+        Lwt_rte.emit_trace Begin trace_context
+          [%e pexp_constant ~loc (Pconst_string (loc.loc_start.pos_fname, loc, None))]
+          [%e pexp_constant ~loc (Pconst_integer (string_of_int loc.loc_start.pos_lnum, None))];
+        __ppx_lwt_loop [%e start]
       ]
     in
     Some (mapper#expression { new_exp with pexp_attributes })
