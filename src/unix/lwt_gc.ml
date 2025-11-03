@@ -20,7 +20,7 @@ let ensure_termination t =
         (fun () -> Lwt_main.Exit_hooks.remove hook; Lwt.return_unit))
   end
 
-let finaliser ?domain f =
+let finaliser f =
   (* In order not to create a reference to the value in the
      notification callback, we use an initially unset option cell
      which will be filled when the finaliser is called. *)
@@ -28,7 +28,6 @@ let finaliser ?domain f =
   let id =
     Lwt_unix.make_notification
       ~once:true
-      ?for_other_domain:domain
       (fun () ->
          match !opt with
          | None ->
@@ -42,8 +41,8 @@ let finaliser ?domain f =
      opt := Some x;
      Lwt_unix.send_notification id)
 
-let finalise ?domain f x =
-  Gc.finalise (finaliser ?domain f) x
+let finalise f x =
+  Gc.finalise (finaliser f) x
 
 (* Exit hook for a finalise_or_exit *)
 let foe_exit f called weak () =

@@ -47,6 +47,7 @@ let add_loc exn = try raise exn with exn -> exn
 let suites : Test.suite list = []
 
 
+
 (* Tests for promises created with [Lwt.return], [Lwt.fail], and related
    functions, as well as state query (hard to test one without the other).
    These tests use assertions instead of relying on the correctness of a final
@@ -403,33 +404,33 @@ let suites = suites @ [bind_tests]
 let backtrace_bind_tests = suite "backtrace_bind" [
   test "fulfilled" begin fun () ->
     let p = Lwt.return "foo" in
-    let p = Lwt.backtrace_bind add_loc p (fun s -> Lwt.return @@ s ^ "bar") in
+    let p = Lwt.backtrace_bind __FILE__ __LINE__ add_loc p (fun s -> Lwt.return @@ s ^ "bar") in
     state_is (Lwt.Return "foobar") p
   end;
 
   test "rejected" begin fun () ->
     let p = Lwt.fail Exception in
-    let p = Lwt.backtrace_bind add_loc p (fun _ -> Lwt.return "foo") in
+    let p = Lwt.backtrace_bind __FILE__ __LINE__ add_loc p (fun _ -> Lwt.return "foo") in
     state_is (Lwt.Fail Exception) p
   end;
 
   test "pending, fulfilled" begin fun () ->
     let p, r = Lwt.wait () in
-    let p = Lwt.backtrace_bind add_loc p (fun s -> Lwt.return (s ^ "bar")) in
+    let p = Lwt.backtrace_bind __FILE__ __LINE__ add_loc p (fun s -> Lwt.return (s ^ "bar")) in
     Lwt.wakeup r "foo";
     state_is (Lwt.Return "foobar") p
   end;
 
   test "pending, fulfilled, f raises" begin fun () ->
     let p, r = Lwt.wait () in
-    let p = Lwt.backtrace_bind add_loc p (fun () -> raise Exception) in
+    let p = Lwt.backtrace_bind __FILE__ __LINE__ add_loc p (fun () -> raise Exception) in
     Lwt.wakeup r ();
     state_is (Lwt.Fail Exception) p
   end;
 
   test "pending, rejected" begin fun () ->
     let p, r = Lwt.wait () in
-    let p = Lwt.backtrace_bind add_loc p (fun _ -> Lwt.return "foo") in
+    let p = Lwt.backtrace_bind __FILE__ __LINE__ add_loc p (fun _ -> Lwt.return "foo") in
     Lwt.wakeup_exn r Exception;
     state_is (Lwt.Fail Exception) p
   end;
@@ -439,7 +440,7 @@ let backtrace_bind_tests = suite "backtrace_bind" [
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p3 =
-      Lwt.backtrace_bind add_loc
+      Lwt.backtrace_bind __FILE__ __LINE__ add_loc
         p1
         (fun () ->
           Lwt.wakeup r2 ();
@@ -683,7 +684,7 @@ let suites = suites @ [catch_tests]
 let backtrace_catch_tests = suite "backtrace_catch" [
   test "fulfilled" begin fun () ->
     let p =
-      Lwt.backtrace_catch add_loc
+      Lwt.backtrace_catch __FILE__ __LINE__ add_loc
         (fun () -> Lwt.return "foo")
         (fun _ -> Lwt.return "bar")
     in
@@ -692,7 +693,7 @@ let backtrace_catch_tests = suite "backtrace_catch" [
 
   test "f raises" begin fun () ->
     let p =
-      Lwt.backtrace_catch add_loc
+      Lwt.backtrace_catch __FILE__ __LINE__ add_loc
         (fun () -> raise Exception)
         (fun exn -> Lwt.return exn)
     in
@@ -701,7 +702,7 @@ let backtrace_catch_tests = suite "backtrace_catch" [
 
   test "rejected" begin fun () ->
     let p =
-      Lwt.backtrace_catch add_loc
+      Lwt.backtrace_catch __FILE__ __LINE__ add_loc
         (fun () -> raise Exception)
         (fun exn -> Lwt.return exn)
     in
@@ -711,7 +712,7 @@ let backtrace_catch_tests = suite "backtrace_catch" [
   test "pending" begin fun () ->
     let h_ran = ref false in
     let p =
-      Lwt.backtrace_catch add_loc
+      Lwt.backtrace_catch __FILE__ __LINE__ add_loc
         (fun () -> fst (Lwt.wait ()))
         (fun _ -> h_ran := true; Lwt.return_unit)
     in
@@ -721,7 +722,7 @@ let backtrace_catch_tests = suite "backtrace_catch" [
   test "pending, fulfilled" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_catch add_loc
+      Lwt.backtrace_catch __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun _ -> Lwt.return "bar")
     in
@@ -732,7 +733,7 @@ let backtrace_catch_tests = suite "backtrace_catch" [
   test "pending, rejected" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_catch add_loc
+      Lwt.backtrace_catch __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun exn -> Lwt.return exn)
     in
@@ -743,7 +744,7 @@ let backtrace_catch_tests = suite "backtrace_catch" [
   test "pending, rejected, h raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_catch add_loc
+      Lwt.backtrace_catch __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun _ -> raise Exception)
     in
@@ -756,7 +757,7 @@ let backtrace_catch_tests = suite "backtrace_catch" [
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p3 =
-      Lwt.backtrace_catch add_loc
+      Lwt.backtrace_catch __FILE__ __LINE__ add_loc
         (fun () -> p1)
         (fun _exn ->
           Lwt.wakeup r2 ();
@@ -956,7 +957,7 @@ let suites = suites @ [try_bind_tests]
 let backtrace_try_bind_tests = suite "backtrace_try_bind" [
   test "fulfilled" begin fun () ->
     let p =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> Lwt.return "foo")
         (fun s -> Lwt.return (s ^ "bar"))
         (fun _ -> Lwt.return "!!1")
@@ -966,7 +967,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
 
   test "rejected" begin fun () ->
     let p =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> raise Exception)
         (fun _ -> Lwt.return Exit)
         (fun exn -> Lwt.return exn)
@@ -976,7 +977,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
 
   test "f raises" begin fun () ->
     let p =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> raise Exception)
         (fun _ -> Lwt.return Exit)
         (fun exn -> Lwt.return exn)
@@ -988,7 +989,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun _ -> f_ran := true; Lwt.return_unit)
         (fun _ -> f_ran := true; Lwt.return_unit)
@@ -999,7 +1000,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
   test "pending, fulfilled" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun s -> Lwt.return (s ^ "bar"))
         (fun _ -> Lwt.return "!!1")
@@ -1011,7 +1012,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
   test "pending, fulfilled, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun _ -> raise Exception)
         (fun _ -> Lwt.return_unit)
@@ -1023,7 +1024,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
   test "pending, rejected" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun _ -> Lwt.return Exit)
         (fun exn -> Lwt.return exn)
@@ -1035,7 +1036,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
   test "pending, rejected, h raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun _ -> Lwt.return_unit)
         (fun _ -> raise Exception)
@@ -1049,7 +1050,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p3 =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> p1)
         (fun () ->
           Lwt.wakeup r2 ();
@@ -1067,7 +1068,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p3 =
-      Lwt.backtrace_try_bind add_loc
+      Lwt.backtrace_try_bind __FILE__ __LINE__ add_loc
         (fun () -> p1)
         (fun () ->
           Lwt.return_false)
@@ -1321,7 +1322,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   test "fulfilled" begin fun () ->
     let f'_ran = ref false in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> Lwt.return "foo")
         (fun () -> f'_ran := true; Lwt.return_unit)
     in
@@ -1331,7 +1332,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
 
   test "fulfilled, f' rejected" begin fun () ->
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> Lwt.return_unit)
         (fun () -> Lwt.fail Exception)
     in
@@ -1341,7 +1342,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   (* Instance of the bind quirk. *)
   test "fulfilled, f' raises" begin fun () ->
     try
-      ignore @@ Lwt.backtrace_finalize add_loc
+      ignore @@ Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> Lwt.return_unit)
         (fun () -> raise Exception);
       Lwt.return_false
@@ -1352,7 +1353,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   test "rejected" begin fun () ->
     let f'_ran = ref false in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> raise Exception)
         (fun () -> f'_ran := true; Lwt.return_unit)
     in
@@ -1362,7 +1363,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
 
   test "rejected, f' rejected" begin fun () ->
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> Lwt.fail Exit)
         (fun () -> Lwt.fail Exception)
     in
@@ -1372,7 +1373,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   (* Instance of the bind quirk. *)
   test "rejected, f' raises" begin fun () ->
     try
-      ignore @@ Lwt.backtrace_finalize add_loc
+      ignore @@ Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> raise Exit)
         (fun () -> raise Exception);
       Lwt.return_false
@@ -1384,7 +1385,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     let f'_ran = ref false in
     let p, _ = Lwt.wait () in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun () -> f'_ran := true; Lwt.return_unit)
     in
@@ -1396,7 +1397,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     let f'_ran = ref false in
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun () -> f'_ran := true; Lwt.return_unit)
     in
@@ -1408,7 +1409,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   test "pending, fulfilled, f' rejected" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun () -> raise Exception)
     in
@@ -1419,7 +1420,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   test "pending, fulfilled, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun () -> raise Exception)
     in
@@ -1431,7 +1432,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     let f'_ran = ref false in
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun () -> f'_ran := true; Lwt.return_unit)
     in
@@ -1443,7 +1444,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   test "pending, rejected, f' rejected" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun () -> raise Exception)
     in
@@ -1454,7 +1455,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   test "pending, rejected, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p)
         (fun () -> raise Exception)
     in
@@ -1467,7 +1468,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p3 =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p1)
         (fun () ->
           Lwt.wakeup r2 ();
@@ -1483,7 +1484,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p3 =
-      Lwt.backtrace_finalize add_loc
+      Lwt.backtrace_finalize __FILE__ __LINE__ add_loc
         (fun () -> p1)
         (fun () ->
           Lwt.wakeup r2 ();
@@ -2122,7 +2123,6 @@ let both_tests = suite "both" [
     let p = Lwt.both (Lwt.fail Exception) (fst (Lwt.wait ())) in
     state_is Lwt.Sleep p
   end;
-
 
   test "pending, fulfilled, then fulfilled" begin fun () ->
     let p1, r1 = Lwt.wait () in
@@ -4205,7 +4205,7 @@ let lwt_sequence_tests = suite "add_task_l and add_task_r" [
 let suites = suites @ [lwt_sequence_tests]
 
 
-(*
+
 let pause_tests = suite "pause" [
   test "initial state" begin fun () ->
     Lwt.return (Lwt.paused_count () = 0)
@@ -4290,7 +4290,6 @@ let pause_tests = suite "pause" [
   end;
 ]
 let suites = suites @ [pause_tests]
-*)
 
 
 

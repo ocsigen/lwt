@@ -2,7 +2,6 @@
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
 
-
 (** Cooperative system calls *)
 
 (** This modules maps system calls, like those of the standard
@@ -1437,18 +1436,13 @@ val wait_for_jobs : unit -> unit Lwt.t
 
 type notification
 
-val make_notification : ?once : bool -> ?for_other_domain:Domain.id -> (unit -> unit) -> notification
-  (** [make_notification ?once ?for_other_domain f] registers a new notifier. It
-      returns the id of the notifier. Each time a notification with this id is
+val make_notification : ?once : bool -> (unit -> unit) -> notification
+  (** [make_notification ?once f] registers a new notifier. It returns the
+      id of the notifier. Each time a notification with this id is
       received, [f] is called.
 
       if [once] is specified, then the notification is stopped after
-      the first time it is received. It defaults to [false]
-
-      if [for_other_domain] is specified, then the notification will trigger the
-      Lwt main loop on the given domain. An unspecified error may occur if the
-      specified domain is not running an Lwt main loop. If unspecified,
-      [Domain.self ()] is used. *)
+      the first time it is received. It defaults to [false]. *)
 
 val send_notification : notification -> unit
   (** [send_notification id] sends a notification.
@@ -1468,9 +1462,6 @@ val set_notification : notification -> (unit -> unit) -> unit
   (** [set_notification id f] replace the function associated to the
       notification by [f]. It raises [Not_found] if the given
       notification is not found. *)
-
-val init_domain : unit -> unit
-  (** call when Domain.spawn! and call on domain0 too, don't call twice for the same domain *)
 
 (** {2 System threads pool} *)
 
@@ -1570,3 +1561,6 @@ val write_bigarray :
   string -> file_descr -> IO_vectors._bigarray -> int -> int -> int Lwt.t
   [@@ocaml.deprecated " This is an internal function."]
   (** @deprecated This is for internal use only. *)
+
+val write_job_count_runtimte_event : unit -> unit
+val sigchld_handler_installer : unit Lazy.t

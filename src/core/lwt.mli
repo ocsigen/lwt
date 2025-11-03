@@ -2050,12 +2050,16 @@ val poll : 'a t -> 'a option
 val apply : ('a -> 'b t) -> 'a -> 'b t
 
 val backtrace_bind :
+  string -> int ->
   (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
 val backtrace_catch :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 val backtrace_finalize :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
 val backtrace_try_bind :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
 val abandon_wakeups : unit -> unit
@@ -2069,12 +2073,8 @@ module Private : sig
     val get_from_storage : 'a key -> storage -> 'a option
     val modify_storage : 'a key -> 'a option -> storage -> storage
     val empty_storage : storage
-    val current_storage : storage Domain.DLS.key
-  end
-
-  module Multidomain_sync : sig
-    val get_sent_callbacks : Domain.id -> (unit -> unit) Lwt_sequence.t[@ocaml.warning "-3"]
-    val register_notification : Domain.id -> (unit -> unit) -> unit
-    val is_alredy_registered : Domain.id -> bool
+    val current_storage : storage ref
   end
 end [@@alert trespassing "for internal use only, keep away"]
+
+val tracing_context : string key
