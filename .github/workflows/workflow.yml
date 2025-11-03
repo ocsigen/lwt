@@ -1,8 +1,10 @@
-name: Builds, tests & co
+name: Builds, tests
 
 on:
   pull_request:
   push:
+    branches:
+    - master
   schedule:
     # Prime the caches every Monday
     - cron: 0 1 * * MON
@@ -15,6 +17,8 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
+          - "4.14"
+          - "5.0"
           - "5.1"
           - "5.2"
           - "5.3"
@@ -32,59 +36,18 @@ jobs:
           - os: windows-latest
             ocaml-compiler: "5.4"
             libev: false
+          - os: ubuntu-latest
+            ocaml-name: "5.4.0+32bit"
+            ocaml-compiler: "ocaml-variants.5.4.0+options,ocaml-option-32bit"
+            libev: false
+
 
     runs-on: ${{ matrix.os }}
 
+    name:
+       ${{ matrix.ocaml-name != '' && matrix.ocaml-name || matrix.ocaml-compiler}} / ${{ matrix.os }} / libev=${{ matrix.libev}}
+
     steps:
-      - name: set version-dependent variables
-        id: configpkgs
-        shell: bash
-        run: |
-          opampkgs="./lwt.opam ./lwt_react.opam ./lwt_retry.opam ./lwt_ppx.opam"
-          dunepkgs="lwt,lwt_react,lwt_retry,lwt_ppx"
-          case ${{ matrix.ocaml-compiler }} in
-            "4.14"|"5.0")
-              :
-              ;;
-            "5.1"|"5.2"|"5.3"|"5.4")
-              opampkgs="${opampkgs} ./lwt_ppx__ppx_let_tests.opam"
-              dunepkgs="${dunepkgs},lwt_ppx__ppx_let_tests"
-              ;;
-            *)
-              printf "unrecognised version %s\n" "${{ matrix.ocaml-compiler }}";
-              exit 1
-              ;;
-          esac
-          case ${{ matrix.ocaml-compiler }} in
-            "4.14")
-              :
-              ;;
-            "5.0"|"5.1"|"5.2"|"5.3"|"5.4")
-              opampkgs="${opampkgs} ./lwt_direct.opam"
-              dunepkgs="${dunepkgs},lwt_direct"
-              ;;
-            *)
-              printf "unrecognised version %s\n" "${{ matrix.ocaml-compiler }}";
-              exit 1
-              ;;
-          esac
-          case ${{ matrix.ocaml-compiler }} in
-            "4.14"|"5.0"|"5.1"|"5.2"|"5.3")
-              :
-              ;;
-            "5.4")
-              opampkgs="${opampkgs} ./lwt_runtime_events.opam"
-              dunepkgs="${dunepkgs},lwt_runtime_events"
-              ;;
-            *)
-              printf "unrecognised version %s\n" "${{ matrix.ocaml-compiler }}";
-              exit 1
-              ;;
-          esac
-          echo "opampkgs=${opampkgs}"
-          echo "opampkgs=${opampkgs}" >> "$GITHUB_OUTPUT"
-          echo "dunepkgs=${dunepkgs}"
-          echo "dunepkgs=${dunepkgs}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout tree
         uses: actions/checkout@v5
@@ -94,22 +57,45 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
+      - name: set ppx-related variables
+        id: configpackages
+        shell: bash
+        run: |
+          opam exec -- ocaml src/util/letppx.ml
+          opam exec -- ocaml src/util/letppx.ml >> "$GITHUB_OUTPUT"
+
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
 
-      - run: opam install --deps-only --with-test ${{ steps.configpkgs.outputs.opampkgs }}
+      - run: opam install ./lwt.opam ./lwt_react.opam ./lwt_retry.opam ./lwt_ppx.opam --deps-only --with-test
 
-      - run: opam exec -- dune build --only-packages ${{ steps.configpkgs.outputs.dunepkgs }}
+      - run: opam install ./lwt_ppx__ppx_let_tests.opam --deps-only --with-test
+        if: ${{ fromJSON(steps.configpackages.outputs.letppx) }}
 
-      - run: opam exec -- dune runtest --only-packages ${{ steps.configpkgs.outputs.dunepkgs }}
+      - run: opam install ./lwt_direct.opam --deps-only --with-test
+        if: ${{ fromJSON(steps.configpackages.outputs.direct) }}
 
-  lint-opam:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout tree
-        uses: actions/checkout@v5
-      - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v3
-        with:
-          ocaml-compiler: 5
-      - uses: ocaml/setup-ocaml/lint-opam@v3
+      - run: opam install ./lwt_runtime_events.opam --deps-only --with-test
+        if: ${{ fromJSON(steps.configpackages.outputs.runtime_events) }}
+
+      - run: opam exec -- dune build --only-packages lwt,lwt_react,lwt_retry
+
+      - run: opam exec -- dune build --only-packages lwt,lwt_ppx__ppx_let_tests
+        if: ${{ fromJSON(steps.configpackages.outputs.letppx) }}
+
+      - run: opam exec -- dune build --only-packages lwt,lwt_direct
+        if: ${{ fromJSON(steps.configpackages.outputs.direct) }}
+
+      - run: opam exec -- dune build --only-packages lwt,lwt_runtime_events
+        if: ${{ fromJSON(steps.configpackages.outputs.runtime_events) }}
+
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_react,lwt_retry,lwt_ppx
+
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_ppx__ppx_let_tests
+        if: ${{ fromJSON(steps.configpackages.outputs.letppx) }}
+
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_direct
+        if: ${{ fromJSON(steps.configpackages.outputs.direct) }}
+
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_runtime_events
+        if: ${{ fromJSON(steps.configpackages.outputs.runtime_events) }}

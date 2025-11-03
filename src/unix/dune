@@ -189,6 +189,7 @@
    windows_somaxconn
    unix_accept4)
   (flags
+   (:standard)
    (:include unix_c_flags.sexp)))
  (c_library_flags
   (:include unix_c_library_flags.sexp)))
