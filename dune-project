@@ -26,7 +26,7 @@
 
 (package
  (name lwt_ppx)
- (version 5.9.2+dev)
+ (version 6.0.0-beta01)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
   (ocaml (>= 4.08))
@@ -54,7 +54,7 @@
 
 (package
  (name lwt_direct)
- (version 6.0.0~beta00)
+ (version 6.0.0-beta01)
  (synopsis "Direct-style control-flow and `await` for Lwt")
  (authors "Simon Cruanes")
  (depends
@@ -64,7 +64,7 @@
 
 (package
  (name lwt_runtime_events)
- (version 6.0.0~beta00)
+ (version 6.0.0-beta01)
  (synopsis "Emit runtime events to trace the execution of Lwt programs")
  (authors "Raphaël Proust")
  (depends
@@ -73,7 +73,7 @@
 
 (package
  (name lwt)
- (version 6.0.0~beta00)
+ (version 6.0.0-beta01)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
 
