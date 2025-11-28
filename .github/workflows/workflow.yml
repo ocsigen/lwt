@@ -17,33 +17,28 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - "4.08"
-          - "4.09"
-          - "4.10"
-          - "4.11"
-          - "4.12"
-          - "4.13"
           - "4.14"
           - "5.0"
           - "5.1"
           - "5.2"
           - "5.3"
+          - "5.4"
         libev:
           - true
           - false
         include:
           - os: ubuntu-24.04-arm
-            ocaml-compiler: "5.3"
+            ocaml-compiler: "5.4"
             libev: false
           - os: macos-latest
-            ocaml-compiler: "5.3"
+            ocaml-compiler: "5.4"
             libev: false
           - os: windows-latest
-            ocaml-compiler: "5.3"
+            ocaml-compiler: "5.4"
             libev: false
           - os: ubuntu-latest
-            ocaml-name: "5.3.0+32bit"
-            ocaml-compiler: "ocaml-variants.5.3.0+options,ocaml-option-32bit"
+            ocaml-name: "5.4.0+32bit"
+            ocaml-compiler: "ocaml-variants.5.4.0+options,ocaml-option-32bit"
             libev: false
 
 
@@ -63,7 +58,7 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: set ppx-related variables
-        id: configppx
+        id: configpackages
         shell: bash
         run: |
           opam exec -- ocaml src/util/letppx.ml
@@ -75,14 +70,32 @@ jobs:
       - run: opam install ./lwt.opam ./lwt_react.opam ./lwt_retry.opam ./lwt_ppx.opam --deps-only --with-test
 
       - run: opam install ./lwt_ppx__ppx_let_tests.opam --deps-only --with-test
-        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
+        if: ${{ fromJSON(steps.configpackages.outputs.letppx) }}
+
+      - run: opam install ./lwt_direct.opam --deps-only --with-test
+        if: ${{ fromJSON(steps.configpackages.outputs.direct) }}
+
+      - run: opam install ./lwt_runtime_events.opam --deps-only --with-test
+        if: ${{ fromJSON(steps.configpackages.outputs.runtime_events) }}
 
       - run: opam exec -- dune build --only-packages lwt,lwt_react,lwt_retry
 
       - run: opam exec -- dune build --only-packages lwt,lwt_ppx__ppx_let_tests
-        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
+        if: ${{ fromJSON(steps.configpackages.outputs.letppx) }}
+
+      - run: opam exec -- dune build --only-packages lwt,lwt_direct
+        if: ${{ fromJSON(steps.configpackages.outputs.direct) }}
+
+      - run: opam exec -- dune build --only-packages lwt,lwt_runtime_events
+        if: ${{ fromJSON(steps.configpackages.outputs.runtime_events) }}
 
       - run: opam exec -- dune runtest --only-packages lwt,lwt_react,lwt_retry,lwt_ppx
 
       - run: opam exec -- dune runtest --only-packages lwt,lwt_ppx__ppx_let_tests
-        if: ${{ fromJSON(steps.configppx.outputs.letppx) }}
+        if: ${{ fromJSON(steps.configpackages.outputs.letppx) }}
+
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_direct
+        if: ${{ fromJSON(steps.configpackages.outputs.direct) }}
+
+      - run: opam exec -- dune runtest --only-packages lwt,lwt_runtime_events
+        if: ${{ fromJSON(steps.configpackages.outputs.runtime_events) }}

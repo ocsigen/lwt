@@ -1,4 +1,14 @@
-===== 5.10.0 =====
+===== 6.0.0+dev =====
+
+====== Additions ======
+
+  * Lwt_direct using Lwt in direct-style. (Simon Cruanes, #1060)
+
+  * Support multiple scheduler running in parallel in separate domains.
+
+  * Exception filter defaults to letting systems exceptions through.
+
+===== 5.10.0+dev =====
 
 ====== Misc
 

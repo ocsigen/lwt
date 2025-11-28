@@ -26,12 +26,12 @@
 
 (package
  (name lwt_ppx)
- (version 5.9.2+dev)
+ (version 6.0.0-beta01)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
-  (lwt (>= 5.7))))
+  (lwt (>= 6))))
 
 (package
  (name lwt_ppx__ppx_let_tests)
@@ -53,8 +53,27 @@
   (react (>= 1.0))))
 
 (package
+ (name lwt_direct)
+ (version 6.0.0-beta01)
+ (synopsis "Direct-style control-flow and `await` for Lwt")
+ (authors "Simon Cruanes")
+ (depends
+  (ocaml (>= 5.0))
+  base-unix
+  (lwt (>= 6))))
+
+(package
+ (name lwt_runtime_events)
+ (version 6.0.0-beta01)
+ (synopsis "Emit runtime events to trace the execution of Lwt programs")
+ (authors "Raphaël Proust")
+ (depends
+  (ocaml (>= 5.1))
+  ))
+
+(package
  (name lwt)
- (version 5.9.2+dev)
+ (version 6.0.0-beta01)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
 
@@ -66,10 +85,10 @@ a single thread by default. This reduces the need for locks or other
 synchronization primitives. Code can be run in parallel on an opt-in basis.
 ")
  (depends
-  (ocaml (>= 4.08))
+  (ocaml (>= 4.14))
   (cppo (and :build (>= 1.1)))
   (ocamlfind (and :dev (>= 1.7.3-1)))
   (odoc (and :with-doc (>= 2.3)))
   dune-configurator
   ocplib-endian)
- (depopts base-threads base-unix conf-libev))
+ (depopts base-threads base-unix conf-libev lwt_runtime_events))

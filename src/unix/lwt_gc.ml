@@ -12,14 +12,12 @@ module Lwt_sequence = Lwt_sequence
 
 let ensure_termination t =
   if Lwt.state t = Lwt.Sleep then begin
-    let hook =
-      Lwt_sequence.add_l (fun _ -> t) Lwt_main.exit_hooks [@ocaml.warning "-3"]
-    in
+    let hook = Lwt_main.Exit_hooks.add_first (fun _ -> t) in
     (* Remove the hook when t has terminated *)
     ignore (
       Lwt.finalize
         (fun () -> t)
-        (fun () -> Lwt_sequence.remove hook; Lwt.return_unit))
+        (fun () -> Lwt_main.Exit_hooks.remove hook; Lwt.return_unit))
   end
 
 let finaliser f =
@@ -68,7 +66,7 @@ let foe_finaliser f called hook =
   finaliser
     (fun x ->
        (* Remove the exit hook, it is not needed anymore. *)
-       Lwt_sequence.remove hook;
+       Lwt_main.Exit_hooks.remove hook;
        (* Call the real finaliser. *)
        if !called then
          Lwt.return_unit
@@ -83,8 +81,5 @@ let finalise_or_exit f x =
   let weak = Weak.create 1 in
   Weak.set weak 0 (Some x);
   let called = ref false in
-  let hook =
-    Lwt_sequence.add_l (foe_exit f called weak) Lwt_main.exit_hooks
-      [@ocaml.warning "-3"]
-  in
+  let hook = Lwt_main.Exit_hooks.add_first (foe_exit f called weak) in
   Gc.finalise (foe_finaliser f called hook) x

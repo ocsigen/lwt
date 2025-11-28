@@ -10,6 +10,8 @@ open Lwt
 let%lwt structure_let_result = Lwt.return_true
 [@@@ocaml.warning "+22"]
 
+let __trace_ctxt = "test" (* TODO: figure out how to make this implicit *)
+
 let suite = suite "ppx" [
   test "let"
     (fun () ->

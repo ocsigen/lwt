@@ -26,31 +26,37 @@
  (deps bytes_io_data %{exe:dummy.exe}))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_1)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_1))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_2)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_2))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_3)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_3))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_4)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_4))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_5)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_5))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_6)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_6))

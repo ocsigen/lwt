@@ -22,6 +22,9 @@ let abandon_yielded_and_paused () =
 
 let run p =
   let rec run_loop () =
+    Lwt_rte.emit_sch_lap ();
+    Lwt_unix.write_job_count_runtimte_event ();
+    Lwt_rte.emit_paused_count (Lwt.paused_count ()) ;
     match Lwt.poll p with
     | Some x ->
       x
@@ -43,7 +46,10 @@ let run p =
       run_loop ()
   in
 
-  run_loop ()
+  Lwt_rte.emit_sch_call_begin ();
+  Fun.protect
+    ~finally:(fun () -> Lwt_rte.emit_sch_call_end ())
+    (fun () -> run_loop ())
 
 let run_already_called = ref `No
 let run_already_called_mutex = Mutex.create ()
@@ -100,6 +106,8 @@ let run p =
   | Some message -> failwith message
   | None -> ()
   end;
+
+  Lazy.force Lwt_unix.sigchld_handler_installer;
 
   match run p with
   | result ->
