@@ -2077,4 +2077,6 @@ module Private : sig
   end
 end [@@alert trespassing "for internal use only, keep away"]
 
+(** [Lwt.with_key tracing_context (Some name) (fun () -> <e>)] causes the span
+    events emitted inside of <e> to bear the name [name]. *)
 val tracing_context : string key
