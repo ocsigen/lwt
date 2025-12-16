@@ -1669,9 +1669,8 @@ struct
 end
 include Pending_promises
 
-
-
 let tracing_context = new_key ()
+let with_tracing_context name f = with_value tracing_context (Some name) f
 
 module Sequential_composition :
 sig
@@ -3255,4 +3254,5 @@ end
 module Private = struct
   type nonrec storage = storage
   module Sequence_associated_storage = Sequence_associated_storage
+  let tracing_context = tracing_context
 end

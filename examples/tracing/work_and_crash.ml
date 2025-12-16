@@ -43,7 +43,7 @@ let fibobo () =
         Lwt.return v
   in
   let%lwt () = Lwt_unix.sleep 0.02 in
-  let%lwt _ = Lwt_list.map_s fibobo (List.init 4 (fun x -> 6*x+6)) in
+  let%lwt _ = Lwt_list.map_s fibobo (List.init 12 (fun x -> 6*x+6)) in
   fst (Lwt.task ()) (* never resolve *)
 ;;
 
@@ -57,18 +57,18 @@ let eventually_crash n =
 ;;
 
 let eventually_crash n =
-  Lwt.with_value Lwt.tracing_context (Some "crrrrash") (fun () -> eventually_crash n)
+  Lwt.with_tracing_context "crrrrash" (fun () -> eventually_crash n)
 
 let protek f =
   try%lwt
-    Lwt.with_value Lwt.tracing_context (Some "protekted") f
+    Lwt.with_tracing_context "protekted" f
   with Exit -> exit 1
 
 let () = Lwt_main.run begin
   let%lwt () = Lwt.pause () in
   Lwt.pick [
-    (Lwt.with_value Lwt.tracing_context (Some "pingpong") ping);
-    (Lwt.with_value Lwt.tracing_context (Some "fib") fibobo);
+    (Lwt.with_tracing_context "pingpong" ping);
+    (Lwt.with_tracing_context "fib" fibobo);
     protek (fun () -> eventually_crash 50)
   ]
 end

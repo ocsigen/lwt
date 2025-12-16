@@ -2043,6 +2043,9 @@ module Exception_filter: sig
 
 end
 
+(** [with_tracing_context name (fun () -> <e>)] causes the span events emitted
+    inside of <e> to bear the name [name]. *)
+val with_tracing_context : string -> (unit -> 'a t) -> 'a t
 
 (**/**)
 
@@ -2075,8 +2078,7 @@ module Private : sig
     val empty_storage : storage
     val current_storage : storage ref
   end
+
+  val tracing_context : string key
 end [@@alert trespassing "for internal use only, keep away"]
 
-(** [Lwt.with_key tracing_context (Some name) (fun () -> <e>)] causes the span
-    events emitted inside of <e> to bear the name [name]. *)
-val tracing_context : string key

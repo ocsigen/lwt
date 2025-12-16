@@ -186,7 +186,7 @@ let lwt_expression mapper exp attributes ext_loc =
     let new_exp =
       let loc = !default_loc in
       [%expr
-        let trace_context = Lwt.get Lwt.tracing_context in
+        let trace_context = Lwt.get (Lwt.Private.tracing_context)[@alert "-trespassing"] in
         let rec __ppx_lwt_loop () =
           if [%e cond] then Lwt.bind [%e body] __ppx_lwt_loop
           else begin
@@ -226,7 +226,7 @@ let lwt_expression mapper exp attributes ext_loc =
     let new_exp =
       let loc = !default_loc in
       [%expr
-        let trace_context = Lwt.get Lwt.tracing_context in
+        let trace_context = Lwt.get (Lwt.Private.tracing_context)[@alert "-trespassing"] in
         let [%p pat_bound] : int = [%e bound] in
         let rec __ppx_lwt_loop [%p p] =
           if [%e comp] [%e p'] [%e exp_bound] then begin
