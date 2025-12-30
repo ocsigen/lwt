@@ -19,4 +19,11 @@ let () = Jbuild_plugin.V1.send @@ {|
  (preprocess (pps ppxlib.metaquot|} ^ bisect_ppx ^ {|))
  (flags (:standard -w +A-4)))
 
+(executable
+ (name ppx_lwt_standalone)
+ (modules ppx_lwt_standalone)
+ (libraries
+  lwt_ppx
+  ppxlib))
+
 |}
