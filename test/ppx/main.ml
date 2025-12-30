@@ -162,6 +162,13 @@ let suite = suite "ppx" [
     (fun () ->
        Lwt.return structure_let_result
     ) ;
+
+  (* as reported in https://github.com/ocsigen/lwt/issues/1085 *)
+  test "1085"
+    (fun () ->
+      let%lwt (_ : int) = Lwt.return 0 in
+      Lwt.return_true
+    ) ;
 ]
 
 let _ = Test.run "ppx" [ suite ]

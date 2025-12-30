@@ -2,9 +2,15 @@
  (public_name lwt_ppx)
  (synopsis "Lwt PPX syntax extension")
  (libraries ppxlib)
+ (modules ppx_lwt)
  (ppx_runtime_libraries lwt)
  (kind ppx_rewriter)
  (preprocess
-  (pps ppxlib.metaquot))
- (instrumentation
-  (backend bisect_ppx)))
+  (pps ppxlib.metaquot)))
+
+(executable
+ (name ppx_lwt_standalone)
+ (modules ppx_lwt_standalone)
+ (libraries
+  lwt_ppx
+  ppxlib))
