@@ -2,9 +2,27 @@
 
 ====== Additions ======
 
-  * Lwt_direct using Lwt in direct-style. (Simon Cruanes, #1060)
+  * Lwt_direct: a package/library for using Lwt in direct-style. (Simon Cruanes, #1060)
 
-  * Support multiple scheduler running in parallel in separate domains.
+  * Lwt_runtime_events: a package/library for emmitting runtime-events.
+
+====== Removals ======
+
+  * Lwt_main.enter_iter_hooks, leave_iter_hooks, and exit_hooks are removed, use Lwt_main.*_hooks instead.
+
+  * Lwt_unix.run is removed, use Lwt_main.run instead
+
+  * Async method "switch" is removed, it has been a synonym for "detach" for a while, use detach instead
+
+  * Lwt_unix.execute_job is removed, use run_job instead
+
+====== Breaking changes ======
+
+  * Lwt_unix notifications are now given an abstract type (Lwt_unix.notification) instead of int
+
+  * Lwt requires OCaml 4.14 or higher, Lwt_direct requires OCaml 5.0, Lwt_runtime_events requires OCaml 5.1
+
+  * Lwt_ppx emits location information (to support runtime events), incompatible with previous versions of Lwt
 
   * Exception filter defaults to letting systems exceptions through.
 
