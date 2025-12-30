@@ -1,0 +1,5 @@
+(library
+ (public_name lwt_runtime_events)
+ (synopsis "Emit runtime events to trace the execution of Lwt programs")
+ (wrapped false)
+ (libraries runtime_events))

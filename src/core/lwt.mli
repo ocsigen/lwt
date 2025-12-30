@@ -2043,6 +2043,9 @@ module Exception_filter: sig
 
 end
 
+(** [with_tracing_context name (fun () -> <e>)] causes the span events emitted
+    inside of <e> to bear the name [name]. *)
+val with_tracing_context : string -> (unit -> 'a t) -> 'a t
 
 (**/**)
 
@@ -2050,14 +2053,32 @@ val poll : 'a t -> 'a option
 val apply : ('a -> 'b t) -> 'a -> 'b t
 
 val backtrace_bind :
+  string -> int ->
   (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
 val backtrace_catch :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 val backtrace_finalize :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
 val backtrace_try_bind :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
 val abandon_wakeups : unit -> unit
 
 val debug_state_is : 'a state -> 'a t -> bool t
+
+module Private : sig
+  type storage
+
+  module Sequence_associated_storage : sig
+    val get_from_storage : 'a key -> storage -> 'a option
+    val modify_storage : 'a key -> 'a option -> storage -> storage
+    val empty_storage : storage
+    val current_storage : storage ref
+  end
+
+  val tracing_context : string key
+end [@@alert trespassing "for internal use only, keep away"]
+

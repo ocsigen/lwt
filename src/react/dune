@@ -2,6 +2,4 @@
  (public_name lwt_react)
  (synopsis "Reactive programming helpers for Lwt")
  (wrapped false)
- (libraries lwt react)
- (instrumentation
-  (backend bisect_ppx)))
+ (libraries lwt react))
