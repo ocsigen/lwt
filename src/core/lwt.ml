@@ -716,9 +716,7 @@ module Exception_filter = struct
     | Out_of_memory -> false
     | Stack_overflow -> false
     | _ -> true
-  let v =
-    (* Default value: the legacy behaviour to avoid breaking programs *)
-    ref handle_all
+  let v = ref handle_all_except_runtime
   let set f = v := f
   let run e = !v e
 end
