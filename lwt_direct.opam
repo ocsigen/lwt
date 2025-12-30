@@ -11,7 +11,7 @@ homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
-  "dune" {>= "3.15"}
+  "dune" {>= "3.18"}
   "ocaml" {>= "5.0"}
   "base-unix"
   "lwt" {>= "6"}
@@ -32,3 +32,4 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
+x-maintenance-intent: ["(latest)"]

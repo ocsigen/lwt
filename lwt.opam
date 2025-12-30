@@ -21,7 +21,7 @@ homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
-  "dune" {>= "3.15"}
+  "dune" {>= "3.18"}
   "ocaml" {>= "4.14"}
   "cppo" {build & >= "1.1"}
   "ocamlfind" {dev & >= "1.7.3-1"}

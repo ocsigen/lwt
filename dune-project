@@ -1,4 +1,4 @@
-(lang dune 3.15)
+(lang dune 3.18)
 
 (name lwt)
 
@@ -20,6 +20,7 @@
  (maintainers
    "Raphaël Proust <code@bnwr.net>"
    "Shon Feder <shon.feder@gmail.com>")
+ (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 4.08))
   (lwt (>= 5.3))))
@@ -28,6 +29,7 @@
  (name lwt_ppx)
  (version 6.0.0-beta01)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
+ (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
@@ -38,6 +40,7 @@
  (synopsis "DO NOT RELEASE! only for testing let_ppx")
  (license NOTFORRELEASE) ;; trap for opam-repo ci
  (allow_empty)
+ (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 5.1))
   (ppx_let (and :with-test (>= v0.17.1)))))
@@ -46,6 +49,7 @@
  (name lwt_react)
  (version 1.2.0+dev)
  (synopsis "Helpers for using React with Lwt")
+ (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 4.08))
   (cppo (and :build (>= 1.1)))
@@ -84,6 +88,7 @@ Meanwhile, OCaml code, including code creating and waiting on promises, runs in
 a single thread by default. This reduces the need for locks or other
 synchronization primitives. Code can be run in parallel on an opt-in basis.
 ")
+ (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 4.14))
   (cppo (and :build (>= 1.1)))
