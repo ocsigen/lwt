@@ -1553,7 +1553,18 @@ let close_socket fd =
     (fun () ->
        Lwt_unix.close fd)
 
-let open_connection ?fd ?(set_tcp_nodelay=true) ?(prepare_fd=ignore) ?in_buffer ?out_buffer sockaddr =
+let optionally_set_tcp_nodelay set_tcp_nodelay fd =
+  match set_tcp_nodelay with
+  | Some false -> ()
+  | Some true -> Lwt_unix.setsockopt fd Unix.TCP_NODELAY true
+  | None ->
+      (* if not explicitly requested, we attempt to set nodelay but we don't fail in case of error *)
+      try
+        Lwt_unix.setsockopt fd Unix.TCP_NODELAY true
+      with
+        Unix.Unix_error (Unix.EOPNOTSUPP, _, _) -> ()
+
+let open_connection ?fd ?set_tcp_nodelay ?(prepare_fd=ignore) ?in_buffer ?out_buffer sockaddr =
   let fd =
     match fd with
     | None ->
@@ -1562,7 +1573,7 @@ let open_connection ?fd ?(set_tcp_nodelay=true) ?(prepare_fd=ignore) ?in_buffer 
       fd
   in
 
-  if set_tcp_nodelay then Lwt_unix.setsockopt fd Unix.TCP_NODELAY true;
+  optionally_set_tcp_nodelay set_tcp_nodelay fd;
   prepare_fd fd;
 
   let close = lazy (close_socket fd) in
@@ -1609,7 +1620,7 @@ let shutdown_server_deprecated server =
 let establish_server_generic
     bind_function
     ?fd:preexisting_socket_for_listening
-    ?(set_tcp_nodelay=true)
+    ?set_tcp_nodelay
     ?(prepare_listening_fd=ignore)
     ?(prepare_client_fd=ignore)
     ?(backlog = Lwt_unix.somaxconn () [@ocaml.warning "-3"])
@@ -1658,7 +1669,7 @@ let establish_server_generic
         with Invalid_argument _ -> ()
       end;
 
-      if set_tcp_nodelay then Lwt_unix.setsockopt client_socket Unix.TCP_NODELAY true;
+      optionally_set_tcp_nodelay set_tcp_nodelay client_socket;
       prepare_client_fd client_socket;
       connection_handler_callback client_address client_socket;
 
