@@ -577,7 +577,7 @@ val open_connection :
         Nagle's algorithm (https://en.wikipedia.org/wiki/Nagle%27s_algorithm).
         See for example https://brooker.co.za/blog/2024/05/09/nagle.html for why.
 
-        The default value is [true].
+        The default value is to attempt to set [TCP_NODELAY] but ignore [EOPNOTSUPP].
 
       @param prepare_fd is a custom callback that can be used to modify the socket FD
       before it is turned into high level channels.
@@ -694,6 +694,9 @@ val establish_server_with_client_address :
 
     The channels are closed automatically when the promise returned by [f]
     resolves. To avoid this behavior, pass [~no_close:true].
+
+    See {!open_connection} for more details about [set_tcp_nodelay]
+      and [prepare_*_fd].
 
     @since 3.1.0 *)
 
