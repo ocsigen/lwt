@@ -14,7 +14,7 @@
 
 (package
  (name lwt_retry)
- (version 5.9.0+dev)
+ (version 5.9.0)
  (synopsis "Utilities for retrying Lwt computations")
  (authors "Shon Feder")
  (maintainers
@@ -27,13 +27,16 @@
 
 (package
  (name lwt_ppx)
- (version 6.0.0-beta02)
+ (version 6.0.0)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
-  (lwt (>= 6))))
+  (lwt (>= 6)))
+ (conflicts
+  (lwt (= 6.0.0~alpha00))
+  (lwt (= 6.0.0-beta01))))
 
 (package
  (name lwt_ppx__ppx_let_tests)
@@ -47,7 +50,7 @@
 
 (package
  (name lwt_react)
- (version 1.2.0+dev)
+ (version 1.2.0)
  (synopsis "Helpers for using React with Lwt")
  (maintenance_intent "(latest)")
  (depends
@@ -58,7 +61,7 @@
 
 (package
  (name lwt_direct)
- (version 6.0.0-beta02)
+ (version 6.0.0)
  (synopsis "Direct-style control-flow and `await` for Lwt")
  (authors "Simon Cruanes")
  (depends
@@ -68,7 +71,7 @@
 
 (package
  (name lwt_runtime_events)
- (version 6.0.0-beta02)
+ (version 6.0.0)
  (synopsis "Emit runtime events to trace the execution of Lwt programs")
  (authors "Raphaël Proust")
  (depends
@@ -77,7 +80,7 @@
 
 (package
  (name lwt)
- (version 6.0.0-beta02)
+ (version 6.0.0)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
 
