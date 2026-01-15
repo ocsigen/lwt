@@ -56,7 +56,8 @@ let gen_name i = lwt_prefix ^ string_of_int i
 let gen_bindings l =
   let aux i binding =
     { binding with
-      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i)
+      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i);
+      pvb_constraint = None;
     }
   in
   List.mapi aux l
@@ -72,7 +73,15 @@ let gen_binds e_loc l e =
       in
       let fun_ =
         let loc = e_loc in
-        [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])]
+        match binding.pvb_constraint with
+        | None -> [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])]
+        | Some (Pvc_constraint { locally_abstract_univars = []; typ }) -> [%expr (fun ([%p binding.pvb_pat] : [%t typ]) -> [%e aux (i+1) t])]
+(*
+        | Some (Pvc_constraint { locally_abstract_univars = _::_; typ= _}) -> failwith "what to do here"
+        | Some (Pvc_coercion { ground = None; coercion }) -> [%expr (fun ([%p binding.pvb_pat] :> [%t coercion]) -> [%e aux (i+1) t])]
+        | Some (Pvc_coercion { ground = Some ground; coercion }) -> [%expr (fun ([%p binding.pvb_pat] : [%t ground] :> [%t coercion]) -> [%e aux (i+1) t])]
+*)
+        | _ -> failwith "WIP: what to do here"
       in
       let new_exp =
           let loc = e_loc in
