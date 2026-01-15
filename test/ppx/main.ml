@@ -166,7 +166,7 @@ let suite = suite "ppx" [
     ) ;
 
   (* as reported in https://github.com/ocsigen/lwt/issues/1085 *)
-  test "1085"
+  test "1085-int"
     (fun () ->
       let%lwt (_ : int) = Lwt.return 0 in
       Lwt.return_true
