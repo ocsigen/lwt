@@ -1065,9 +1065,12 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
 
   /* Fallback to synchronous call if there is no worker available and
      we can not launch more threads. */
-  if (async_method != LWT_UNIX_ASYNC_METHOD_NONE && thread_waiting_count == 0 &&
-      thread_count >= pool_size)
-    async_method = LWT_UNIX_ASYNC_METHOD_NONE;
+  if (async_method != LWT_UNIX_ASYNC_METHOD_NONE) {
+    lwt_unix_mutex_lock(&pool_mutex);
+  	if (thread_waiting_count == 0 && thread_count >= pool_size)
+      async_method = LWT_UNIX_ASYNC_METHOD_NONE;
+    lwt_unix_mutex_unlock(&pool_mutex);
+	}
 
   /* Initialises job parameters. */
   job->state = LWT_UNIX_JOB_STATE_PENDING;
@@ -1123,7 +1126,9 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
         lwt_unix_mutex_unlock(&pool_mutex);
       }
 
+      lwt_unix_mutex_lock(&job->mutex);
       done = job->state == LWT_UNIX_JOB_STATE_DONE;
+      lwt_unix_mutex_unlock(&job->mutex);
       if (done) {
         /* Wait for the mutex to be released because the job is going to
            be freed immediately. */
