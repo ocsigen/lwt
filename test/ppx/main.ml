@@ -171,6 +171,16 @@ let suite = suite "ppx" [
       let%lwt (_ : int) = Lwt.return 0 in
       Lwt.return_true
     ) ;
+  test "1085-int-again"
+    (fun () ->
+      let%lwt _ : int = Lwt.return 0 in
+      Lwt.return_true
+    ) ;
+  test "1085-any"
+    (fun () ->
+      let%lwt _ : _ = Lwt.return 0 in
+      Lwt.return_true
+    ) ;
 ]
 
 let _ = Test.run "ppx" [ suite ]

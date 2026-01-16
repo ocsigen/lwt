@@ -75,13 +75,32 @@ let gen_binds e_loc l e =
         let loc = e_loc in
         match binding.pvb_constraint with
         | None -> [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])]
-        | Some (Pvc_constraint { locally_abstract_univars = []; typ }) -> [%expr (fun ([%p binding.pvb_pat] : [%t typ]) -> [%e aux (i+1) t])]
-(*
-        | Some (Pvc_constraint { locally_abstract_univars = _::_; typ= _}) -> failwith "what to do here"
-        | Some (Pvc_coercion { ground = None; coercion }) -> [%expr (fun ([%p binding.pvb_pat] :> [%t coercion]) -> [%e aux (i+1) t])]
-        | Some (Pvc_coercion { ground = Some ground; coercion }) -> [%expr (fun ([%p binding.pvb_pat] : [%t ground] :> [%t coercion]) -> [%e aux (i+1) t])]
+        | Some (Pvc_constraint { locally_abstract_univars = []; typ }) ->
+            [%expr (fun ([%p binding.pvb_pat] : [%t typ]) -> [%e aux (i+1) t])]
+(* TODO: I don't know how to trigger this
+        | Some constraint_ pv ->
+            begin match binding.pvb_pat.ppat_desc with
+            | Ppat_var pv ->
+                let e =
+                  let open Ast_builder.Default in
+                  pexp_let ~loc
+                  Nonrecursive
+                    [
+                      Latest.value_binding ~constraint_
+                      ~loc
+                      ~pat:binding.pvb_pat
+                      ~expr:(pexp_ident ~loc {loc=pv.loc; txt=Lident pv.txt})
+                      ()
+                ]
+                  (aux (i+1) t)
+                in
+               [%expr (fun [%p binding.pvb_pat] -> [%e e])]
+            | _ ->
+                Location.Error.(raise (make ~loc "unsupported value binding constraint" ~sub:[]))
+            end
 *)
-        | _ -> failwith "WIP: what to do here"
+        | _ ->
+            Location.Error.(raise (make ~loc "unsupported value binding constraint" ~sub:[]))
       in
       let new_exp =
           let loc = e_loc in
