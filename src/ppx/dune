@@ -9,10 +9,3 @@
   (pps ppxlib.metaquot))
  (instrumentation
   (backend bisect_ppx)))
-
-(executable
- (name ppx_lwt_standalone)
- (modules ppx_lwt_standalone)
- (libraries
-  lwt_ppx
-  ppxlib))
