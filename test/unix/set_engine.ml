@@ -3,11 +3,17 @@
 
 open Lwt_engine
 
-let () = set (new libev ()) 
-let () = assert (match id () with Engine_id__libev eve -> Ev_backend.(equal eve default) | _ -> false)
+let () =
+  if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default then begin
+    set (new libev ());
+    assert (match id () with Engine_id__libev eve -> Ev_backend.(equal eve default) | _ -> false)
+  end
 
-let () = set (new libev ~backend:Ev_backend.poll ()) 
-let () = assert (match id () with Engine_id__libev eve -> Ev_backend.(equal eve poll) | _ -> false)
+let () =
+  if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default then begin
+    set (new libev ~backend:Ev_backend.poll ());
+    assert (match id () with Engine_id__libev eve -> Ev_backend.(equal eve poll) | _ -> false)
+  end
 
 let () = set (new select) 
 let () = assert (match id () with Engine_id__select -> true | _ -> false)
