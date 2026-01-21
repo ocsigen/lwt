@@ -37,11 +37,14 @@ let _fake_event = {
 
 let fake_event = ref _fake_event
 
+type engine_id = ..
+
 (* +-----------------------------------------------------------------+
    | Engines                                                         |
    +-----------------------------------------------------------------+ *)
 
 class virtual abstract = object(self)
+  method virtual id : engine_id
   method virtual iter : bool -> unit
   method virtual private cleanup : unit
   method virtual private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
@@ -113,6 +116,7 @@ end
 class type t = object
   inherit abstract
 
+  method id : engine_id
   method iter : bool -> unit
   method private cleanup : unit
   method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
@@ -172,8 +176,11 @@ external ev_io_stop : ev_loop -> ev_io -> unit = "lwt_libev_io_stop"
 external ev_timer_init : ev_loop -> float -> bool -> (unit -> unit) -> ev_timer = "lwt_libev_timer_init"
 external ev_timer_stop : ev_loop -> ev_timer -> unit  = "lwt_libev_timer_stop"
 
+type engine_id += Engine_id__libev of Ev_backend.t
 class libev ?(backend=Ev_backend.default) () = object
   inherit abstract
+
+  method id = Engine_id__libev backend
 
   val loop = ev_init backend
   method loop = loop
@@ -330,8 +337,11 @@ class virtual select_or_poll_based = object
          if Lwt_sequence.is_empty actions then wait_writable <- Fd_map.remove fd wait_writable)
 end
 
+type engine_id += Engine_id__select
 class virtual select_based = object(self)
   inherit select_or_poll_based
+
+  method id = Engine_id__select
 
   method private virtual select : Unix.file_descr list -> Unix.file_descr list -> float -> Unix.file_descr list * Unix.file_descr list
 
@@ -365,8 +375,11 @@ class virtual select_based = object(self)
     List.iter (fun fd -> invoke_actions fd wait_writable) fds_w
 end
 
+type engine_id += Engine_id__poll
 class virtual poll_based = object(self)
   inherit select_or_poll_based
+
+  method id = Engine_id__select
 
   method private virtual poll : (Unix.file_descr * bool * bool) list -> float -> (Unix.file_descr * bool * bool) list
 
@@ -429,6 +442,7 @@ let set ?(transfer=true) ?(destroy=true) engine =
   if destroy then !current#destroy;
   current := (engine : #t :> t)
 
+let id () = !current#id
 let iter block = !current#iter block
 let on_readable fd f = !current#on_readable fd f
 let on_writable fd f = !current#on_writable fd f

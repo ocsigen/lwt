@@ -52,6 +52,14 @@ let run_tests = [
     with Failure _ ->
       Lwt.return_true
   end;
+
+  test "Lwt_engine.id gives default" ~sequential:true begin fun () ->
+    match Lwt_engine.id () with
+    | Lwt_engine.Engine_id__libev eve -> Lwt.return (Lwt_engine.Ev_backend.equal eve Lwt_engine.Ev_backend.default)
+    | Lwt_engine.Engine_id__select -> Lwt.return_true
+    | Lwt_engine.Engine_id__poll -> Lwt.return_false (* never chosen by default *)
+    | _ -> Lwt.return_false (* no way this has been extended in this test suite *)
+  end;
 ]
 
 let tests = tests @ run_tests
