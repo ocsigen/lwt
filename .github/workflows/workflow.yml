@@ -36,6 +36,12 @@ jobs:
           - os: windows-latest
             ocaml-compiler: "5.4"
             libev: false
+          - os: windows-latest
+            ocaml-compiler: "ocaml-variants.4.14.2+options,host-system-msvc"
+            libev: false
+          - os: windows-latest
+            ocaml-compiler: "ocaml-variants.4.14.2+options,host-system-mingw"
+            libev: false
           - os: ubuntu-latest
             ocaml-name: "5.4.0+32bit"
             ocaml-compiler: "ocaml-variants.5.4.0+options,ocaml-option-32bit"
