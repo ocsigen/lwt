@@ -7,7 +7,7 @@ open Lwt
    an outer call to Lwt_main.run, and nested calls to Lwt_main.run are not
    allowed. *)
 [@@@ocaml.warning "-22"]
-let%lwt structure_let_result = Lwt.return_true
+let%lwt structure_let_result : bool = Lwt.return_true
 [@@@ocaml.warning "+22"]
 
 let __trace_ctxt = "test" (* TODO: figure out how to make this implicit *)
