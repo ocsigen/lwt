@@ -56,7 +56,8 @@ let gen_name i = lwt_prefix ^ string_of_int i
 let gen_bindings l =
   let aux i binding =
     { binding with
-      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i)
+      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i);
+      pvb_constraint = None;
     }
   in
   List.mapi aux l
@@ -72,7 +73,13 @@ let gen_binds e_loc l e =
       in
       let fun_ =
         let loc = e_loc in
-        [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])]
+        match binding.pvb_constraint with
+        | None -> [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])]
+        | Some (Pvc_constraint { locally_abstract_univars = []; typ }) ->
+            [%expr (fun ([%p binding.pvb_pat] : [%t typ]) -> [%e aux (i+1) t])]
+        | _ ->
+            (* no support for more advanced type annotations *)
+            Location.Error.(raise (make ~loc "unsupported value binding constraint" ~sub:[]))
       in
       let new_exp =
           let loc = e_loc in
@@ -379,6 +386,18 @@ class mapper = object (self)
         let loc = !default_loc in
         [%stri
           let [%p var] =
+            (Lwt_main.run [@ocaml.ppwarning [%e warning]])
+              [%e super#expression exp]]
+
+      | [%stri let%lwt [%p? var] : [%t? typ] = [%e? exp]] ->
+        let warning =
+          estring ~loc:!default_loc
+            ("let%lwt should not be used at the module item level.\n" ^
+             "Replace let%lwt x = e by let x = Lwt_main.run (e)")
+        in
+        let loc = !default_loc in
+        [%stri
+          let [%p var] : [%t typ] =
             (Lwt_main.run [@ocaml.ppwarning [%e warning]])
               [%e super#expression exp]]
 
