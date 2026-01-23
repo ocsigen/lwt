@@ -30,13 +30,26 @@ let test test_name ?(only_if = fun () -> true) ?(sequential = false) run =
 
 module Log =
 struct
-  let log_file =
+  let filename =
     let pid = Unix.getpid () in
     let ms = Unix.gettimeofday () |> modf |> fst in
-    let filename = Printf.sprintf "test.%i.%03.0f.log" pid (ms *. 1e3) in
-    open_out filename
+    Printf.sprintf "test.%i.%03.0f.log" pid (ms *. 1e3)
+  let log_file = open_out filename
   let () =
-    at_exit (fun () -> close_out_noerr log_file)
+    at_exit (fun () ->
+      (match Sys.getenv_opt "CI" with
+      | None -> ()
+      | Some _ ->
+          let ic = open_in filename in
+            try
+              while true do
+                let line = input_line ic in
+                print_endline line
+              done
+            with End_of_file ->
+              close_in ic
+      );
+      close_out_noerr log_file)
 
   let start_time = ref None
   let elapsed () =
