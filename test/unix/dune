@@ -13,7 +13,8 @@
    ocaml_runtime_exc_5
    ocaml_runtime_exc_6
    set_engine
-   cloexec)))
+   cloexec
+   wait)))
 
 (executable
  (name dummy)
@@ -74,3 +75,9 @@
  (name cloexec)
  (libraries lwt lwt.unix lwttester tester)
  (modules cloexec))
+
+(test
+ (package lwt)
+ (name wait)
+ (libraries lwt lwt.unix lwttester tester)
+ (modules wait))
