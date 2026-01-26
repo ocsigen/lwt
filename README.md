@@ -8,7 +8,7 @@
 [github-actions-img]: https://github.com/ocsigen/lwt/actions/workflows/workflow.yml/badge.svg?branch=master
 
 Lwt is a concurrent programming library for OCaml. It provides a single data
-type: the *promise*, which is a value that will become determined in the future.
+type: the *promise*, which is a value that will become resolved in the future.
 Creating a promise spawns a computation. When that computation is I/O, Lwt runs
 it in parallel with your OCaml code.
 
@@ -20,9 +20,36 @@ Here is a simplistic Lwt program which requests the Google front page, and fails
 if the request is not completed in five seconds:
 
 ```ocaml
-open Lwt.Syntax
-
 let () =
+  let request =
+    let%lwt addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
+    let google = Lwt_unix.((List.hd addresses).ai_addr) in
+
+    Lwt_io.(with_connection google (fun (incoming, outgoing) ->
+      write outgoing "GET / HTTP/1.1\r\n";%lwt
+      write outgoing "Connection: close\r\n\r\n";%lwt
+      let%lwt response = read incoming in
+      Lwt.return (Some response)))
+  in
+
+  let timeout =
+    Lwt_unix.sleep 5.;%lwt
+    Lwt.return_none
+  in
+
+  match Lwt_main.run (Lwt.pick [request; timeout]) with
+  | Some response -> print_string response
+  | None -> prerr_endline "Request timed out"; exit 1
+
+(* ocamlfind opt -package lwt.unix,lwt_ppx -linkpkg example.ml && ./a.out *)
+```
+
+If you are not using the `lwt_ppx` syntax extension, you can use the `let*`
+binding opoerators from the `Lwt.Syntax` module instead.
+
+```ocaml
+let () =
+  let open Lwt.Syntax in
   let request =
     let* addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
     let google = Lwt_unix.((List.hd addresses).ai_addr) in
@@ -36,24 +63,29 @@ let () =
 
   let timeout =
     let* () = Lwt_unix.sleep 5. in
-    Lwt.return None
+    Lwt.return_none
   in
 
   match Lwt_main.run (Lwt.pick [request; timeout]) with
   | Some response -> print_string response
   | None -> prerr_endline "Request timed out"; exit 1
 
-(* ocamlfind opt -package lwt.unix -linkpkg example.ml && ./a.out *)
+(* ocamlfind opt -package lwt.unix,lwt_ppx -linkpkg example.ml && ./a.out *)
 ```
 
-In the program, functions such as `Lwt_io.write` create promises. The
-`let* ... in` construct is used to wait for a promise to become determined; the
-code after `in` is scheduled to run in a "callback." `Lwt.pick` races promises
-against each other, and behaves as the first one to complete. `Lwt_main.run`
-forces the whole promise-computation network to be executed. All the visible
-OCaml code is run in a single thread, but Lwt internally uses a combination of
-worker threads and non-blocking file descriptors to resolve in parallel the
-promises that do I/O.
+In the program above, functions such as `Lwt_io.write` create promises. The
+`let%lwt ... in` construct (provided by `lwt_ppx`) or the `let* ... in`
+construct (provided by `Lwt.Syntax`) are used to wait for a promise to resolve.
+The code after `in` is scheduled to run after the code inside the `let...in`
+has resolved.
+
+`Lwt.pick` races promises against each other, and behaves as the first one to
+complete.
+
+`Lwt_main.run` forces the whole promise-computation network to be executed. All
+the visible OCaml code is run in a single thread, but Lwt internally uses a
+combination of worker threads and non-blocking file descriptors to resolve in
+parallel the promises that do I/O.
 
 
 <br/>
