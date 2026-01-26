@@ -27,6 +27,7 @@ CAMLextern int caml_win32_multi_byte_to_wide_char(const char* s,
 
 #include <caml/alloc.h>
 #include <caml/fail.h>
+#include <caml/misc.h>
 #include <caml/memory.h>
 #include <caml/osdeps.h>
 
