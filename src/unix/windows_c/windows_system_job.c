@@ -10,9 +10,9 @@
 #if OCAML_VERSION < 41300
 #define CAML_INTERNALS
 #endif
+#include <caml/misc.h>
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
-#include <caml/misc.h>
 #include <caml/unixsupport.h>
 #include <caml/osdeps.h>
 
