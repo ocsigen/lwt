@@ -27,7 +27,7 @@
 
 (package
  (name lwt_ppx)
- (version 6.0.0)
+ (version 6.1.0)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (maintenance_intent "(latest)")
  (depends
@@ -80,7 +80,7 @@
 
 (package
  (name lwt)
- (version 6.0.0)
+ (version 6.1.0)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
 
