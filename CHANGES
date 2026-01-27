@@ -1,4 +1,10 @@
-===== 5.9.1 =====
+===== 5.9.3 =====
+
+====== Fixes ======
+
+  * lwt_ppx: correctly carry type annotations again (broken since in 5.9.2). (Pierre Villemot, #1091)
+
+===== 5.9.2 =====
 
 ====== Packaging ======
 
