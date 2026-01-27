@@ -15,7 +15,7 @@ let tcp_server_client_exchange server_logic client_logic =
     >>= fun () ->
     let server_address = Lwt_unix.getsockname sock in
     let () = Lwt_unix.listen sock 5 in
-    Lwt.awaken ~order:Dont_care notify_server_is_ready server_address;
+    Lwt.resolve_next notify_server_is_ready server_address;
     Lwt_unix.accept sock
     >>= fun (fd_client, _) ->
     server_logic fd_client
@@ -41,7 +41,7 @@ let udp_server_client_exchange server_logic client_logic =
     Lwt_unix.bind sock sockaddr
     >>= fun () ->
     let server_address = Lwt_unix.getsockname sock in
-    Lwt.awaken ~order:Dont_care notify_server_is_ready server_address;
+    Lwt.resolve_next notify_server_is_ready server_address;
     server_logic sock
     >>= fun (_n, _sockaddr) -> Lwt_unix.close sock
   in

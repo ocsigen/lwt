@@ -33,7 +33,7 @@ let suite = suite "lwt_mutex" [
       >>= fun thread_2_canceled ->
 
       (* Thread 1: release the mutex. *)
-      Lwt.awaken ~order:Nested resume_thread_1 ();
+      (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) resume_thread_1 ();
       thread_1 >>= fun () ->
 
       (* Thread 3: try to take the mutex. Thread 2 should not have it locked,
@@ -59,15 +59,15 @@ let suite = suite "lwt_mutex" [
         Lwt_mutex.unlock mutex
       in
 
-      (* Thread 3: wrap the awaken of thread 2 in a awaken of thread 3. *)
+      (* Thread 3: wrap the resolve of thread 2 in a resolve of thread 3. *)
       let top_level_waiter, wake_top_level_waiter = Lwt.wait () in
       let while_waking =
         top_level_waiter >>= fun () ->
-        (* Inside thread 3 awaken. *)
+        (* Inside thread 3 resolve. *)
 
         (* Thread 1: release the mutex. This queues thread 2 using
-           Dont_care inside Lwt_mutex.unlock. *)
-        Lwt.awaken ~order:Nested resume_thread_1 ();
+           later inside Lwt_mutex.unlock. *)
+        Lwt.resolve_next resume_thread_1 ();
         thread_1 >>= fun () ->
 
         (* Confirm the mutex is now considered locked by thread 2. *)
@@ -101,6 +101,6 @@ let suite = suite "lwt_mutex" [
        * See also:
        * https://github.com/ocsigen/lwt/pull/261
        *)
-      Lwt.awaken ~order:Dont_care wake_top_level_waiter ();
+      Lwt.resolve_next wake_top_level_waiter ();
       while_waking);
 ]

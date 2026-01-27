@@ -201,7 +201,7 @@ let suite =
              (Lwt_result.fail 0)
              p2
          in
-         Lwt.awaken ~order:Dont_care r2 (Result.Error 1);
+         Lwt.resolve_next r2 (Result.Error 1);
          Lwt.bind p (fun x -> Lwt.return (x = Result.Error 0))
       );
 
@@ -213,7 +213,7 @@ let suite =
              p1
              (Lwt_result.fail 1)
          in
-         Lwt.awaken ~order:Dont_care r1 (Result.Error 0);
+         Lwt.resolve_next r1 (Result.Error 0);
          Lwt.bind p (fun x -> Lwt.return (x = Result.Error 1))
       );
 
@@ -263,8 +263,8 @@ let suite =
           let* s2 = p2 in
           Lwt.return (Result.Ok (s1 ^ s2))
         in
-        Lwt.awaken ~order:Nested r1 (Result.Ok "foo");
-        Lwt.awaken ~order:Nested r2 (Result.Ok "bar");
+        (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r1 (Result.Ok "foo");
+        (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r2 (Result.Ok "bar");
         state_is (Lwt.Return (Result.Ok "foobar")) p'
       );
 
@@ -278,8 +278,8 @@ let suite =
           and* s2 = p2 in
           Lwt.return (Result.Ok (s1 ^ s2))
         in
-        Lwt.awaken ~order:Nested r1 (Result.Ok "foo");
-        Lwt.awaken ~order:Nested r2 (Result.Ok "bar");
+        (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r1 (Result.Ok "foo");
+        (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r2 (Result.Ok "bar");
         state_is (Lwt.Return (Result.Ok "foobar")) p'
       );
 
@@ -293,8 +293,8 @@ let suite =
           and+ s2 = p2 in
           s1 ^ s2
         in
-        Lwt.awaken ~order:Nested r1 (Result.Ok "foo");
-        Lwt.awaken ~order:Nested r2 (Result.Ok "bar");
+        (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r1 (Result.Ok "foo");
+        (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r2 (Result.Ok "bar");
         state_is (Lwt.Return (Result.Ok "foobar")) p'
       );
   ]

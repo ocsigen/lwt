@@ -407,100 +407,47 @@ val wait : unit -> ('a t * 'a u)
 
 (** {3 Resolving} *)
 
-(** [awaken_result wakener res] does nothing immediately.
+(** [resolve_immediately_result wakener res] immediately resolves the promise
+    associated to [wakener] with the value carried by [res].
 
-    The next time the
-    scheduler runs, the promise associated with the [wakener] is resolved with
-    the provided [res]. If [res] is [Ok v] then it is successfully resolved with
-    [v]. If [res] is [Error exc] then it is rejected with [exc]. *)
-val awaken_result : 'a u -> ('a, exn) result -> unit
+    The control-flow returns to the caller of [resolve_immediately_result] once
+    all the callbacks associated to the resolved promise have compoleted. This
+    is hinted out by the return type: [unit Lwt.t]. *)
+val resolve_immediately_result : 'a u -> ('a, exn) result -> unit t
 
-(** [awaken w v] is [awaken_result w (Ok v)] *)
-val awaken : 'a u -> 'a -> unit
+val resolve_immediately : 'a u -> 'a -> unit t
 
-(** [awaken_exn w e] is [awaken_result w (Error e)] *)
-val awaken_exn : 'a u -> exn -> unit
+val resolve_immediately_exn : 'a u -> exn -> unit t
 
+(** [resolve_next_result wakener res] does nothing immediately.
 
-(** [ordering] indicates a scheduling strategy for fullfilling or rejection of
-    promnises associated to resolvers.
+    Once the caller of [resolve_next_result] yields control to another thread,
+    the promise associated to [wakener] with the value carried by [res] is
+    resolved and all its attached callbacks are triggered. *)
+val resolve_next_result : 'a u -> ('a, exn) result -> unit
 
-    Specifically, when a promise is resolved via a call to {!awaken} (or
-    {!awaken_exn} or {!awaken_result}), the execution can be ordered in two
-    distinct ways:
+val resolve_next : 'a u -> 'a -> unit
 
-    - [Deferred]: Resolves the promise later, after the current code reaches a
-    pause or some I/O. This is often the behaviour you want. It makes the 
-    - [Nested]: Resolves the promise immediately, come back to the current
-    code afterwards
+val resolve_next_exn : 'a u -> exn -> unit
 
-    If you have no preference between those two behaviours, [Dont_care] lets the
-    scheduler pick depending on internal state.
+(*
+(** [resolve_later_result wakener res] does nothing immediately.
 
-    To understand the difference, consider the following setup
-{[
-    let has_happened = ref false ;;
-    let blocker, resolver = wait () ;;
-    let task1 =
-      let* () = blocker in
-      has_happened := true; (* side-effect happens here *)
-      Lwt.return ()
-    ;;
-]}
+    The next time the control flow passes to the scheduler (TODO: explain
+    better), the promise associated to [wakener] with the value carried by
+    [res] is resolved and all its attached callbacks are triggered. *)
+val resolve_later_result : 'a u -> ('a, exn) result -> unit
 
-    Then, if a separate task resolves [blocker] by way of [resolver], two
-    different ordering can happen as examplified by:
+val resolve_later : 'a u -> 'a -> unit
 
-{[
-    let task2 =
-      awaken ~order resolver;
-      (if !has_happened then
-        (* Using [Later] for [ordering] causes this branch to be taken *)
-        print_endline "Current code was prioritised over resolved promise"
-      else
-        (* Using [Nested] for [ordering] causes this branch to be taken *)
-        print_endline "Resolved promise code was prioritised over current");
-      Lwt.return ()
-    ;;
-]}
-
-    *)
-type ordering =
-  | Deferred (** Prioritise code at current location; queue awakening to come back to it later. *)
-  | Dont_care
-  | Nested (** Prioritise resolving the promise; come back to current code location later. *)
-
-val awaken : order:ordering -> 'a u -> 'a -> unit
-(** [awaken ~order r v] fullfills the pending promise associated to the
-    resolver [r] with value [v].
-
-    The scheduling of the fullfillment happens according to the [order]
-    parameter. See {!type-ordering}.
-
-    If the promise is not pending, [Lwt.awaken] raises
-    {!Stdlib.Invalid_argument}, unless the promise is {{!Lwt.cancel} canceled}.
-    If the promise is canceled, [Lwt.awaken] has no effect.
-
-    If your program has multiple threads, it is important to make sure that
-    [Lwt.wakeup_later] (and any similar function) is only called from the main
-    thread. [Lwt.wakeup_later] can trigger callbacks attached to promises
-    by the program, and these assume they are running in the main thread. If you
-    need to communicate from a worker thread to the main thread running Lwt, see
-    {!Lwt_preemptive} or {!Lwt_unix.send_notification}. *)
-
-val awaken_exn : order:ordering -> 'a u -> exn -> unit
-(** [awaken_exn] is similar to [awaken] but the promise associated to the
-    resolver is rejected (rather than fullfilled). *)
-
-val awaken_result : order:ordering -> 'a u -> ('a, exn) result -> unit
-(** [awaken_result] is similar to either [awaken] or [awaken_exn] depending on
-    if the value is [Ok _] or [Error _]. *)
+val resolve_later_exn : 'a u -> exn -> unit
+*)
 
 val wakeup_later : 'a u -> 'a -> unit
-(** [@@ocaml.deprecated "Use awaken ~order:Dont_care instead"] *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 val wakeup_later_exn : _ u -> exn -> unit
-(** [@@ocaml.deprecated "Use awaken_exn ~order:Dont_care instead"] *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 val return : 'a -> 'a t
 (** [Lwt.return v] creates a new {{!t} promise} that is {e already fulfilled}
@@ -1695,7 +1642,7 @@ val of_result : ('a, exn) result -> 'a t
       rejected with [exn]. *)
 
 val wakeup_later_result : 'a u -> ('a, exn) result -> unit
-(** [@@ocaml.deprecated "Use awaken_result ~order:Dont_care instead"] *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 
 
@@ -1829,13 +1776,13 @@ let () =
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
-(** [@@ocaml.deprecated "Use awaken ~order:Nested instead"] *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 val wakeup_exn : _ u -> exn -> unit
-(** [@@ocaml.deprecated "Use awaken_exn ~order:Nested instead"] *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 val wakeup_result : 'a u -> ('a, exn) result -> unit
-(** [@@ocaml.deprecated "Use awaken_result ~order:Nested instead"] *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 
 
@@ -2111,3 +2058,8 @@ val backtrace_try_bind :
 val abandon_wakeups : unit -> unit
 
 val debug_state_is : 'a state -> 'a t -> bool t
+module Private : sig
+  val resolve_immediately__just_unit : 'a u -> 'a -> unit
+  val resolve_immediately_result__just_unit : 'a u -> ('a, exn) result -> unit
+end [@@alert trespassing "for internal use only, keep away"]
+

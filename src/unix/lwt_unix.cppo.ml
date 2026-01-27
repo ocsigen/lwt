@@ -117,7 +117,7 @@ let call_notification id =
 
 let sleep delay =
   let waiter, wakener = Lwt.task () in
-  let ev = Lwt_engine.on_timer delay false (fun ev -> Lwt_engine.stop_event ev; Lwt.awaken ~order:Nested wakener ()) in
+  let ev = Lwt_engine.on_timer delay false (fun ev -> Lwt_engine.stop_event ev; (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) wakener ()) in
   Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event ev);
   waiter
 
@@ -196,7 +196,7 @@ let run_job_aux async_method job result =
     (* Add the job to the sequence of all jobs. *)
     let node = Lwt_sequence.add_l (
       (waiter >>= fun _ -> Lwt.return_unit),
-      (fun exn -> if Lwt.state waiter = Lwt.Sleep then Lwt.awaken_exn ~order:Nested wakener exn))
+      (fun exn -> if Lwt.state waiter = Lwt.Sleep then (Lwt.Private.resolve_immediately_result__just_unit[@ocaml.alert "-trespassing"]) wakener (Error exn)))
       jobs in
     ignore begin
       (* Create the notification for asynchronous awaken. *)
@@ -205,7 +205,7 @@ let run_job_aux async_method job result =
           (fun () ->
              Lwt_sequence.remove node;
              let result = result job in
-             if Lwt.state waiter = Lwt.Sleep then Lwt.awaken_result ~order:Nested wakener result)
+             if Lwt.state waiter = Lwt.Sleep then (Lwt.Private.resolve_immediately_result__just_unit[@ocaml.alert "-trespassing"]) wakener result)
       in
       (* Give the job some time before we fallback to asynchronous
          notification. *)
@@ -521,11 +521,11 @@ let rec retry_syscall node event ch wakener action =
   | Success v ->
     Lwt_sequence.remove !node;
     stop_events ch;
-    Lwt.awaken ~order:Nested wakener v
+    (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) wakener v
   | Exn e ->
     Lwt_sequence.remove !node;
     stop_events ch;
-    Lwt.awaken_exn ~order:Nested wakener e
+    (Lwt.Private.resolve_immediately_result__just_unit[@ocaml.alert "-trespassing"]) wakener (Error e)
   | Requeued event' ->
     if event <> event' then begin
       Lwt_sequence.remove !node;
@@ -2369,11 +2369,11 @@ let install_sigchld_handler () =
                let (pid', _, _) as v = do_wait4 flags pid in
                if pid' <> 0 then begin
                  Lwt_sequence.remove node;
-                 Lwt.awaken ~order:Nested wakener v
+                 (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) wakener v
                end
              with e when Lwt.Exception_filter.run e ->
                Lwt_sequence.remove node;
-               Lwt.awaken_exn ~order:Nested wakener e
+               (Lwt.Private.resolve_immediately_result__just_unit[@ocaml.alert "-trespassing"]) wakener (Error e)
            end wait_children)
     end
   end

@@ -312,7 +312,7 @@ let auto_flush oc =
     if wrapper.state = Busy_primitive then
       wrapper.state <- Idle;
     if not (Lwt_sequence.is_empty wrapper.queued) then
-      Lwt.awaken ~order:Dont_care (Lwt_sequence.take_l wrapper.queued) ();
+      Lwt.resolve_next (Lwt_sequence.take_l wrapper.queued) ();
     Lwt.return_unit
 
   | Closed | Invalid ->
@@ -327,7 +327,7 @@ let unlock : type m. m channel -> unit = fun wrapper -> match wrapper.state with
       wrapper.state <- Idle
     else begin
       wrapper.state <- Waiting_for_busy;
-      Lwt.awaken ~order:Dont_care (Lwt_sequence.take_l wrapper.queued) ()
+      Lwt.resolve_next (Lwt_sequence.take_l wrapper.queued) ()
     end;
     (* Launches the auto-flusher: *)
     let ch = wrapper.channel in
@@ -346,7 +346,7 @@ let unlock : type m. m channel -> unit = fun wrapper -> match wrapper.state with
   | Closed | Invalid ->
     (* Do not change channel state if the channel has been closed *)
     if not (Lwt_sequence.is_empty wrapper.queued) then
-      Lwt.awaken ~order:Dont_care (Lwt_sequence.take_l wrapper.queued) ()
+      Lwt.resolve_next (Lwt_sequence.take_l wrapper.queued) ()
 
   | Idle | Waiting_for_busy ->
     (* We must never unlock an unlocked channel *)
@@ -452,8 +452,8 @@ let rec abort wrapper = match wrapper.state with
     wrapper.state <- Closed;
     (* Abort any current real reading/writing operation on the
        channel: *)
-    Lwt.awaken_exn ~order:Nested
-      wrapper.channel.abort_wakener (closed_channel wrapper.channel);
+   (Lwt.Private.resolve_immediately_result__just_unit[@ocaml.alert "-trespassing"])
+      wrapper.channel.abort_wakener (Error (closed_channel wrapper.channel));
     Lazy.force wrapper.channel.close
 
 let close : type mode. mode channel -> unit Lwt.t = fun wrapper ->
@@ -1661,7 +1661,7 @@ let establish_server_generic
         ()
       end;
 
-      Lwt.awaken ~order:Dont_care notify_listening_socket_closed ();
+      Lwt.resolve_next notify_listening_socket_closed ();
       Lwt.return_unit
     | `Try_again ->
       accept_loop ()
@@ -1670,7 +1670,7 @@ let establish_server_generic
   let server =
     {shutdown =
       lazy begin
-        Lwt.awaken ~order:Dont_care notify_should_stop `Should_stop;
+        Lwt.resolve_next notify_should_stop `Should_stop;
         wait_until_listening_socket_closed
       end}
   in
