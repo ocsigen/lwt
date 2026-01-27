@@ -175,7 +175,7 @@ let create_with_reference () =
     end;
     (* Do this at the end in case one of the function raise an
        exception. *)
-    if x = None then Lwt.resolve_next close ()
+    if x = None then (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) close ()
   in
   (t, push, fun x -> source.push_external <- Obj.repr x)
 
