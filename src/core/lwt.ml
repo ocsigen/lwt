@@ -143,7 +143,7 @@
 
      - Sequential composition
 
-       For example, [Lwt.bind]. These promises only are only resolved when the
+       For example, [Lwt.bind]. These promises are only resolved when the
        preceding sequence of promises resolves. The user cannot resolve these
        promises directly (but see the section on cancellation below).
 
@@ -716,9 +716,7 @@ module Exception_filter = struct
     | Out_of_memory -> false
     | Stack_overflow -> false
     | _ -> true
-  let v =
-    (* Default value: the legacy behaviour to avoid breaking programs *)
-    ref handle_all
+  let v = ref handle_all_except_runtime
   let set f = v := f
   let run e = !v e
 end
@@ -730,6 +728,9 @@ sig
   val new_key : unit -> _ key
   val get : 'v key -> 'v option
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
+  val get_from_storage : 'v key -> storage -> 'v option
+  val modify_storage : 'v key -> 'v option -> storage -> storage
+  val empty_storage : storage
 
   (* Internal interface *)
   val current_storage : storage ref
@@ -773,28 +774,33 @@ struct
     next_key_id := id + 1;
     {id = id; value = None}
 
-  let current_storage = ref Storage_map.empty
+  (* generic storage *)
+  let empty_storage = Storage_map.empty
 
-  let get key =
-    if Storage_map.mem key.id !current_storage then begin
-      let refresh = Storage_map.find key.id !current_storage in
+  let get_from_storage key storage =
+    match Storage_map.find_opt key.id storage with
+    | Some refresh ->
       refresh ();
       let value = key.value in
       key.value <- None;
       value
-    end
-    else
-      None
+    | None -> None
+
+  let modify_storage key value storage =
+    match value with
+    | Some _ ->
+      let refresh = fun () -> key.value <- value in
+      Storage_map.add key.id refresh storage
+    | None ->
+      Storage_map.remove key.id storage
+
+  (* built-in storage: propagated by bind and such *)
+  let current_storage = ref Storage_map.empty
+
+  let get key = get_from_storage key !current_storage
 
   let with_value key value f =
-    let new_storage =
-      match value with
-      | Some _ ->
-        let refresh = fun () -> key.value <- value in
-        Storage_map.add key.id refresh !current_storage
-      | None ->
-        Storage_map.remove key.id !current_storage
-    in
+    let new_storage = modify_storage key value !current_storage in
 
     let saved_storage = !current_storage in
     current_storage := new_storage;
@@ -1530,6 +1536,8 @@ struct
 end
 include Pending_promises
 
+let tracing_context = new_key ()
+let with_tracing_context name f = with_value tracing_context (Some name) f
 
 let paused = Lwt_sequence.create ()
 
@@ -1769,7 +1777,6 @@ include Paused
 
 
 
-
 module Sequential_composition :
 sig
   (* Main interface (public) *)
@@ -1791,12 +1798,16 @@ sig
 
   (* Backtrace support (internal; for use by the PPX) *)
   val backtrace_bind :
+    string -> int ->
     (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
   val backtrace_catch :
+    string -> int ->
     (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
   val backtrace_finalize :
+    string -> int ->
     (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
   val backtrace_try_bind :
+    string -> int ->
     (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 end =
 struct
@@ -1997,16 +2008,18 @@ struct
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
-  let backtrace_bind add_loc p f =
+  let backtrace_bind loc_f loc_l add_loc p f =
+    let trace_context = Sequence_associated_storage.get tracing_context in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred trace () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
 
       let callback p_result =
+        if trace then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -2043,14 +2056,15 @@ struct
         ~callback:(fun () -> f v)
         ~if_deferred:(fun () ->
           let (p'', callback) =
-            create_result_promise_and_callback_if_deferred () in
+            create_result_promise_and_callback_if_deferred false () in
           (p'', callback, p.state))
 
     | Rejected exn ->
       to_public_promise {state = Rejected (add_loc exn)}
 
     | Pending p_callbacks ->
-      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
+      let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
@@ -2177,7 +2191,8 @@ struct
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
-  let backtrace_catch add_loc f h =
+  let backtrace_catch loc_f loc_l add_loc f h =
+    let trace_context = Sequence_associated_storage.get tracing_context in
     let p =
       try f ()
       with exn when Exception_filter.run exn -> fail exn
@@ -2185,12 +2200,13 @@ struct
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred traced () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
 
       let callback p_result =
+        if traced then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
         | Fulfilled _ as p_result ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2231,11 +2247,12 @@ struct
         ~callback:(fun () -> h (add_loc exn))
         ~if_deferred:(fun () ->
           let (p'', callback) =
-            create_result_promise_and_callback_if_deferred () in
+            create_result_promise_and_callback_if_deferred false () in
           (p'', callback, p.state))
 
     | Pending p_callbacks ->
-      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
+      let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
@@ -2314,7 +2331,8 @@ struct
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
-  let backtrace_try_bind add_loc f f' h =
+  let backtrace_try_bind loc_f loc_l add_loc f f' h =
+    let trace_context = Sequence_associated_storage.get tracing_context in
     let p =
       try f ()
       with exn when Exception_filter.run exn -> fail exn
@@ -2322,12 +2340,13 @@ struct
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred traced () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
 
       let callback p_result =
+        if traced then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -2374,7 +2393,7 @@ struct
         ~callback:(fun () -> f' v)
         ~if_deferred:(fun () ->
           let (p'', callback) =
-            create_result_promise_and_callback_if_deferred () in
+            create_result_promise_and_callback_if_deferred false () in
           (p'', callback, p.state))
 
     | Rejected exn ->
@@ -2383,11 +2402,12 @@ struct
         ~callback:(fun () -> h (add_loc exn))
         ~if_deferred:(fun () ->
           let (p'', callback) =
-            create_result_promise_and_callback_if_deferred () in
+            create_result_promise_and_callback_if_deferred false () in
           (p'', callback, p.state))
 
     | Pending p_callbacks ->
-      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
+      let (p'', callback) = create_result_promise_and_callback_if_deferred true () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
 
@@ -2396,8 +2416,8 @@ struct
       (fun x -> bind (f' ()) (fun () -> return x))
       (fun e -> bind (f' ()) (fun () -> fail e))
 
-  let backtrace_finalize add_loc f f' =
-    backtrace_try_bind add_loc f
+  let backtrace_finalize loc_f loc_l add_loc f f' =
+    backtrace_try_bind loc_f loc_l add_loc f
       (fun x -> bind (f' ()) (fun () -> return x))
       (fun e -> bind (f' ()) (fun () -> fail (add_loc e)))
 
@@ -3301,6 +3321,9 @@ struct
 end
 
 module Private = struct
+  type nonrec storage = storage
+  module Sequence_associated_storage = Sequence_associated_storage
+  let tracing_context = tracing_context
   let resolve_immediately__just_unit = resolve_immediately__just_unit
   let resolve_immediately_result__just_unit = resolve_immediately_result__just_unit
 end

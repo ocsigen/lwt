@@ -12,6 +12,8 @@ module Lwt_sequence = Lwt_sequence
 
 open Lwt.Infix
 
+let job_count = ref 0
+
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
    +-----------------------------------------------------------------+ *)
@@ -19,7 +21,6 @@ open Lwt.Infix
 type async_method =
   | Async_none
   | Async_detach
-  | Async_switch
 
 let default_async_method_var = ref Async_detach
 
@@ -30,11 +31,9 @@ let () =
       default_async_method_var := Async_none
     | "detach" ->
       default_async_method_var := Async_detach
-    | "switch" ->
-      default_async_method_var := Async_switch
     | str ->
       Printf.eprintf
-        "%s: invalid lwt async method: '%s', must be 'none', 'detach' or 'switch'\n%!"
+        "%s: invalid lwt async method: '%s', must be 'none' or 'detach'\n%!"
         (Filename.basename Sys.executable_name) str
   with Not_found ->
     ()
@@ -54,9 +53,6 @@ let with_async_none f =
 
 let with_async_detach f =
   Lwt.with_value async_method_key (Some Async_detach) f
-
-let with_async_switch f =
-  Lwt.with_value async_method_key (Some Async_switch) f
 
 (* +-----------------------------------------------------------------+
    | Notifications management                                        |
@@ -79,6 +75,8 @@ module Notifiers = Hashtbl.Make(struct
   end)
 
 let notifiers = Notifiers.create 1024
+
+type notification = int (* a simple ID*)
 
 (* See https://github.com/ocsigen/lwt/issues/277 and
    https://github.com/ocsigen/lwt/pull/278. *)
@@ -178,12 +176,6 @@ let cancel_jobs () = abort_jobs Lwt.Canceled
 let wait_for_jobs () =
   Lwt.join (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) jobs [])
 
-let wrap_result f x =
-  try
-    Result.Ok (f x)
-  with exn when Lwt.Exception_filter.run exn ->
-    Result.Error exn
-
 let run_job_aux async_method job result =
   (* Starts the job. *)
   if start_job job async_method then
@@ -198,12 +190,14 @@ let run_job_aux async_method job result =
       (waiter >>= fun _ -> Lwt.return_unit),
       (fun exn -> if Lwt.state waiter = Lwt.Sleep then (Lwt.Private.resolve_immediately_result__just_unit[@ocaml.alert "-trespassing"]) wakener (Error exn)))
       jobs in
+    incr job_count;
     ignore begin
       (* Create the notification for asynchronous awaken. *)
-      let id =
+      let notification =
         make_notification ~once:true
           (fun () ->
              Lwt_sequence.remove node;
+             decr job_count;
              let result = result job in
              if Lwt.state waiter = Lwt.Sleep then (Lwt.Private.resolve_immediately_result__just_unit[@ocaml.alert "-trespassing"]) wakener result)
       in
@@ -211,7 +205,7 @@ let run_job_aux async_method job result =
          notification. *)
       Lwt.pause () >>= fun () ->
       (* The job has terminated, send the result immediately. *)
-      if check_job job id then call_notification id;
+      if check_job job notification then call_notification notification;
       Lwt.return_unit
     end;
     waiter
@@ -224,11 +218,6 @@ let choose_async_method = function
     match Lwt.get async_method_key with
     | Some am -> am
     | None -> !default_async_method_var
-
-let execute_job ?async_method ~job ~result ~free =
-  let async_method = choose_async_method async_method in
-  run_job_aux async_method job (fun job -> let x = wrap_result result job in free job; x)
-[@@ocaml.warning "-16"]
 
 external self_result : 'a job -> 'a = "lwt_unix_self_result"
 (* returns the result of a job using the [result] field of the C
@@ -243,22 +232,7 @@ let self_result job =
   with exn when Lwt.Exception_filter.run exn ->
     Result.Error exn
 
-let in_retention_test = ref false
-
-let retained o =
-  let retained = ref true in
-  Gc.finalise (fun _ ->
-    if !in_retention_test then
-      retained := false)
-    o;
-  in_retention_test := true;
-  retained
-
 let run_job ?async_method job =
-  if !in_retention_test then begin
-    Gc.full_major ();
-    in_retention_test := false
-  end;
   let async_method = choose_async_method async_method in
   if async_method = Async_none then
     try
@@ -2247,7 +2221,7 @@ and signal_handler_id = signal_handler option ref
 let signals = ref Signal_map.empty
 let signal_count () =
   Signal_map.fold
-    (fun _signum (_id, actions) len -> len + Lwt_sequence.length actions)
+    (fun _signum (_notification, actions) len -> len + Lwt_sequence.length actions)
     !signals
     0
 
@@ -2277,7 +2251,7 @@ let on_signal_full signum handler =
   id := Some { sh_num = signum; sh_node = node };
   id
 
-let on_signal signum f = on_signal_full signum (fun _id num -> f num)
+let on_signal signum f = on_signal_full signum (fun _notification num -> f num)
 
 let disable_signal_handler id =
   match !id with
@@ -2305,6 +2279,7 @@ let reinstall_signal_handler signum =
 
 external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
 
+(* TODO: replace fork with something thread+domain safe *)
 let fork () =
   match Unix.fork () with
   | 0 ->
@@ -2322,7 +2297,7 @@ let fork () =
     Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
     (* And cancel them all. We yield first so that if the program
        do an exec just after, it won't be executed. *)
-    Lwt.on_termination (Lwt_main.yield () [@warning "-3"]) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
+    Lwt.on_termination (Lwt.pause ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
     0
   | pid ->
     pid
@@ -2355,11 +2330,12 @@ let do_wait4 flags pid =
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
 
-let sigchld_handler_installed = ref false
-
-let install_sigchld_handler () =
-  if not Sys.win32 && not !sigchld_handler_installed then begin
-    sigchld_handler_installed := true;
+(* The lazy value is forced when calling [Lwt_main.run]. This is to avoid
+   installing the sigchld_handler in cases where the user is not really using
+   Lwt (just linking against it for some reason). *)
+let sigchld_handler_installer =
+  lazy begin
+  if not Sys.win32 then
     ignore begin
       on_signal Sys.sigchld
         (fun _ ->
@@ -2378,15 +2354,6 @@ let install_sigchld_handler () =
     end
   end
 
-(* The callback of Lwt.pause will only be run if Lwt_main.run is called by the
-   user. In that case, the process is positively using Lwt, and we want to
-   install the SIGCHLD handler, in order to cause any EINTR-unsafe code to
-   fail (as it should). *)
-let () =
-  Lwt.async (fun () ->
-    Lwt.pause () >|= fun () ->
-    install_sigchld_handler ())
-
 let _waitpid flags pid =
   Lwt.catch
     (fun () -> Lwt.return (Unix.waitpid flags pid))
@@ -2397,7 +2364,7 @@ let waitpid =
     _waitpid
   else
     fun flags pid ->
-      install_sigchld_handler ();
+      Lazy.force sigchld_handler_installer;
       if List.mem Unix.WNOHANG flags then
         _waitpid flags pid
       else
@@ -2414,7 +2381,7 @@ let waitpid =
         end
 
 let wait4 flags pid =
-  install_sigchld_handler ();
+  Lazy.force sigchld_handler_installer;
   if Sys.win32 || Lwt_config.android then
     Lwt.return (do_wait4 flags pid)
   else
@@ -2461,8 +2428,6 @@ let system cmd =
 (* +-----------------------------------------------------------------+
    | Misc                                                            |
    +-----------------------------------------------------------------+ *)
-
-let run = Lwt_main.run
 
 let handle_unix_error f x =
   Lwt.catch
@@ -2589,3 +2554,5 @@ struct
 
   let send_msg_2 = send_msg
 end
+
+let write_job_count_runtimte_event () = Lwt_rte.emit_job_count !job_count

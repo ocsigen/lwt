@@ -1,0 +1,10 @@
+; causes build errors when in src/ppx (when building other packages but not this one)
+; can't use (package lwt_ppx) because dune complains it'd be useless without a public_name
+; so this lives in examples/
+(executable
+ (name ppx_lwt_standalone)
+ (modules ppx_lwt_standalone)
+ (libraries
+  lwt_ppx
+  ppxlib))
+

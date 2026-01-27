@@ -1,0 +1,11 @@
+(executable
+  (name work_and_crash)
+  (enabled_if (>= %{ocaml_version} 5.4))
+  (libraries lwt lwt.unix)
+  (preprocess
+   (pps lwt_ppx)))
+
+(executable
+  (name tailgate)
+  (enabled_if (>= %{ocaml_version} 5.4))
+  (libraries unix runtime_events lwt_runtime_events))

@@ -65,8 +65,15 @@ val forwards_signal : int -> bool
 (** An engine represents a set of functions used to register different
     kinds of callbacks for different kinds of events. *)
 
+type engine_id = ..
+
+val id : unit -> engine_id
+
 (** Abstract class for engines. *)
 class virtual abstract : object
+  method virtual id : engine_id
+    (** identifies the engine *)
+
   method destroy : unit
     (** Destroy the engine, remove all its events and free its
         associated resources. *)
@@ -113,6 +120,7 @@ end
 class type t = object
   inherit abstract
 
+  method id : engine_id
   method iter : bool -> unit
   method private cleanup : unit
   method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
@@ -142,6 +150,8 @@ end
 
   (** Type of libev loops. *)
 
+type engine_id += Engine_id__libev of Ev_backend.t
+
 (** Engine based on libev. If not compiled with libev support, the
     creation of the class will raise {!Lwt_sys.Not_available}. *)
 class libev : ?backend:Ev_backend.t -> unit -> object
@@ -158,6 +168,8 @@ class libev : ?backend:Ev_backend.t -> unit -> object
 end
 
 (** Engine based on {!Unix.select}. *)
+type engine_id += Engine_id__select
+type engine_id += Engine_id__poll
 class select : t
 
 (** Abstract class for engines based on a select-like function. *)

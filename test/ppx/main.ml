@@ -7,8 +7,10 @@ open Lwt
    an outer call to Lwt_main.run, and nested calls to Lwt_main.run are not
    allowed. *)
 [@@@ocaml.warning "-22"]
-let%lwt structure_let_result = Lwt.return_true
+let%lwt structure_let_result : bool = Lwt.return_true
 [@@@ocaml.warning "+22"]
+
+let __trace_ctxt = "test" (* TODO: figure out how to make this implicit *)
 
 let suite = suite "ppx" [
   test "let"
@@ -161,6 +163,23 @@ let suite = suite "ppx" [
   test "structure let"
     (fun () ->
        Lwt.return structure_let_result
+    ) ;
+
+  (* as reported in https://github.com/ocsigen/lwt/issues/1085 *)
+  test "1085-int"
+    (fun () ->
+      let%lwt (_ : int) = Lwt.return 0 in
+      Lwt.return_true
+    ) ;
+  test "1085-int-again"
+    (fun () ->
+      let%lwt _ : int = Lwt.return 0 in
+      Lwt.return_true
+    ) ;
+  test "1085-any"
+    (fun () ->
+      let%lwt _ : _ = Lwt.return 0 in
+      Lwt.return_true
     ) ;
 ]
 

@@ -2,8 +2,10 @@
  (public_name lwt)
  (synopsis "Monadic promises and concurrent I/O")
  (wrapped false)
- (instrumentation
-  (backend bisect_ppx)))
+ (libraries
+ (select lwt_rte.ml from
+  (lwt_runtime_events -> lwt_rte.with.ml)
+  (-> lwt_rte.without.ml))))
 
 (documentation
  (package lwt))

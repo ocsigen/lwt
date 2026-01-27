@@ -11,7 +11,8 @@
    ocaml_runtime_exc_3
    ocaml_runtime_exc_4
    ocaml_runtime_exc_5
-   ocaml_runtime_exc_6)))
+   ocaml_runtime_exc_6
+   set_engine)))
 
 (executable
  (name dummy)
@@ -26,31 +27,43 @@
  (deps bytes_io_data %{exe:dummy.exe}))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_1)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_1))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_2)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_2))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_3)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_3))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_4)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_4))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_5)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_5))
 
 (test
+ (package lwt)
  (name ocaml_runtime_exc_6)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_6))
+
+(test
+ (package lwt)
+ (name set_engine)
+ (libraries lwt lwt.unix)
+ (modules set_engine))

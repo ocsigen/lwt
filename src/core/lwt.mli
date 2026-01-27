@@ -45,7 +45,7 @@
 let () =
   Lwt_main.run begin
     let%lwt data = Lwt_io.(read_line stdin) in
-    let%lwt () = Lwt_io.printl data in
+    Lwt_io.printl data;%lwt
     Lwt.return ()
   end
 
@@ -185,25 +185,26 @@ let () =
 {[
 let () =
   Lwt_main.run begin
-    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3. in
-    let five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
-    let%lwt () = three_seconds in
-    let%lwt () = Lwt_io.printl "3 seconds passed" in
-    let%lwt () = five_seconds in
+    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3.
+    and five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
+
+    three_seconds;%lwt
+    Lwt_io.printl "3 seconds passed";%lwt
+    five_seconds;%lwt
     Lwt_io.printl "Only 2 more seconds passed"
   end
 
 (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
-    This program takes about five seconds to run. We are still new to [let%lwt],
-    so let's desugar it:
+    This program takes about five seconds to run. We are still new to [let%lwt]
+    and [;%lwt], so let's desugar them:
 
 {[
 let () =
   Lwt_main.run begin
-    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3. in
-    let five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
+    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3.
+    and five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
 
     (* Both waits have already been started at this point! *)
 
@@ -564,7 +565,7 @@ let () =
 let () =
   Lwt_main.run begin
     let%lwt line = Lwt_io.(read_line stdin) in
-    let%lwt () = Lwt_unix.sleep 1. in
+    Lwt_unix.sleep 1.;%lwt
     Lwt_io.printf "One second ago, you entered %s\n" line
   end
 
@@ -856,8 +857,8 @@ val async : (unit -> unit t) -> unit
 {[
 let () =
   let rec show_nag () : _ Lwt.t =
-    let%lwt () = Lwt_io.printl "Please enter a line" in
-    let%lwt () = Lwt_unix.sleep 1. in
+    Lwt_io.printl "Please enter a line";%lwt
+    Lwt_unix.sleep 1.;%lwt
     show_nag ()
   in
   ignore (show_nag ());     (* Bad – see note for (1)! *)
@@ -882,8 +883,8 @@ let () =
 {[
 let () =
   let rec show_nag () : _ Lwt.t =
-    let%lwt () = Lwt_io.printl "Please enter a line" in
-    let%lwt () = Lwt_unix.sleep 1. in
+    Lwt_io.printl "Please enter a line";%lwt
+    Lwt_unix.sleep 1.;%lwt
     show_nag ()
   in
   Lwt.async (fun () -> show_nag ());
@@ -950,12 +951,12 @@ val both : 'a t -> 'b t -> ('a * 'b) t
 {[
 let () =
   let p_1 =
-    let%lwt () = Lwt_unix.sleep 3. in
+    Lwt_unix.sleep 3.;%lwt
     Lwt_io.printl "Three seconds elapsed"
   in
 
   let p_2 =
-    let%lwt () = Lwt_unix.sleep 5. in
+    Lwt_unix.sleep 5.;%lwt
     Lwt_io.printl "Five seconds elapsed"
   in
 
@@ -981,12 +982,12 @@ val join : (unit t) list -> unit t
 {[
 let () =
   let p_1 =
-    let%lwt () = Lwt_unix.sleep 3. in
+    Lwt_unix.sleep 3.;%lwt
     Lwt_io.printl "Three seconds elapsed"
   in
 
   let p_2 =
-    let%lwt () = Lwt_unix.sleep 5. in
+    Lwt_unix.sleep 5.;%lwt
     Lwt_io.printl "Five seconds elapsed"
   in
 
@@ -1142,7 +1143,7 @@ val cancel : _ t -> unit
 {[
 let () =
   let p =
-    let%lwt () = Lwt_unix.sleep 5. in
+    Lwt_unix.sleep 5.;%lwt
     Lwt_io.printl "Slept five seconds"
   in
 
@@ -1839,8 +1840,8 @@ val pause : unit -> unit t
 {[
 let () =
   let rec handle_io () =
-    let%lwt () = Lwt_io.printl "Handling I/O" in
-    let%lwt () = Lwt_unix.sleep 0.1 in
+    Lwt_io.printl "Handling I/O";%lwt
+    Lwt_unix.sleep 0.1;%lwt
     handle_io ()
   in
 
@@ -1848,12 +1849,10 @@ let () =
     if n = 0 then
       Lwt.return ()
     else
-      let%lwt () =
-        if n mod 1_000_000 = 0 then
-          Lwt.pause ()
-        else
-          Lwt.return ()
-      in
+      (if n mod 1_000_000 = 0 then
+        Lwt.pause ()
+      else
+        Lwt.return ());%lwt
       compute (n - 1)
   in
 
@@ -2040,6 +2039,9 @@ module Exception_filter: sig
 
 end
 
+(** [with_tracing_context name (fun () -> <e>)] causes the span events emitted
+    inside of <e> to bear the name [name]. *)
+val with_tracing_context : string -> (unit -> 'a t) -> 'a t
 
 (**/**)
 
@@ -2047,19 +2049,33 @@ val poll : 'a t -> 'a option
 val apply : ('a -> 'b t) -> 'a -> 'b t
 
 val backtrace_bind :
+  string -> int ->
   (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
 val backtrace_catch :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 val backtrace_finalize :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
 val backtrace_try_bind :
+  string -> int ->
   (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
 val abandon_wakeups : unit -> unit
 
 val debug_state_is : 'a state -> 'a t -> bool t
 module Private : sig
+  type storage
+
+  module Sequence_associated_storage : sig
+    val get_from_storage : 'a key -> storage -> 'a option
+    val modify_storage : 'a key -> 'a option -> storage -> storage
+    val empty_storage : storage
+    val current_storage : storage ref
+  end
+
+  val tracing_context : string key
+
   val resolve_immediately__just_unit : 'a u -> 'a -> unit
   val resolve_immediately_result__just_unit : 'a u -> ('a, exn) result -> unit
 end [@@alert trespassing "for internal use only, keep away"]
-

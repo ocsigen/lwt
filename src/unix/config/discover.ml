@@ -165,7 +165,7 @@ sig
   val add_link_flags : string list -> unit
 end =
 struct
-  let c_flags = ref ["-Wall"; "-fdiagnostics-color=always"]
+  let c_flags = ref ["-Wall"]
   let link_flags = ref []
 
   let extend c_flags' link_flags' =
@@ -267,6 +267,8 @@ struct
         extend unicode ["ws2_32.lib"]
       else
         extend unicode ["-lws2_32"]
+    else
+      extend ["-fPIC"; "-pthread"] []
 
   let c_flags () =
     !c_flags
