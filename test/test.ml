@@ -74,7 +74,7 @@ let run_test : test -> outcome Lwt.t = fun test ->
     let async_exception_promise, async_exception_occurred = Lwt.task () in
     let old_async_exception_hook = !Lwt.async_exception_hook in
     Lwt.async_exception_hook := (fun exn ->
-      Lwt.wakeup_later async_exception_occurred (Exception exn));
+      Lwt.resolve_next async_exception_occurred (Exception exn));
 
     Lwt.finalize
       (fun () ->
