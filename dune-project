@@ -31,7 +31,7 @@
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
-  (lwt (>= 5.7))))
+  (lwt (and (>= 5.7) (< 6)))))
 
 (package
  (name lwt_ppx__ppx_let_tests)
