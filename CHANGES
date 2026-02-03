@@ -4,15 +4,15 @@
 
   * Lwt_engine.engine_id: a mechanism to identify which engine is currently in use. (#1097)
 
-  * lwt_ppx: correctly carry type annotations again (broken since in 5.9.2). (Pierre Villemot, #1091)
-
 ====== Changes ======
 
   * When ?set_tcp_nodelay is not set explicitly, it sets TCP_NODELAY but ignores EOPNOTSUPP errors. (Simon Cruanes, #1092)
 
 ====== Fixes ======
 
-  * Fix build on some windows setups. (Kate Deplaix, #1095, #1082, #1081)
+  * lwt_ppx: correctly carry type annotations again (broken since in 5.9.2). (Pierre Villemot, #1091)
+
+  * Fix build on some windows setups. (Kate Deplaix, #1095, #1082)
 
   * Fix data-race in Lwt's internals. (Olivier Nicole, #1094, #1026)
 
