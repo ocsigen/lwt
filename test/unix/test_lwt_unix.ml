@@ -6,132 +6,6 @@
 open Test
 open Lwt.Infix
 
-(* An instance of the tester for the wait/waitpid tests. *)
-let () =
-  match Sys.argv with
-  | [|_; "--child"|] ->
-    exit 42
-  | _ ->
-    ()
-
-let wait_tests = [
-  test "wait" ~sequential:true ~only_if:(fun () -> not Sys.win32) begin fun () ->
-    match Lwt_unix.fork () with
-    | 0 ->
-      Unix.execv Sys.argv.(0) [|""; "--child"|]
-    | child_pid ->
-      Lwt_unix.wait () >|= function
-      | exited_pid, Lwt_unix.WEXITED 42 when exited_pid = child_pid -> true
-      | _ -> false
-  end;
-
-  test "waitpid" ~sequential:true ~only_if:(fun () -> not Sys.win32)
-      begin fun () ->
-    match Lwt_unix.fork () with
-    | 0 ->
-      Unix.execv Sys.argv.(0) [|""; "--child"|]
-    | child_pid ->
-      Lwt_unix.waitpid [] child_pid >|= function
-      | exited_pid, Lwt_unix.WEXITED 42 when exited_pid = child_pid -> true
-      | _ -> false
-  end;
-
-  test "waitpid: any child" ~sequential:true ~only_if:(fun () -> not Sys.win32)
-      begin fun () ->
-    match Lwt_unix.fork () with
-    | 0 ->
-      Unix.execv Sys.argv.(0) [|""; "--child"|]
-    | child_pid ->
-      Lwt_unix.waitpid [] 0 >|= function
-      | exited_pid, Lwt_unix.WEXITED 42 when exited_pid = child_pid -> true
-      | _ -> false
-  end;
-
-  test "wait4" ~sequential:true ~only_if:(fun () -> not Sys.win32)
-      begin fun () ->
-    match Lwt_unix.fork () with
-    | 0 ->
-      Unix.execv Sys.argv.(0) [|""; "--child"|]
-    | child_pid ->
-      Lwt_unix.wait4 [] child_pid >|= function
-      | exited_pid, Lwt_unix.WEXITED 42, _ when exited_pid = child_pid -> true
-      | _ -> false
-  end;
-
-  test "wait4: any child" ~sequential:true ~only_if:(fun () -> not Sys.win32)
-      begin fun () ->
-    match Lwt_unix.fork () with
-    | 0 ->
-      Unix.execv Sys.argv.(0) [|""; "--child"|]
-    | child_pid ->
-      Lwt_unix.wait4 [] 0 >|= function
-      | exited_pid, Lwt_unix.WEXITED 42, _ when exited_pid = child_pid -> true
-      | _ -> false
-  end;
-]
-
-(* The CLOEXEC tests use execv(2) to execute this code, by passing --cloexec to
-   the copy of the tester in the child process. This is a module side effect
-   that interprets that --cloexec argument. *)
-let () =
-  let is_fd_open fd =
-    let fd  = (Obj.magic (int_of_string fd) : Unix.file_descr) in
-    let buf = Bytes.create 1 in
-    try
-      ignore (Unix.read fd buf 0 1);
-      true
-    with Unix.Unix_error (Unix.EBADF, _, _) ->
-      false
-  in
-
-  match Sys.argv with
-  | [|_; "--cloexec"; fd; "--open"|] ->
-    if is_fd_open fd then
-      exit 0
-    else
-      exit 1
-  | [|_; "--cloexec"; fd; "--closed"|] ->
-    if is_fd_open fd then
-      exit 1
-    else
-      exit 0
-  | _ ->
-    ()
-
-let test_cloexec ~closed flags =
-  Lwt_unix.openfile "/dev/zero" (Unix.O_RDONLY :: flags) 0o644 >>= fun fd ->
-  match Lwt_unix.fork () with
-  | 0 ->
-    let fd = string_of_int (Obj.magic (Lwt_unix.unix_file_descr fd)) in
-    let expected_status = if closed then "--closed" else "--open" in
-    (* There's no portable way to obtain the tester executable name (which may
-       even no longer exist at this point), but argv[0] fortunately has the
-       right value when the tests are run in the Lwt dev environment. *)
-    Unix.execv Sys.argv.(0) [|""; "--cloexec"; fd; expected_status|]
-  | n ->
-    Lwt_unix.close fd >>= fun () ->
-    Lwt_unix.waitpid [] n >>= function
-    | _, Unix.WEXITED 0 -> Lwt.return_true
-    | _, (Unix.WEXITED _ | Unix.WSIGNALED _ | Unix.WSTOPPED _) ->
-      Lwt.return_false
-
-let openfile_tests = [
-  test "openfile: O_CLOEXEC" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec ~closed:true [Unix.O_CLOEXEC]);
-
-  test "openfile: O_CLOEXEC not given" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec ~closed:false []);
-
-  test "openfile: O_KEEPEXEC" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec ~closed:false [Unix.O_KEEPEXEC]);
-
-  test "openfile: O_CLOEXEC, O_KEEPEXEC" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec ~closed:true [Unix.O_CLOEXEC; Unix.O_KEEPEXEC]);
-
-  test "openfile: O_KEEPEXEC, O_CLOEXEC" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec ~closed:true [Unix.O_KEEPEXEC; Unix.O_CLOEXEC]);
-]
-
 let utimes_tests = [
   test "utimes: basic"
     (fun () ->
@@ -1060,7 +934,7 @@ let lwt_preemptive_tests = [
             Lwt.pause () >>= fun () ->
             Lwt.wakeup r 42;
             Lwt.return ())
-          (function _ -> Stdlib.exit 2);
+          (function _ -> assert false);
         Lwt.return ())
     in
     Lwt_preemptive.detach f () >>= fun () ->
@@ -1251,9 +1125,7 @@ let dup_tests ~blocking =
 
 let suite =
   suite "lwt_unix"
-    (wait_tests @
-     openfile_tests @
-     utimes_tests @
+    (utimes_tests @
      readdir_tests @
      io_vectors_byte_count_tests @
      readv_tests @

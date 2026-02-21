@@ -8,7 +8,6 @@ open Lwt.Infix
 
 let expected_str = "the quick brown fox jumps over the lazy dog"
 let expected = Bytes.of_string expected_str
-let expected_len = Bytes.length expected
 
 let check_status ?(status=(=) 0) = function
   | Unix.WEXITED n when status n -> Lwt.return_true
@@ -22,7 +21,8 @@ let check_status ?(status=(=) 0) = function
     Printf.eprintf "stopped with signal %d" x;
     Lwt.return_false
 
-let pwrite ~stdin pout =
+let pwrite ~stdin pout expected =
+  let expected_len = Bytes.length expected in
   let args = [|"dummy.exe"; "read"|] in
   let proc = Lwt_process.exec ~stdin ("./dummy.exe", args) in
   let write = Lwt.finalize
@@ -33,25 +33,46 @@ let pwrite ~stdin pout =
   assert (n = expected_len);
   check_status r
 
-let pread ?stdout ?stderr pin =
-  let buf = Bytes.create expected_len in
-  let proc = match stdout, stderr with
-    | Some stdout, None ->
-       let args = [|"dummy.exe"; "write"|] in
-       Lwt_process.exec ~stdout ("./dummy.exe", args)
-    | None, Some stderr ->
-       let args = [|"dummy.exe"; "errwrite"|] in
-       Lwt_process.exec ~stderr ("./dummy.exe", args)
-    | _ -> assert false
+let read_all ic buf ofs len =
+  let rec loop ic buf ofs len =
+    Lwt_unix.read ic buf ofs len >>= function
+    | 0 ->
+        Lwt.return ofs
+    | n ->
+        let ofs = ofs + n in
+        let len = len - n in
+        if len = 0 then
+          Lwt.return ofs
+        else
+          loop ic buf ofs len
   in
-  let read = Lwt_unix.read pin buf 0 expected_len in
+  loop ic buf ofs len
+
+let pread ?env ?stdout ?stderr pin cmd expected =
+  (match stdout, stderr with
+    | Some _, None
+    | None, Some _ ->
+      ()
+    | _ -> assert false);
+  let expected_len = Bytes.length expected in
+  let buf = Bytes.create expected_len in
+  let args = [|"dummy.exe"; cmd|] in
+  let proc = Lwt_process.exec ?env ?stdout ?stderr ("./dummy.exe", args) in
+  let read = read_all pin buf 0 expected_len in
   proc >>= fun r ->
   read >>= fun n ->
-  assert (n = expected_len);
+  (if n <> expected_len then Printf.ksprintf failwith "expected %d bytes, got %d" expected_len n);
   assert (Bytes.equal buf expected);
   Lwt_unix.read pin buf 0 1 >>= fun n ->
-  assert (n = 0);
+  if n <> 0 then Printf.ksprintf failwith "expected 0 bytes remaining, got %d" n;
   check_status r
+
+let bytes_of_env env =
+  env
+  |> Array.map (Printf.sprintf "%s\n")
+  |> Array.to_list
+  |> String.concat ""
+  |> Bytes.of_string
 
 let suite = suite "lwt_process" [
   (* The sleep command is not available on Win32. *)
@@ -93,15 +114,36 @@ let suite = suite "lwt_process" [
   test "can write to subproc stdin"
     (fun () ->
       let pin, pout = Lwt_unix.pipe_out ~cloexec:true () in
-      pwrite ~stdin:(`FD_move pin) pout);
+      pwrite ~stdin:(`FD_move pin) pout expected);
 
   test "can read from subproc stdout"
     (fun () ->
       let pin, pout = Lwt_unix.pipe_in ~cloexec:true () in
-      pread ~stdout:(`FD_move pout) pin);
+      pread ~stdout:(`FD_move pout) pin "write" expected);
 
   test "can read from subproc stderr"
     (fun () ->
       let pin, perr = Lwt_unix.pipe_in ~cloexec:true () in
-      pread ~stderr:(`FD_move perr) pin);
+      pread ~stderr:(`FD_move perr) pin "errwrite" expected);
+
+  test "overrides env"
+    (fun () ->
+      let env = [| "FOO=1" |] in
+      let expected = Bytes.of_string "FOO=1\n" in
+      let pin, pout = Lwt_unix.pipe_in ~cloexec:true () in
+      pread ~env ~stdout:(`FD_move pout) pin "printenv" expected);
+
+  test "passes env"
+    (fun () ->
+      let env = Unix.unsafe_environment () in
+      let expected = bytes_of_env env in
+      let pin, pout = Lwt_unix.pipe_in ~cloexec:true () in
+      pread ~env ~stdout:(`FD_move pout) pin "printenv" expected);
+
+  test "inherits env"
+    (fun () ->
+      let env = Unix.unsafe_environment () in
+      let expected = bytes_of_env env in
+      let pin, pout = Lwt_unix.pipe_in ~cloexec:true () in
+      pread ?env:None ~stdout:(`FD_move pout) pin "printenv" expected);
 ]
