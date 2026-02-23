@@ -16,6 +16,10 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
+#if OCAML_VERSION_MAJOR < 5
+#define caml_unix_get_sockaddr get_sockaddr
+#endif
+
 #include "lwt_unix.h"
 
 struct job_getnameinfo {
