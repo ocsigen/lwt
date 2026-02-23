@@ -16,6 +16,10 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
+#if OCAML_VERSION_MAJOR < 5
+#define caml_unix_get_sockaddr get_sockaddr
+#endif
+
 #include "lwt_unix.h"
 
 struct job_getnameinfo {
@@ -59,7 +63,7 @@ static value result_getnameinfo(struct job_getnameinfo *job)
 CAMLprim value lwt_unix_getnameinfo_job(value sockaddr, value opts)
 {
     LWT_UNIX_INIT_JOB(job, getnameinfo, 0);
-    get_sockaddr(sockaddr, &job->addr, &job->addr_len);
+    caml_unix_get_sockaddr(sockaddr, &job->addr, &job->addr_len);
     job->opts = lwt_convert_flag_list(opts, getnameinfo_flag_table);
     return lwt_unix_alloc_job(&job->job);
 }

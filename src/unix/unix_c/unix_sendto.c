@@ -23,7 +23,7 @@ value lwt_unix_sendto(value fd, value buf, value ofs, value len, value flags,
     union sock_addr_union addr;
     socklen_t addr_len;
     int ret;
-    get_sockaddr(dest, &addr, &addr_len);
+    caml_unix_get_sockaddr(dest, &addr, &addr_len);
     ret = sendto(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)),
                  Long_val(len), lwt_convert_flag_list(flags, msg_flag_table),
                  &addr.s_gen, addr_len);

@@ -14,6 +14,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#if OCAML_VERSION_MAJOR < 5
+#define caml_unix_get_sockaddr get_sockaddr
+#endif
+
 #include "lwt_unix.h"
 
 struct job_bind {
@@ -42,7 +46,7 @@ CAMLprim value lwt_unix_bind_job(value fd, value address)
 {
     LWT_UNIX_INIT_JOB(job, bind, 0);
     job->fd = Int_val(fd);
-    get_sockaddr(address, &job->addr, &job->addr_len);
+    caml_unix_get_sockaddr(address, &job->addr, &job->addr_len);
 
     return lwt_unix_alloc_job(&job->job);
 }
