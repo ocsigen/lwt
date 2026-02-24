@@ -1028,7 +1028,7 @@ let lwt_preemptive_tests = [
         (fun () ->
           Lwt.pause () >>= fun () ->
           Lwt.pause () >>= fun () ->
-          Lwt.wakeup r 42;
+          (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r 42;
           Lwt.return ())
         (fun _ -> assert false)
     in
@@ -1044,7 +1044,7 @@ let lwt_preemptive_tests = [
           Lwt.pause () >>= fun () ->
           Lwt.pause () >>= fun () ->
           raise Exit)
-        (function Exit -> Lwt.wakeup r 45 | _ -> assert false)
+        (function Exit -> (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r 45 | _ -> assert false)
     in
     Lwt_preemptive.detach f () >>= fun () ->
     p >>= fun x ->
@@ -1058,7 +1058,7 @@ let lwt_preemptive_tests = [
           (fun () ->
             Lwt.pause () >>= fun () ->
             Lwt.pause () >>= fun () ->
-            Lwt.wakeup r 42;
+            (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) r 42;
             Lwt.return ())
           (function _ -> Stdlib.exit 2);
         Lwt.return ())

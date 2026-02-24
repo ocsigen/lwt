@@ -1342,136 +1342,6 @@ struct
 end
 include Resolution_loop
 
-
-
-module Resolving :
-sig
-  val wakeup_later_result : 'a u -> ('a, exn) result -> unit
-  val wakeup_later : 'a u -> 'a -> unit
-  val wakeup_later_exn : _ u -> exn -> unit
-
-  val wakeup_result : 'a u -> ('a, exn) result -> unit
-  val wakeup : 'a u -> 'a -> unit
-  val wakeup_exn : _ u -> exn -> unit
-
-  val cancel : 'a t -> unit
-end =
-struct
-  (* Note that this function deviates from the "ideal" callback deferral
-     behavior: it runs callbacks directly on the current stack. It should
-     therefore be possible to cause a stack overflow using this function. *)
-  let wakeup_general api_function_name r result =
-    let Internal p = to_internal_resolver r in
-    let p = underlying p in
-
-    match p.state with
-    | Rejected Canceled ->
-      ()
-    | Fulfilled _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
-    | Rejected _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
-
-    | Pending _ ->
-      let result = state_of_result result in
-      let State_may_have_changed p = resolve ~allow_deferring:false p result in
-      ignore p
-
-  let wakeup_result r result = wakeup_general "wakeup_result" r result
-  let wakeup r v = wakeup_general "wakeup" r (Ok v)
-  let wakeup_exn r exn = wakeup_general "wakeup_exn" r (Error exn)
-
-  let wakeup_later_general api_function_name r result =
-    let Internal p = to_internal_resolver r in
-    let p = underlying p in
-
-    match p.state with
-    | Rejected Canceled ->
-      ()
-    | Fulfilled _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
-    | Rejected _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
-
-    | Pending _ ->
-      let result = state_of_result result in
-      let State_may_have_changed p =
-        resolve ~maximum_callback_nesting_depth:1 p result in
-      ignore p
-
-  let wakeup_later_result r result =
-    wakeup_later_general "wakeup_later_result" r result
-  let wakeup_later r v =
-    wakeup_later_general "wakeup_later" r (Ok v)
-  let wakeup_later_exn r exn =
-    wakeup_later_general "wakeup_later_exn" r (Error exn)
-
-
-
-  type packed_callbacks =
-    | Packed : _ callbacks -> packed_callbacks
-    [@@ocaml.unboxed]
-
-  (* Note that this function deviates from the "ideal" callback deferral
-     behavior: it runs callbacks directly on the current stack. It should
-     therefore be possible to cause a stack overflow using this function. *)
-  let cancel p =
-    let canceled_result = Rejected Canceled in
-
-    (* Walks the promise dependency graph backwards, looking for cancelable
-       initial promises, and cancels (only) them.
-
-       Found initial promises are canceled immediately, as they are found, by
-       setting their state to [Rejected Canceled]. This is to prevent them from
-       being "found twice" if they are reachable by two or more distinct paths
-       through the promise dependency graph.
-
-       The callbacks of these initial promises are then run, in a separate
-       phase. These callbacks propagate cancellation forwards to any dependent
-       promises. See "Cancellation" in the Overview. *)
-    let propagate_cancel : (_, _, _) promise -> packed_callbacks list =
-        fun p ->
-      let rec cancel_and_collect_callbacks :
-          'a 'u 'c. packed_callbacks list -> ('a, 'u, 'c) promise ->
-            packed_callbacks list =
-          fun (type c) callbacks_accumulator (p : (_, _, c) promise) ->
-
-        let p = underlying p in
-        match p.state with
-        (* If the promise is not still pending, it can't be canceled. *)
-        | Fulfilled _ ->
-          callbacks_accumulator
-        | Rejected _ ->
-          callbacks_accumulator
-
-        | Pending callbacks ->
-          match callbacks.how_to_cancel with
-          | Not_cancelable ->
-            callbacks_accumulator
-          | Cancel_this_promise ->
-            let State_may_have_changed p =
-              set_promise_state p canceled_result in
-            ignore p;
-            (Packed callbacks)::callbacks_accumulator
-          | Propagate_cancel_to_one p' ->
-            cancel_and_collect_callbacks callbacks_accumulator p'
-          | Propagate_cancel_to_several ps ->
-            List.fold_left cancel_and_collect_callbacks callbacks_accumulator ps
-      in
-      cancel_and_collect_callbacks [] p
-    in
-
-    let Internal p = to_internal_promise p in
-    let callbacks = propagate_cancel p in
-
-    callbacks |> List.iter (fun (Packed callbacks) ->
-      run_callbacks_or_defer_them
-        ~allow_deferring:false callbacks canceled_result)
-end
-include Resolving
-
-
-
 module Trivial_promises :
 sig
   val return : 'a -> 'a t
@@ -1516,7 +1386,6 @@ struct
     to_public_promise {state = Rejected (Invalid_argument msg)}
 end
 include Trivial_promises
-
 
 
 module Pending_promises :
@@ -1669,6 +1538,244 @@ include Pending_promises
 
 let tracing_context = new_key ()
 let with_tracing_context name f = with_value tracing_context (Some name) f
+
+let paused = Lwt_sequence.create ()
+
+
+module Resolving :
+sig
+
+  val resolve_immediately_result : 'a u -> ('a, exn) result -> unit t
+  val resolve_immediately_result__just_unit : 'a u -> ('a, exn) result -> unit
+  val resolve_immediately : 'a u -> 'a -> unit t
+  val resolve_immediately__just_unit : 'a u -> 'a -> unit
+  val resolve_immediately_exn : 'a u -> exn -> unit t
+
+  val resolve_next_result : 'a u -> ('a, exn) result -> unit
+  val resolve_next : 'a u -> 'a -> unit
+  val resolve_next_exn : 'a u -> exn -> unit
+
+(*
+  val resolve_later_result : 'a u -> ('a, exn) result -> unit
+  val resolve_later : 'a u -> 'a -> unit
+  val resolve_later_exn : 'a u -> exn -> unit
+*)
+
+  val wakeup_later_result : 'a u -> ('a, exn) result -> unit
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
+
+  val wakeup_later : 'a u -> 'a -> unit
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
+
+  val wakeup_later_exn : _ u -> exn -> unit
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
+
+
+  val wakeup_result : 'a u -> ('a, exn) result -> unit
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
+
+  val wakeup : 'a u -> 'a -> unit
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
+
+  val wakeup_exn : _ u -> exn -> unit
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
+
+  val cancel : 'a t -> unit
+end =
+struct
+
+  type ordering =
+(*     | Later *)
+    | Next
+    | Immediately
+    | Legacy_later
+
+  let resolve_general api_function_name order r result =
+    let Internal p = to_internal_resolver r in
+    let p = underlying p in
+
+    match p.state with
+    | Rejected Canceled ->
+      ()
+    | Fulfilled _ ->
+      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+    | Rejected _ ->
+      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+
+    | Pending _ ->
+      let result = state_of_result result in
+      let State_may_have_changed p =
+      match order with
+        | Next -> resolve ~maximum_callback_nesting_depth:min_int p result
+        | Immediately -> resolve ~allow_deferring:false p result
+        | Legacy_later -> resolve ~maximum_callback_nesting_depth:1 p result
+(* This causes type errors bc state won't have changed yet
+        | Later -> begin
+            let pp = add_task_r paused in
+            let Internal pp = to_internal_promise pp in
+            let saved_storage = !current_storage in
+            let callback = fun _result ->
+              current_storage := saved_storage;
+              handle_with_async_exception_hook (fun () ->
+                let _ : (_, _, _) state_changed = resolve ~allow_deferring:false p result in
+                ()) ()
+            in
+            match pp.state with
+            | Proxy _ -> assert false
+            | Fulfilled _ -> assert false
+            | Rejected _ -> assert false
+            | Pending p_callbacks ->
+                add_implicitly_removed_callback p_callbacks callback;
+                State_may_have_changed p
+        end
+*)
+      in
+      ignore p
+
+  let resolve_immediately_result r result =
+    resolve_general "resolve_immediately_result" Immediately r result;
+    return_unit
+  let resolve_immediately_result__just_unit r result =
+    resolve_general "resolve_immediately_result" Immediately r result
+  let resolve_immediately r v =
+    resolve_general "resolve_immediately_result" Immediately r (Ok v);
+    return_unit
+  let resolve_immediately__just_unit r v =
+    resolve_general "resolve_immediately_result" Immediately r (Ok v)
+  let resolve_immediately_exn r exc =
+    resolve_general "resolve_immediately_result" Immediately r (Error exc);
+    return_unit
+
+  let resolve_next_result r result =
+    resolve_general "resolve_next_result" Next r result
+  let resolve_next r v =
+    resolve_general "resolve_next_result" Next r (Ok v)
+  let resolve_next_exn r exc =
+    resolve_general "resolve_next_result" Next r (Error exc)
+
+(*
+  let resolve_later_result r result =
+    resolve_general "resolve_later_result" Later r result
+  let resolve_later r result =
+    resolve_general "resolve_later" Later r (Ok result)
+  let resolve_later_exn r result =
+    resolve_general "resolve_later_exn" Later r (Error result)
+*)
+
+  let wakeup_result r result = resolve_general "wakeup_result" Immediately r result
+  let wakeup r v = resolve_general "wakeup" Immediately r (Ok v)
+  let wakeup_exn r exn = resolve_general "wakeup_exn" Immediately r (Error exn)
+
+  let wakeup_later_result r result =
+    resolve_general "wakeup_later_result" Legacy_later r result
+  let wakeup_later r v =
+    resolve_general "wakeup_later" Legacy_later r (Ok v)
+  let wakeup_later_exn r exn =
+    resolve_general "wakeup_later_exn" Legacy_later r (Error exn)
+
+  type packed_callbacks =
+    | Packed : _ callbacks -> packed_callbacks
+    [@@ocaml.unboxed]
+
+  (* Note that this function deviates from the "ideal" callback deferral
+     behavior: it runs callbacks directly on the current stack. It should
+     therefore be possible to cause a stack overflow using this function. *)
+  let cancel p =
+    let canceled_result = Rejected Canceled in
+
+    (* Walks the promise dependency graph backwards, looking for cancelable
+       initial promises, and cancels (only) them.
+
+       Found initial promises are canceled immediately, as they are found, by
+       setting their state to [Rejected Canceled]. This is to prevent them from
+       being "found twice" if they are reachable by two or more distinct paths
+       through the promise dependency graph.
+
+       The callbacks of these initial promises are then run, in a separate
+       phase. These callbacks propagate cancellation forwards to any dependent
+       promises. See "Cancellation" in the Overview. *)
+    let propagate_cancel : (_, _, _) promise -> packed_callbacks list =
+        fun p ->
+      let rec cancel_and_collect_callbacks :
+          'a 'u 'c. packed_callbacks list -> ('a, 'u, 'c) promise ->
+            packed_callbacks list =
+          fun (type c) callbacks_accumulator (p : (_, _, c) promise) ->
+
+        let p = underlying p in
+        match p.state with
+        (* If the promise is not still pending, it can't be canceled. *)
+        | Fulfilled _ ->
+          callbacks_accumulator
+        | Rejected _ ->
+          callbacks_accumulator
+
+        | Pending callbacks ->
+          match callbacks.how_to_cancel with
+          | Not_cancelable ->
+            callbacks_accumulator
+          | Cancel_this_promise ->
+            let State_may_have_changed p =
+              set_promise_state p canceled_result in
+            ignore p;
+            (Packed callbacks)::callbacks_accumulator
+          | Propagate_cancel_to_one p' ->
+            cancel_and_collect_callbacks callbacks_accumulator p'
+          | Propagate_cancel_to_several ps ->
+            List.fold_left cancel_and_collect_callbacks callbacks_accumulator ps
+      in
+      cancel_and_collect_callbacks [] p
+    in
+
+    let Internal p = to_internal_promise p in
+    let callbacks = propagate_cancel p in
+
+    callbacks |> List.iter (fun (Packed callbacks) ->
+      run_callbacks_or_defer_them
+        ~allow_deferring:false callbacks canceled_result)
+end
+include Resolving
+
+
+module Paused : sig
+  val pause : unit -> unit t
+  val wakeup_paused : unit -> unit
+  val paused_count : unit -> int
+  val register_pause_notifier : (int -> unit) -> unit
+  val abandon_paused : unit -> unit
+end = struct
+
+  let pause_hook = ref ignore
+
+  let paused_count = ref 0
+
+  let pause () =
+    let p = add_task_r paused in
+    incr paused_count;
+    !pause_hook !paused_count;
+    p
+
+  let wakeup_paused () =
+    if Lwt_sequence.is_empty paused then
+      paused_count := 0
+    else begin
+      let tmp = Lwt_sequence.create () in
+      Lwt_sequence.transfer_r paused tmp;
+      paused_count := 0;
+      Lwt_sequence.iter_l (fun r -> wakeup r ()) tmp
+    end
+
+  let register_pause_notifier f = pause_hook := f
+
+  let abandon_paused () =
+    Lwt_sequence.clear paused;
+    paused_count := 0
+
+  let paused_count () = !paused_count
+end
+include Paused
+
+
+
 
 module Sequential_composition :
 sig
@@ -3100,13 +3207,6 @@ sig
     ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'a5 -> 'a6 -> 'a7 -> 'b) ->
     ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'a5 -> 'a6 -> 'a7 -> 'b t)
 
-  (* Paused promises *)
-  val pause : unit -> unit t
-  val wakeup_paused : unit -> unit
-  val paused_count : unit -> int
-  val register_pause_notifier : (int -> unit) -> unit
-  val abandon_paused : unit -> unit
-
   (* Internal interface for other modules in Lwt *)
   val poll : 'a t -> 'a option
 end =
@@ -3180,35 +3280,6 @@ struct
     with exn when Exception_filter.run exn -> fail exn
 
 
-
-  let pause_hook = ref ignore
-
-  let paused = Lwt_sequence.create ()
-  let paused_count = ref 0
-
-  let pause () =
-    let p = add_task_r paused in
-    incr paused_count;
-    !pause_hook !paused_count;
-    p
-
-  let wakeup_paused () =
-    if Lwt_sequence.is_empty paused then
-      paused_count := 0
-    else begin
-      let tmp = Lwt_sequence.create () in
-      Lwt_sequence.transfer_r paused tmp;
-      paused_count := 0;
-      Lwt_sequence.iter_l (fun r -> wakeup r ()) tmp
-    end
-
-  let register_pause_notifier f = pause_hook := f
-
-  let abandon_paused () =
-    Lwt_sequence.clear paused;
-    paused_count := 0
-
-  let paused_count () = !paused_count
 end
 include Miscellaneous
 
@@ -3253,4 +3324,6 @@ module Private = struct
   type nonrec storage = storage
   module Sequence_associated_storage = Sequence_associated_storage
   let tracing_context = tracing_context
+  let resolve_immediately__just_unit = resolve_immediately__just_unit
+  let resolve_immediately_result__just_unit = resolve_immediately_result__just_unit
 end

@@ -171,11 +171,11 @@ let create_with_reference () =
       source.push_signal <- new_waiter;
       push_signal_resolver := new_push_signal_resolver;
       (* Signal that a new value has been received. *)
-      Lwt.wakeup_later old_push_signal_resolver ()
+      Lwt.resolve_next old_push_signal_resolver ()
     end;
     (* Do this at the end in case one of the function raise an
        exception. *)
-    if x = None then Lwt.wakeup close ()
+    if x = None then (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) close ()
   in
   (t, push, fun x -> source.push_external <- Obj.repr x)
 
@@ -249,7 +249,7 @@ let notify_pusher info last =
   let waiter, wakener = Lwt.task () in
   info.pushb_push_waiter <- waiter;
   info.pushb_push_wakener <- wakener;
-  Lwt.wakeup_later old_wakener ()
+  Lwt.resolve_next old_wakener ()
 
 class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close = object
   val mutable closed = false
@@ -298,7 +298,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close = 
         info.pushb_signal <- new_waiter;
         wakener_cell := new_wakener;
         (* Signal that a new value has been received. *)
-        Lwt.wakeup_later old_wakener ()
+        Lwt.resolve_next old_wakener ()
       end;
       Lwt.return_unit
     end
@@ -312,7 +312,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close = 
       last := new_last;
       if info.pushb_pending <> None then begin
         info.pushb_pending <- None;
-        Lwt.wakeup_later_exn info.pushb_push_wakener Closed
+        Lwt.resolve_next_exn info.pushb_push_wakener Closed
       end;
       (* Send a signal if at least one thread is waiting for a new
          element. *)
@@ -320,9 +320,9 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close = 
         info.pushb_waiting <- false;
         let old_wakener = !wakener_cell in
         (* Signal that a new value has been received. *)
-        Lwt.wakeup_later old_wakener ()
+        Lwt.resolve_next old_wakener ()
       end;
-      Lwt.wakeup close ();
+      (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) close ();
     end
 
   method count =
@@ -378,7 +378,7 @@ let feed s =
             from.from_create () >>= fun x ->
             (* Push the element to the end of the queue. *)
             enqueue x s;
-            if x = None then Lwt.wakeup s.close ();
+            if x = None then (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) s.close ();
             Lwt.return_unit)
           Lwt.reraise
       in
@@ -390,7 +390,7 @@ let feed s =
     let x = f () in
     (* Push the element to the end of the queue. *)
     enqueue x s;
-    if x = None then Lwt.wakeup s.close ();
+    if x = None then (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) s.close ();
     Lwt.return_unit
   | Push push ->
     push.push_waiting <- true;

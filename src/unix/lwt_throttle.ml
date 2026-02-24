@@ -68,7 +68,7 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
       (* the table is empty: we do not need to clean in 1 second *)
       t.cleaning <- None
     else launch_cleaning t;
-    List.iter (fun u -> Lwt.wakeup u true) to_run
+    List.iter (fun u -> (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) u true) to_run
 
   and launch_cleaning t =
     t.cleaning <-

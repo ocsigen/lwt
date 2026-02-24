@@ -408,25 +408,47 @@ val wait : unit -> ('a t * 'a u)
 
 (** {3 Resolving} *)
 
+(** [resolve_immediately_result wakener res] immediately resolves the promise
+    associated to [wakener] with the value carried by [res].
+
+    The control-flow returns to the caller of [resolve_immediately_result] once
+    all the callbacks associated to the resolved promise have compoleted. This
+    is hinted out by the return type: [unit Lwt.t]. *)
+val resolve_immediately_result : 'a u -> ('a, exn) result -> unit t
+
+val resolve_immediately : 'a u -> 'a -> unit t
+
+val resolve_immediately_exn : 'a u -> exn -> unit t
+
+(** [resolve_next_result wakener res] does nothing immediately.
+
+    Once the caller of [resolve_next_result] yields control to another thread,
+    the promise associated to [wakener] with the value carried by [res] is
+    resolved and all its attached callbacks are triggered. *)
+val resolve_next_result : 'a u -> ('a, exn) result -> unit
+
+val resolve_next : 'a u -> 'a -> unit
+
+val resolve_next_exn : 'a u -> exn -> unit
+
+(*
+(** [resolve_later_result wakener res] does nothing immediately.
+
+    The next time the control flow passes to the scheduler (TODO: explain
+    better), the promise associated to [wakener] with the value carried by
+    [res] is resolved and all its attached callbacks are triggered. *)
+val resolve_later_result : 'a u -> ('a, exn) result -> unit
+
+val resolve_later : 'a u -> 'a -> unit
+
+val resolve_later_exn : 'a u -> exn -> unit
+*)
+
 val wakeup_later : 'a u -> 'a -> unit
-(** [Lwt.wakeup_later r v] {e fulfills}, with value [v], the {e pending}
-    {{!t} promise} associated with {{!u} resolver} [r]. This triggers callbacks
-    attached to the promise.
-
-    If the promise is not pending, [Lwt.wakeup_later] raises
-    {!Stdlib.Invalid_argument}, unless the promise is {{!Lwt.cancel} canceled}.
-    If the promise is canceled, [Lwt.wakeup_later] has no effect.
-
-    If your program has multiple threads, it is important to make sure that
-    [Lwt.wakeup_later] (and any similar function) is only called from the main
-    thread. [Lwt.wakeup_later] can trigger callbacks attached to promises
-    by the program, and these assume they are running in the main thread. If you
-    need to communicate from a worker thread to the main thread running Lwt, see
-    {!Lwt_preemptive} or {!Lwt_unix.send_notification}. *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 val wakeup_later_exn : _ u -> exn -> unit
-(** [Lwt.wakeup_later_exn r exn] is like {!Lwt.wakeup_later}, except, if the
-    associated {{!t} promise} is {e pending}, it is {e rejected} with [exn]. *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 val return : 'a -> 'a t
 (** [Lwt.return v] creates a new {{!t} promise} that is {e already fulfilled}
@@ -1621,15 +1643,7 @@ val of_result : ('a, exn) result -> 'a t
       rejected with [exn]. *)
 
 val wakeup_later_result : 'a u -> ('a, exn) result -> unit
-(** [Lwt.wakeup_later_result r result] resolves the pending promise [p]
-    associated to resolver [r], according to [result]:
-
-    - If [result] is [Ok v], [p] is fulfilled with [v].
-    - If [result] is [Error exn], [p] is rejected with [exn].
-
-    If [p] is not pending, [Lwt.wakeup_later_result] raises
-    [Stdlib.Invalid_argument _], except if [p] is {{!Lwt.cancel} canceled}. If
-    [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 
 
@@ -1763,30 +1777,13 @@ let () =
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
-(** [Lwt.wakeup r v] is like {!Lwt.wakeup_later}[ r v], except it guarantees
-    that callbacks associated with [r] will be called immediately, deeper on the
-    current stack.
-
-    In contrast, {!Lwt.wakeup_later} {e may} call callbacks immediately, or may
-    queue them for execution on a shallower stack – though still before the next
-    time Lwt blocks the process on I/O.
-
-    Using this function is discouraged, because calling it in a loop can exhaust
-    the stack. The loop might be difficult to detect or predict, due to combined
-    mutually-recursive calls between multiple modules and libraries.
-
-    Also, trying to use this function to guarantee the timing of callback calls
-    for synchronization purposes is discouraged. This synchronization effect is
-    obscure to readers. It is better to use explicit promises, or {!Lwt_mutex},
-    {!Lwt_condition}, and/or {!Lwt_mvar}. *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 val wakeup_exn : _ u -> exn -> unit
-(** [Lwt.wakeup_exn r exn] is like {!Lwt.wakeup_later_exn}[ r exn], but has
-    the same problems as {!Lwt.wakeup}. *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 val wakeup_result : 'a u -> ('a, exn) result -> unit
-(** [Lwt.wakeup_result r result] is like {!Lwt.wakeup_later_result}[ r result],
-    but has the same problems as {!Lwt.wakeup}. *)
+(** [@@ocaml.deprecated "Use resolve functions instead"] *)
 
 
 
@@ -2067,7 +2064,6 @@ val backtrace_try_bind :
 val abandon_wakeups : unit -> unit
 
 val debug_state_is : 'a state -> 'a t -> bool t
-
 module Private : sig
   type storage
 
@@ -2079,5 +2075,7 @@ module Private : sig
   end
 
   val tracing_context : string key
-end [@@alert trespassing "for internal use only, keep away"]
 
+  val resolve_immediately__just_unit : 'a u -> 'a -> unit
+  val resolve_immediately_result__just_unit : 'a u -> ('a, exn) result -> unit
+end [@@alert trespassing "for internal use only, keep away"]
