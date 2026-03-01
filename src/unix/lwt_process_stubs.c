@@ -62,31 +62,88 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   CAMLparam5(prog, cmdline, env, cwd, fds);
   CAMLlocal1(result);
 
-  STARTUPINFO si;
+  STARTUPINFOEX siex;
   PROCESS_INFORMATION pi;
   DWORD flags = 0, err;
-  HANDLE hp, fd0, fd1, fd2;
+  HANDLE fd0, fd1, fd2;
   HANDLE to_close0 = INVALID_HANDLE_VALUE, to_close1 = INVALID_HANDLE_VALUE,
     to_close2 = INVALID_HANDLE_VALUE;
+  HANDLE inherit_handles[3];
+  int num_inherit = 0;
+  SIZE_T attr_size = 0;
+  LPPROC_THREAD_ATTRIBUTE_LIST attr_list = NULL;
+  HANDLE h;
+  int i, found;
 
   fd0 = get_handle(Field(fds, 0));
   fd1 = get_handle(Field(fds, 1));
   fd2 = get_handle(Field(fds, 2));
 
   err = ERROR_SUCCESS;
-  ZeroMemory(&si, sizeof(si));
+  ZeroMemory(&siex, sizeof(siex));
   ZeroMemory(&pi, sizeof(pi));
-  si.cb = sizeof(si);
-  si.dwFlags = STARTF_USESTDHANDLES;
+  siex.StartupInfo.cb = sizeof(siex);
+  siex.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
 
-  /* If needed, duplicate the handles fd1, fd2, fd3 to make sure they
+  /* If needed, duplicate the handles fd0, fd1, fd2 to make sure they
      are inheritable. */
-  if (! ensure_inheritable(fd0, &si.hStdInput, &to_close0) ||
-      ! ensure_inheritable(fd1, &si.hStdOutput, &to_close1) ||
-      ! ensure_inheritable(fd2, &si.hStdError, &to_close2)) {
+  if (! ensure_inheritable(fd0, &siex.StartupInfo.hStdInput, &to_close0) ||
+      ! ensure_inheritable(fd1, &siex.StartupInfo.hStdOutput, &to_close1) ||
+      ! ensure_inheritable(fd2, &siex.StartupInfo.hStdError, &to_close2)) {
     err = GetLastError(); goto ret;
   }
 
+  /* Build unique list of handles that the child should inherit.
+     This avoids the race condition where SetHandleInformation + bInheritHandles=TRUE
+     would cause ALL inheritable handles to be inherited by concurrent child processes. */
+  h = siex.StartupInfo.hStdInput;
+  if (h != INVALID_HANDLE_VALUE && h != NULL)
+    inherit_handles[num_inherit++] = h;
+
+  h = siex.StartupInfo.hStdOutput;
+  if (h != INVALID_HANDLE_VALUE && h != NULL) {
+    found = 0;
+    for (i = 0; i < num_inherit; i++)
+      if (inherit_handles[i] == h) { found = 1; break; }
+    if (!found) inherit_handles[num_inherit++] = h;
+  }
+
+  h = siex.StartupInfo.hStdError;
+  if (h != INVALID_HANDLE_VALUE && h != NULL) {
+    found = 0;
+    for (i = 0; i < num_inherit; i++)
+      if (inherit_handles[i] == h) { found = 1; break; }
+    if (!found) inherit_handles[num_inherit++] = h;
+  }
+
+  /* Set up PROC_THREAD_ATTRIBUTE_HANDLE_LIST so only these handles
+     are inherited, even though bInheritHandles is TRUE. */
+  if (num_inherit > 0) {
+    InitializeProcThreadAttributeList(NULL, 1, 0, &attr_size);
+    attr_list = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(
+      GetProcessHeap(), 0, attr_size);
+    if (attr_list == NULL) {
+      err = ERROR_OUTOFMEMORY; goto ret;
+    }
+    if (!InitializeProcThreadAttributeList(attr_list, 1, 0, &attr_size)) {
+      err = GetLastError();
+      HeapFree(GetProcessHeap(), 0, attr_list);
+      attr_list = NULL;
+      goto ret;
+    }
+    if (!UpdateProcThreadAttribute(attr_list, 0,
+          PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+          inherit_handles, num_inherit * sizeof(HANDLE),
+          NULL, NULL)) {
+      err = GetLastError();
+      DeleteProcThreadAttributeList(attr_list);
+      HeapFree(GetProcessHeap(), 0, attr_list);
+      attr_list = NULL;
+      goto ret;
+    }
+    siex.lpAttributeList = attr_list;
+    flags |= EXTENDED_STARTUPINFO_PRESENT;
+  }
 
 #define string_option(opt) \
   (Is_block(opt) ? caml_stat_strdup_to_os(String_val(Field(opt, 0))) : NULL)
@@ -101,7 +158,7 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
 
   flags |= CREATE_UNICODE_ENVIRONMENT;
   if (! CreateProcess(progs, cmdlines, NULL, NULL, TRUE, flags,
-                      envs, cwds, &si, &pi)) {
+                      envs, cwds, (LPSTARTUPINFO)&siex, &pi)) {
     err = GetLastError();
   }
 
@@ -111,7 +168,13 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   caml_stat_free(cwds);
 
 ret:
-/* Close the handles if we duplicated them above. */
+  /* Clean up attribute list if we created one. */
+  if (attr_list != NULL) {
+    DeleteProcThreadAttributeList(attr_list);
+    HeapFree(GetProcessHeap(), 0, attr_list);
+  }
+
+  /* Close the handles if we duplicated them above. */
   if (to_close0 != INVALID_HANDLE_VALUE) CloseHandle(to_close0);
   if (to_close1 != INVALID_HANDLE_VALUE) CloseHandle(to_close1);
   if (to_close2 != INVALID_HANDLE_VALUE) CloseHandle(to_close2);
