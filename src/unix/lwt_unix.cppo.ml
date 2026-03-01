@@ -2354,6 +2354,13 @@ let sigchld_handler_installer =
     end
   end
 
+external win32_waitpid_job :
+  Unix.wait_flag list -> int -> (int * Unix.process_status) job =
+  "lwt_unix_waitpid_job"
+
+let _win32_waitpid flags pid =
+  run_job (win32_waitpid_job flags pid)
+
 let _waitpid flags pid =
   Lwt.catch
     (fun () -> Lwt.return (Unix.waitpid flags pid))
@@ -2361,7 +2368,7 @@ let _waitpid flags pid =
 
 let waitpid =
   if Sys.win32 then
-    _waitpid
+    _win32_waitpid
   else
     fun flags pid ->
       Lazy.force sigchld_handler_installer;
