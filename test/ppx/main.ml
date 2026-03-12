@@ -181,6 +181,22 @@ let suite = suite "ppx" [
       let%lwt _ : _ = Lwt.return 0 in
       Lwt.return_true
     ) ;
+
+  (* offband report of bug, doesn't trigger but le *)
+  test "record-field-infer"
+    (fun () ->
+      let module M = struct type t = { a : int; b : int } end in
+      let module MM = struct type t = { a : float; b : char; } end in
+      let%lwt { a = _; _ } : M.t = Lwt.return { M.a = 0; b = 0 } in
+      Lwt.return_true
+    )[@ocaml.warning "-34-69"] ;
+  test "record-field-infer-brckt"
+    (fun () ->
+      let module M = struct type t = { a : int; b : int } end in
+      let module MM = struct type t = { a : float; b : char; } end in
+      let%lwt ({ a = _; _ } : M.t) = Lwt.return { M.a = 0; b = 0 } in
+      Lwt.return_true
+    )[@ocaml.warning "-34-69"] ;
 ]
 
 let _ = Test.run "ppx" [ suite ]
