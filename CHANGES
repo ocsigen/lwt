@@ -1,3 +1,11 @@
+===== 5.9.4 =====
+
+====== Additions ======
+
+  * Lwt_engine.id: an unused type definition for better 6+ compatibility
+
+  * Lwt_unix.notification=int: a type alias for better 6+ compatibility
+
 ===== 5.9.3 =====
 
 ====== Fixes ======
