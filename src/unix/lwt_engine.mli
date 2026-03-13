@@ -65,6 +65,8 @@ val forwards_signal : int -> bool
 (** An engine represents a set of functions used to register different
     kinds of callbacks for different kinds of events. *)
 
+type engine_id = ..
+
 (** Abstract class for engines. *)
 class virtual abstract : object
   method destroy : unit
