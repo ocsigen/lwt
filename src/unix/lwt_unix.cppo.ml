@@ -80,9 +80,11 @@ module Notifiers = Hashtbl.Make(struct
 
 let notifiers = Notifiers.create 1024
 
+type notification = int
+
 (* See https://github.com/ocsigen/lwt/issues/277 and
    https://github.com/ocsigen/lwt/pull/278. *)
-let current_notification_id = ref (0x7FFFFFFF - 1000)
+let current_notification_id : notification ref = ref (0x7FFFFFFF - 1000)
 
 let rec find_free_id id =
   if Notifiers.mem notifiers id then

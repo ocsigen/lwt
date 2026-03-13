@@ -78,7 +78,7 @@ struct
 end
 
 type thread = {
-  task_cell: (int * (unit -> unit)) CELL.t;
+  task_cell: (Lwt_unix.notification * (unit -> unit)) CELL.t;
   (* Channel used to communicate notification id and tasks to the
      worker thread. *)
 
