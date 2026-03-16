@@ -124,7 +124,7 @@ let add_worker worker =
   | None ->
     Queue.add worker workers
   | Some w ->
-    Lwt.wakeup w worker
+    (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) w worker
 
 (* Wait for worker to be available, then return it: *)
 let get_worker () =
@@ -187,7 +187,7 @@ let detach f args =
   let waiter, wakener = Lwt.wait () in
   let id =
     Lwt_unix.make_notification ~once:true
-      (fun () -> Lwt.wakeup_result wakener !result)
+      (fun () -> (Lwt.Private.resolve_immediately_result__just_unit[@ocaml.alert "-trespassing"]) wakener !result)
   in
   Lwt.finalize
     (fun () ->

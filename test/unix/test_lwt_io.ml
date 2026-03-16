@@ -35,7 +35,7 @@ struct
         Lwt.finalize
           (fun () -> f channels)
           (fun () ->
-            Lwt.wakeup notify_handler_finished ();
+            (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) notify_handler_finished ();
             Lwt.return_unit))
 
     >>= fun server ->
@@ -154,11 +154,11 @@ let suite = suite "lwt_io" [
 
       let server =
         (Lwt_io.Versioned.establish_server_1 [@ocaml.warning "-3"])
-          local (fun channels -> Lwt.wakeup run_handler channels)
+          local (fun channels -> (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) run_handler channels)
       in
 
       Lwt_io.with_connection local (fun _ -> Lwt.return_unit) >>= fun () ->
-      Lwt.wakeup client_finished ();
+      (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) client_finished ();
       Lwt_io.shutdown_server server >>= fun () ->
       handler);
 
@@ -176,7 +176,7 @@ let suite = suite "lwt_io" [
             Lwt.async (fun () ->
               Lwt_io.close in_channel >>= fun () ->
               Lwt_io.close out_channel >|= fun () ->
-              Lwt.wakeup server_finished ()))
+              (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) server_finished ()))
       in
 
       Lwt_io.with_connection local (fun _ ->
