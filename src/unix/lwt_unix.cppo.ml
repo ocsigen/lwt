@@ -621,10 +621,12 @@ let read ch buf pos len =
     invalid_arg "Lwt_unix.read"
   else
     Lazy.force ch.blocking >>= function
-    | true ->
+    | true when Sys.win32 ->
       (* On Windows, select() doesn't work with pipe handles, so skip
          wait_read and let the worker thread handle blocking directly. *)
-      (if Sys.win32 then Lwt.return_unit else wait_read ch) >>= fun () ->
+      run_job (read_job ch.fd buf pos len)
+    | true ->
+      wait_read ch >>= fun () ->
       run_job (read_job ch.fd buf pos len)
     | false ->
       wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
@@ -634,8 +636,10 @@ let pread ch buf ~file_offset pos len =
     invalid_arg "Lwt_unix.pread"
   else
     Lazy.force ch.blocking >>= function
+    | true when Sys.win32 ->
+      run_job (pread_job ch.fd buf ~file_offset pos len)
     | true ->
-      (if Sys.win32 then Lwt.return_unit else wait_read ch) >>= fun () ->
+      wait_read ch >>= fun () ->
       run_job (pread_job ch.fd buf ~file_offset pos len)
     | false ->
       wrap_syscall Read ch (fun () -> stub_pread ch.fd buf ~file_offset pos len)
@@ -651,8 +655,10 @@ let read_bigarray function_name fd buf pos len =
     invalid_arg function_name
   else
     blocking fd >>= function
+    | true when Sys.win32 ->
+      run_job (read_bigarray_job (unix_file_descr fd) buf pos len)
     | true ->
-      (if Sys.win32 then Lwt.return_unit else wait_read fd) >>= fun () ->
+      wait_read fd >>= fun () ->
       run_job (read_bigarray_job (unix_file_descr fd) buf pos len)
     | false ->
       wrap_syscall Read fd (fun () ->
@@ -681,8 +687,10 @@ let write ch buf pos len =
     invalid_arg "Lwt_unix.write"
   else
     Lazy.force ch.blocking >>= function
+    | true when Sys.win32 ->
+      run_job (write_job ch.fd buf pos len)
     | true ->
-      (if Sys.win32 then Lwt.return_unit else wait_write ch) >>= fun () ->
+      wait_write ch >>= fun () ->
       run_job (write_job ch.fd buf pos len)
     | false ->
       wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
@@ -692,8 +700,10 @@ let pwrite ch buf ~file_offset pos len =
     invalid_arg "Lwt_unix.pwrite"
   else
     Lazy.force ch.blocking >>= function
+    | true when Sys.win32 ->
+      run_job (pwrite_job ch.fd buf ~file_offset pos len)
     | true ->
-      (if Sys.win32 then Lwt.return_unit else wait_write ch) >>= fun () ->
+      wait_write ch >>= fun () ->
       run_job (pwrite_job ch.fd buf ~file_offset pos len)
     | false ->
       wrap_syscall Write ch (fun () -> stub_pwrite ch.fd buf ~file_offset pos len)
@@ -717,8 +727,10 @@ let write_bigarray function_name fd buf pos len =
     invalid_arg function_name
   else
     blocking fd >>= function
+    | true when Sys.win32 ->
+      run_job (write_bigarray_job (unix_file_descr fd) buf pos len)
     | true ->
-      (if Sys.win32 then Lwt.return_unit else wait_write fd) >>= fun () ->
+      wait_write fd >>= fun () ->
       run_job (write_bigarray_job (unix_file_descr fd) buf pos len)
     | false ->
       wrap_syscall Write fd (fun () ->
