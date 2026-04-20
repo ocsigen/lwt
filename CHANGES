@@ -1,3 +1,9 @@
+===== 6.1.2 =====
+
+====== Fixes ======
+
+  * fix initialisation of lock on Windows. (Mark Elvers, David Allsopp, #1103, #1107, #1104)
+
 ===== 6.1.1 =====
 
 ====== Fixes ======
