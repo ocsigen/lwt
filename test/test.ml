@@ -1,12 +1,19 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
+let () = Printexc.record_backtrace true
 
 type test = {
   test_name : string;
   skip_if_this_is_false : unit -> bool;
   sequential : bool;
   run : unit -> bool Lwt.t;
+}
+
+type suite = {
+  suite_name : string;
+  suite_tests : test list;
+  skip_suite_if_this_is_false : unit -> bool;
 }
 
 type outcome =
@@ -28,15 +35,28 @@ let test_direct test_name ?(only_if = fun () -> true) run =
 let test test_name ?(only_if = fun () -> true) ?(sequential = false) run =
   {test_name; skip_if_this_is_false = only_if; sequential; run}
 
+let running_in_ci = Option.is_some (Sys.getenv_opt "CI")
+
 module Log =
 struct
-  let log_file =
+  let filename =
     let pid = Unix.getpid () in
     let ms = Unix.gettimeofday () |> modf |> fst in
-    let filename = Printf.sprintf "test.%i.%03.0f.log" pid (ms *. 1e3) in
-    open_out filename
+    Printf.sprintf "test.%i.%03.0f.log" pid (ms *. 1e3)
+  let log_file = open_out filename
   let () =
-    at_exit (fun () -> close_out_noerr log_file)
+    at_exit (fun () ->
+      if running_in_ci then
+        let ic = open_in filename in
+        try
+          while true do
+            let line = input_line ic in
+            print_endline line
+          done
+        with End_of_file ->
+          close_in ic ;
+      flush_all ();
+      close_out_noerr log_file)
 
   let start_time = ref None
   let elapsed () =
@@ -59,15 +79,15 @@ end
 
 let log = Log.log
 
-let run_test : test -> outcome Lwt.t = fun test ->
+let run_test : suite -> test -> outcome Lwt.t = fun suite test ->
   if test.skip_if_this_is_false () = false then begin
-    log @@ (fun k -> k test.test_name "skipping");
+    log @@ (fun k -> k (Printf.sprintf "[%s] %s" suite.suite_name test.test_name) "skipping");
     Lwt.return Skipped
   end
 
   else begin
     let start_time = Unix.gettimeofday () in
-    log @@ (fun k -> k test.test_name "starting");
+    log @@ (fun k -> k (Printf.sprintf "[%s] %s" suite.suite_name test.test_name) "starting");
 
     (* Lwt.async_exception_hook handling inspired by
          https://github.com/mirage/alcotest/issues/45 *)
@@ -102,7 +122,7 @@ let run_test : test -> outcome Lwt.t = fun test ->
       (fun () ->
         Lwt.async_exception_hook := old_async_exception_hook;
         let elapsed = Unix.gettimeofday () -. start_time in
-        log @@ (fun k -> k test.test_name "finished in %.3f s" elapsed);
+        log @@ (fun k -> k (Printf.sprintf "[%s] %s" suite.suite_name test.test_name) "finished in %.3f s" elapsed);
         Lwt.return_unit)
   end
 
@@ -113,12 +133,6 @@ let outcome_to_character : outcome -> string = function
   | Skipped -> "S"
 
 
-
-type suite = {
-  suite_name : string;
-  suite_tests : test list;
-  skip_suite_if_this_is_false : unit -> bool;
-}
 
 let contains_dup_tests suite tests =
   let names =
@@ -145,6 +159,7 @@ let suite name ?(only_if = fun () -> true) tests =
 
 let run_test_suite : suite -> ((string * outcome) list) Lwt.t = fun suite ->
   if suite.skip_suite_if_this_is_false () = false then
+    let () = log @@ (fun k -> k suite.suite_name "skipping") in
     let outcomes =
       suite.suite_tests
       |> List.map (fun {test_name; _} -> (test_name, Skipped))
@@ -158,7 +173,7 @@ let run_test_suite : suite -> ((string * outcome) list) Lwt.t = fun suite ->
 
   else
     suite.suite_tests |> Lwt_list.map_s begin fun test ->
-      Lwt.bind (run_test test) (fun outcome ->
+      Lwt.bind (run_test suite test) (fun outcome ->
       outcome |> outcome_to_character |> print_string;
       flush stdout;
       Lwt.return (test.test_name, outcome))
@@ -281,7 +296,7 @@ let concurrent library_name suites =
       if suite.skip_suite_if_this_is_false () = false then
         Lwt.return Skipped
       else
-        run_test test
+        run_test suite test
     end
     >|= fun outcome ->
     print_string (outcome_to_character outcome);
@@ -331,8 +346,14 @@ let concurrent library_name suites =
       | (suite, test), Exception exn ->
         Printf.eprintf "Test '%s' in suite '%s' raised '%s'\n"
           test.test_name suite.suite_name (Printexc.to_string exn)
-      | _ ->
-        ());
+      | (suite, test), Skipped ->
+        if running_in_ci then
+          Printf.eprintf "Test '%s' in suite '%s' skipped\n"
+            test.test_name suite.suite_name
+      | (suite, test), Passed ->
+        if running_in_ci then
+          Printf.eprintf "Test '%s' in suite '%s' passed\n"
+            test.test_name suite.suite_name);
     exit 1
   end
 
