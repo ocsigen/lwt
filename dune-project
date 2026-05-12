@@ -53,7 +53,7 @@
 
 (package
  (name lwt)
- (version 5.9.2)
+ (version 5.10.0)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
 
