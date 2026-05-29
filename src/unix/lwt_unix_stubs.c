@@ -239,9 +239,12 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition,
 int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
   HANDLE handle =
       CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start, data, 0, NULL);
-  if (handle)
+  if (handle) {
     CloseHandle(handle);
-  return 0;
+    return 0;
+  }
+  win32_maperr(GetLastError());
+  return errno;
 }
 
 lwt_unix_thread lwt_unix_thread_self() { return GetCurrentThreadId(); }
