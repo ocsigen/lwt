@@ -34,13 +34,13 @@ struct job_gethostbyname {
 static void worker_gethostbyname(struct job_gethostbyname *job)
 {
 #if HAS_GETHOSTBYNAME_R == 5
-    int h_errno;
+    int local_h_errno;
     job->ptr = gethostbyname_r(job->name, &job->entry, job->buffer,
-                               NETDB_BUFFER_SIZE, &h_errno);
+                               NETDB_BUFFER_SIZE, &local_h_errno);
 #elif HAS_GETHOSTBYNAME_R == 6
-    int h_errno;
+    int local_h_errno;
     if (gethostbyname_r(job->name, &job->entry, job->buffer, NETDB_BUFFER_SIZE,
-                        &(job->ptr), &h_errno) != 0)
+                        &(job->ptr), &local_h_errno) != 0)
         job->ptr = NULL;
 #else
     job->ptr = gethostbyname(job->name);

@@ -33,13 +33,13 @@ struct job_gethostbyaddr {
 static void worker_gethostbyaddr(struct job_gethostbyaddr *job)
 {
 #if HAS_GETHOSTBYADDR_R == 7
-    int h_errno;
+    int local_h_errno;
     job->ptr = gethostbyaddr_r(&job->addr, 4, AF_INET, &job->entry, job->buffer,
-                               NETDB_BUFFER_SIZE, &h_errno);
+                               NETDB_BUFFER_SIZE, &local_h_errno);
 #elif HAS_GETHOSTBYADDR_R == 8
-    int h_errno;
+    int local_h_errno;
     if (gethostbyaddr_r(&job->addr, 4, AF_INET, &job->entry, job->buffer,
-                        NETDB_BUFFER_SIZE, &job->ptr, &h_errno) != 0)
+                        NETDB_BUFFER_SIZE, &job->ptr, &local_h_errno) != 0)
         job->ptr = NULL;
 #else
     job->ptr = gethostbyaddr(&job->addr, 4, AF_INET);
