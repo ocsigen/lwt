@@ -65,7 +65,7 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD flags = 0, err;
-  HANDLE hp, fd0, fd1, fd2;
+  HANDLE fd0, fd1, fd2;
   HANDLE to_close0 = INVALID_HANDLE_VALUE, to_close1 = INVALID_HANDLE_VALUE,
     to_close2 = INVALID_HANDLE_VALUE;
 
