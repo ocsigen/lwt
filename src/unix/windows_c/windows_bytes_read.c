@@ -44,7 +44,7 @@ CAMLprim value lwt_unix_bytes_read(value fd, value buf, value vofs, value vlen)
             numwritten = 0;
         } else if (err) {
             win32_maperr(err);
-            uerror("write", Nothing);
+            uerror("read", Nothing);
         }
         written = numwritten;
     }
