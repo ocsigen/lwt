@@ -1,0 +1,47 @@
+;; Declarative wodoc config for the Lwt documentation.
+;; Replaces doc/build.sh, doc/menu.wiki, doc/template.html and doc/leftnav.html:
+;;   wodoc build --config doc/wodoc --out <dir>/<label> --label <v> \
+;;               --menu <shared menu.html> [--latest]
+;; (wodoc build runs `dune build @doc` itself when --src is not given.)
+(project lwt)
+(title Lwt)
+(pub /lwt)
+(landing lwt/index.html)
+;; no (highlight …): wodoc's default starter already colours lwt/jsoo/eliom syntax.
+;; lwt's sibling packages are not dependency edges, so odoc leaves their refs
+;; unresolved; link them into their own subtree.
+(sibling Ppx_lwt   lwt_ppx/Lwt_ppx/Ppx_lwt)
+(sibling Lwt_react lwt_react/Lwt_react)
+(sibling Lwt_retry lwt_retry/Lwt_retry)
+(nav
+  (section "Manual"
+    (link "Overview"   lwt/index.html  index)
+    (link "Lwt manual" lwt/manual.html manual))
+  (section "Core library [lwt]"
+    (link "Lwt"           lwt/Lwt/index.html)
+    (link "Lwt_list"      lwt/Lwt_list/index.html)
+    (link "Lwt_stream"    lwt/Lwt_stream/index.html)
+    (link "Lwt_result"    lwt/Lwt_result/index.html)
+    (link "Lwt_seq"       lwt/Lwt_seq/index.html)
+    (link "Lwt_mutex"     lwt/Lwt_mutex/index.html)
+    (link "Lwt_condition" lwt/Lwt_condition/index.html)
+    (link "Lwt_mvar"      lwt/Lwt_mvar/index.html)
+    (link "Lwt_switch"    lwt/Lwt_switch/index.html)
+    (link "Lwt_pool"      lwt/Lwt_pool/index.html))
+  (section "Unix library [lwt.unix]"
+    (link "Lwt_unix"       lwt/Lwt_unix/index.html)
+    (link "Lwt_main"       lwt/Lwt_main/index.html)
+    (link "Lwt_io"         lwt/Lwt_io/index.html)
+    (link "Lwt_process"    lwt/Lwt_process/index.html)
+    (link "Lwt_bytes"      lwt/Lwt_bytes/index.html)
+    (link "Lwt_preemptive" lwt/Lwt_preemptive/index.html)
+    (link "Lwt_fmt"        lwt/Lwt_fmt/index.html)
+    (link "Lwt_throttle"   lwt/Lwt_throttle/index.html)
+    (link "Lwt_timeout"    lwt/Lwt_timeout/index.html)
+    (link "Lwt_engine"     lwt/Lwt_engine/index.html)
+    (link "Lwt_gc"         lwt/Lwt_gc/index.html)
+    (link "Lwt_sys"        lwt/Lwt_sys/index.html))
+  (section "Other libraries"
+    (link "Lwt_react" lwt_react/Lwt_react/index.html)
+    (link "Lwt_ppx"   lwt_ppx/Lwt_ppx/index.html)
+    (link "Lwt_retry" lwt_retry/Lwt_retry/index.html)))

@@ -15,5 +15,5 @@ scratch/
 # BuckleScript output.
 lib/
 
-# Wikidoc output.
-/docs/api/
+# wodoc themed-site build output (doc/build.sh).
+/_doc-site/
