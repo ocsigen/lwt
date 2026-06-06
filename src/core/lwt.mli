@@ -550,7 +550,7 @@ let () =
 (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
-    This uses the Lwt {{: Ppx_lwt.html} PPX} (preprocessor). Note that we had to
+    This uses the Lwt {{!Ppx_lwt} PPX} (preprocessor). Note that we had to
     add package [lwt_ppx] to the command line for building this program. We will
     do that throughout this manual.
 
@@ -607,7 +607,7 @@ let () =
 ]}
 
     Despite the above code, the recommended way to write [Lwt.catch] is using
-    the [try%lwt] syntactic sugar from the {{: Ppx_lwt.html} PPX}. Here is an
+    the [try%lwt] syntactic sugar from the {{!Ppx_lwt} PPX}. Here is an
     equivalent example:
 
 {[
