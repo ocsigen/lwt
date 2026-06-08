@@ -31,8 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          opam install . --deps-only --with-doc
-          opam install odoc
+          opam install . --deps-only --with-doc   # odoc is a with-doc dep
           # wodoc: the odoc driver that themes the pages with the Ocsigen chrome.
           opam pin add -n wodoc https://github.com/ocsigen/wodoc.git
           opam install wodoc
