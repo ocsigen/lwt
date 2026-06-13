@@ -60,19 +60,16 @@ directory; the other version directories already on `gh-pages` are preserved.
 
 ## Releasing a stable version
 
-The CI only ever (re)builds `dev/`. A stable version is a **frozen snapshot** of
-`dev/` plus the `latest` symlink, produced at release time on the `gh-pages`
-branch (no rebuild — the docs of a release are exactly the `dev` docs at that
-point):
+The CI builds only `dev/`. To publish a stable version, run the **Documentation**
+workflow manually (GitHub → Actions → *Documentation* → "Run workflow") with the
+**version** input (e.g. `1.2.3`). The `release` job freezes the current `dev/`
+docs as `/<version>/`, repoints the `latest` symlink, writes the root redirect
+and refreshes `versions.json` — via `wodoc release --from dev --version <version>`.
+No rebuild: the docs of a release are exactly the `dev` docs at that point.
+
+Equivalently, by hand on a `gh-pages` checkout:
 
 ```
-git fetch origin gh-pages
-git worktree add gh-pages gh-pages && cd gh-pages
-cp -a dev <version>          # e.g. freeze the current dev docs as 1.2.3
-ln -sfn <version> latest     # point `latest` at the new release
-git add <version> latest && git commit -m "Release doc <version>" && git push
+wodoc release --site . --from dev --version <version>
+git add -A && git commit -m "Release doc <version>" && git push
 ```
-
-The project-root `index.html` redirects to `latest/`, so nothing else changes.
-Older version directories are preserved untouched. (This freeze step is a good
-candidate for a future `wodoc release` subcommand.)
