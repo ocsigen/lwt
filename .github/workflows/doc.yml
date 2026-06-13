@@ -11,12 +11,17 @@ name: Documentation
 on:
   push:
     branches: [master]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Publish a stable version: freeze the dev docs now on gh-pages as /<version>/ and repoint `latest` (e.g. 1.2.3). Leave empty to just rebuild dev."
+        required: false
+        default: ""
 
 # Don't run on forks: deployment targets ocsigen/lwt's gh-pages.
 jobs:
   build-deploy:
-    if: github.repository == 'ocsigen/lwt'
+    if: github.repository == 'ocsigen/lwt' && (github.event_name != 'workflow_dispatch' || github.event.inputs.version == '')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -52,3 +57,46 @@ jobs:
           folder: _doc-site/dev
           target-folder: dev
           clean: true
+
+  release:
+    # Manual run with a version: freeze the dev docs currently on gh-pages as the
+    # stable /<version>/ and repoint `latest` at it (refreshing versions.json).
+    # No rebuild -- the docs of a release are exactly the dev docs at that point.
+    if: github.repository == 'ocsigen/lwt' && github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.4.0"
+
+      - name: Install wodoc
+        run: |
+          opam pin add -n wodoc https://github.com/ocsigen/wodoc.git
+          opam install wodoc
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+          fetch-depth: 0
+
+      - name: Freeze dev as the stable version and repoint latest
+        # wodoc release: cp -a site/dev site/<version>, ln -sfn <version> latest,
+        # write the root index.html redirect if missing, refresh versions.json.
+        run: >-
+          opam exec -- wodoc release --site site --from dev
+          --version "${{ github.event.inputs.version }}"
+
+      - name: Commit and push gh-pages
+        run: |
+          cd site
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet \
+            || git commit -m "Release doc ${{ github.event.inputs.version }} (freeze dev, repoint latest)"
+          git push
