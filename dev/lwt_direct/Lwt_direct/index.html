@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Module Lwt_direct — Lwt</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/ocsigen-odoc.css"/>
+  <link rel="alternate" type="text/markdown" href="../../lwt_direct/Lwt_direct.md"/>
+  <script src="../../highlight.pack.js"></script>
+  <script src="../../wodoc-highlight.js"></script>
+</head>
+<body class="wodoc-page wodoc-doc">
+  <!-- Shared site menu — THE single source of truth for the header, top menu and
+     drawer of EVERY Ocsigen doc page (vitrine + all projects). Canonical copy
+     lives here in ocsigen.github.io; each project's build fetches it. Injected
+     by `wodoc assemble --menu`. Holes filled by the tool (braces omitted here so
+     this comment is not itself rewritten by the hole-filler):
+       subproject  the sub-project name shown next to the Ocsigen logo
+                   (empty on the vitrine), via --subproject
+       leftnav     the project's left navigation, expanded into BOTH the mobile
+                   drawer (below) and the left column (in the page template),
+                   via --leftnav
+     The current entry is highlighted by adding the `current` class to the
+     element carrying data-wodoc-page=<id>: --current on the vitrine (page id),
+     --menu-current in a project (the project id). Nothing is hardcoded here, so
+     this file is the ONLY place the menu is defined.
+
+     Links are the FINAL site paths (/<project>/, /<page>): the target layout
+     where each project is served at ocsigen.org/<project>/ — no transitional
+     /wodoc/ prefix. -->
+<div class="page-header">
+  <p class="logo-ocsigen"><a href="/"><img src="/img/ocsigen-white.svg" alt="Ocsigen"/></a></p>
+  <p class="logo-subproject">Lwt</p>
+
+  <div class="mainmenu">
+    <p class="mainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></p>
+    <p class="mainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></p>
+    <p class="mainmenu-blog" data-wodoc-page="blog"><a href="/blog/">Blog</a></p>
+    <p data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></p>
+    <p data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></p>
+    <p data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></p>
+    <p data-wodoc-page="lwt" class="current"><a href="/lwt/">Lwt</a></p>
+    <p data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></p>
+    <p data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></p>
+  </div>
+
+  <form id="googlesearch" action="https://google.com/search">
+    <input name="q" id="gsearch-box" placeholder="Search using Google"/>
+    <label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label>
+    <input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/>
+  </form>
+
+  <aside class="how-drawer">
+    <input id="how-drawer-toggle" type="checkbox"/>
+    <label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label>
+    <nav class="how-drawer-content">
+      <ul class="drawermainmenu">
+        <li class="drawermainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></li>
+        <li class="drawermainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></li>
+        <li class="drawermainmenu-project current" data-wodoc-page="lwt"><a href="/lwt/">Lwt</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-toolkit"><a href="/ocsigen-toolkit/">Toolkit</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsipersist"><a href="/ocsipersist/">Ocsipersist</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="reactiveData"><a href="/reactiveData/">ReactiveData</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-i18n"><a href="/ocsigen-i18n/">i18n</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="wodoc"><a href="/wodoc/">Wodoc</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="projects"><a href="/projects">Other projects</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="papers"><a href="/papers">Research papers</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="credits"><a href="/credits">Who does Ocsigen?</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="contributing"><a href="/contributing">Contributing</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="blog"><a href="/blog/">Blog</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="install"><a href="/install">Installation</a></li>
+        <li class="drawermainmenu-page"><a href="https://github.com/ocsigen">Source code</a></li>
+      </ul>
+      <!-- On mobile the left column is hidden; its menu lives here in the burger
+           (.how-doctree, shown only on narrow screens), as the old site did.
+           Empty on the vitrine; the leftnav hole is filled (with the same
+           fragment as the left column) only on project pages. -->
+      <nav class="how-doctree"><div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../../lwt/index.html">Overview</a></li>
+<li class="ml3" data-wodoc-page="lwt/manual.html"><a href="../../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+</nav>
+    </nav>
+  </aside>
+</div>
+
+
+  <div class="project-page">
+    <div class="twocols">
+      <nav class="leftcol">
+        <div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../../lwt/index.html">Overview</a></li>
+<li class="ml3" data-wodoc-page="lwt/manual.html"><a href="../../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+
+      </nav>
+      <article class="rightcol">
+        <header class="odoc-preamble"><h1>Module <code><span>Lwt_direct</span></code></h1><p>Direct style control flow for Lwt.</p><p>Using this module you can write code in direct style (using loops, exceptions handlers, etc.) in an Lwt codebase. Your direct-style sections must be enclosed in a call to <a href="#val-spawn"><code>spawn</code></a> and they may <a href="#val-await"><code>await</code></a> on promises. For example:</p><pre class="language-ocaml"><code>open Lwt_direct
+spawn (fun () -&gt;
+  let continue = ref true in
+  while !continue do
+    match await @@ Lwt_io.read_line in_channel with
+    | exception End_of_file -&gt; continue := false
+    | line -&gt;
+      let uppercase_line = String.uppercase_ascii line in
+      await @@ Lwt_io.write_line out_channel uppercase_line
+  done)</code></pre><p>In this code snippet, the <code>while</code>-loop repeats a simple task of reading from an <a href="../../lwt/Lwt_io/index.html#type-channel"><code>Lwt_io.channel</code></a>, modifying it, and writing it to a different channel. The code is in direct-style: the control structures are standard OCaml without any Lwt primitives.</p><p>The code-snippet as a whole is a <code>unit Lwt.t</code> promise. It becomes resovled when the function returns. Conversely, the promises inside the snippet are wrapped in <a href="#val-await"><code>await</code></a>, turning them into regular plain (non-Lwt) values (although values that are not available immediately).</p><p>The <code>Lwt_direct</code> module is implemented using OCaml 5's <a href="https://ocaml.org/manual/5.3/effects.html">effects and effect handlers</a>. This allows the kind of scheduling where a promise is turned into a regular value and vice-versa.</p></header>
+        <div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-spawn"><code><span><span class="keyword">val</span> spawn : <span><span>(<span>unit <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'a</span>)</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="../../lwt/Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p><code>spawn f</code> runs the function <code>f ()</code>, it also returns a promise <code>p</code> which is resolved when the call to <code>f ()</code> returns a value. If <code>f ()</code> throws an exception, the promise <code>p</code> is rejected.</p><p>The function <code>f</code> can create Lwt promises (e.g., by calling functions from <code>Lwt_io</code>, <code>Lwt_unix</code>, or third-party libraries) and use <a href="#val-await"><code>await</code></a> to wait for them. These promises are evaluated in the Lwt event loop.</p><p>Like any promise in Lwt, <code>f ()</code> can starve the event loop if it runs long computations without yielding to the event loop.</p><p>Cancelling the promise returned by <code>spawn</code> has no effect: the execution of <code>f ()</code> continues and the promise is not cancelled.</p><p>When <code>f ()</code> terminates (successfully or not), the promise <code>spawn f</code> is resolved with <code>f ()</code>'s result, or the exception raised by <code>f ()</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-spawn_in_the_background"><code><span><span class="keyword">val</span> spawn_in_the_background : <span><span>(<span>unit <span class="arrow">&#45;&gt;</span></span> unit)</span> <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p><code>spawn_in_the_background f</code> is similar to <code>ignore (spawn f)</code>. The computation <code>f ()</code> runs in the background in the event loop and returns no result.</p><p>If <code>f()</code> raises an exception, <a href="../../lwt/Lwt/index.html#val-async_exception_hook"><code>Lwt.async_exception_hook</code></a> is called.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-yield"><code><span><span class="keyword">val</span> yield : <span>unit <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Yield to the event loop.</p><p>This is similar to <code>await (Lwt.pause ())</code>, using less indirection internally and fewer characters to write.</p><p>Calling <code>yield</code> outside of <a href="#val-spawn"><code>spawn</code></a> or <a href="#val-spawn_in_the_background"><code>spawn_in_the_background</code></a> will raise an exception, crash your program, or otherwise cause errors. It is a programming error to do so.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-await"><code><span><span class="keyword">val</span> await : <span><span><span class="type-var">'a</span> <a href="../../lwt/Lwt/index.html#type-t">Lwt.t</a></span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'a</span></span></code></div><div class="spec-doc"><p><code>await p</code> returns the result of <code>p</code> (or raises the exception with which <code>p</code> was rejected.</p><p>If <code>p</code> is not resolved yet, <code>await p</code> will suspend the current task (i.e., the computation started by the surrounding <a href="#val-spawn"><code>spawn</code></a>) and resume it when <code>p</code> is resolved.</p><p>Calling <code>await</code> outside of <a href="#val-spawn"><code>spawn</code></a> or <a href="#val-spawn_in_the_background"><code>spawn_in_the_background</code></a> will raise an exception, crash your program, or otherwise cause errors. It is a programming error to do so.</p></div></div><div class="odoc-spec"><div class="spec module anchored" id="module-Storage"><code><span><span class="keyword">module</span> <a href="Storage/index.html">Storage</a></span><span> : <span class="keyword">sig</span> ... <span class="keyword">end</span></span></code></div><div class="spec-doc"><p>Local storage.</p></div></div></div>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    var wodocPub = "/lwt";
+    // Switch version: keep the current page, swapping only the version segment.
+    function wodocVersion(v) {
+      if (!v) return;
+      var re = new RegExp('^(' + wodocPub + '/)[^/]+');
+      var p = location.pathname;
+      location.href =
+        re.test(p) ? p.replace(re, '$1' + v) : wodocPub + '/' + v + '/index.html';
+    }
+    // Build the version <select> from the project's versions.json (the single
+    // source of truth, refreshed on every build/release), so even older frozen
+    // pages list the current set. Falls back to the baked <option>s on failure.
+    (function () {
+      var seg = (location.pathname.match(
+        new RegExp('^' + wodocPub + '/([^/]+)')) || [])[1];
+      function select(sel) {
+        var i;
+        for (i = 0; i < sel.options.length; i++)
+          if (sel.options[i].value === seg) { sel.selectedIndex = i; return; }
+        if (seg) {
+          var o = document.createElement('option');
+          o.value = seg; o.textContent = seg; o.selected = true;
+          sel.insertBefore(o, sel.firstChild);
+        }
+      }
+      fetch(wodocPub + '/versions.json')
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (m) {
+          var list = m.list || [], latest = m.latest;
+          document.querySelectorAll('.wodoc-version').forEach(function (sel) {
+            sel.innerHTML = '';
+            list.forEach(function (v) {
+              var o = document.createElement('option');
+              if (v === latest) { o.value = 'latest'; o.textContent = v + ' (latest)'; }
+              else { o.value = v; o.textContent = v; }
+              sel.appendChild(o);
+            });
+            select(sel);
+          });
+        })
+        .catch(function () {
+          document.querySelectorAll('.wodoc-version').forEach(select);
+        });
+    })();
+  </script>
+</body>
+</html>

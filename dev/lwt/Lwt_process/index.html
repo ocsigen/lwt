@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Module Lwt_process — Lwt</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/ocsigen-odoc.css"/>
+  <link rel="alternate" type="text/markdown" href="../../lwt/Lwt_process.md"/>
+  <script src="../../highlight.pack.js"></script>
+  <script src="../../wodoc-highlight.js"></script>
+</head>
+<body class="wodoc-page wodoc-doc">
+  <!-- Shared site menu — THE single source of truth for the header, top menu and
+     drawer of EVERY Ocsigen doc page (vitrine + all projects). Canonical copy
+     lives here in ocsigen.github.io; each project's build fetches it. Injected
+     by `wodoc assemble --menu`. Holes filled by the tool (braces omitted here so
+     this comment is not itself rewritten by the hole-filler):
+       subproject  the sub-project name shown next to the Ocsigen logo
+                   (empty on the vitrine), via --subproject
+       leftnav     the project's left navigation, expanded into BOTH the mobile
+                   drawer (below) and the left column (in the page template),
+                   via --leftnav
+     The current entry is highlighted by adding the `current` class to the
+     element carrying data-wodoc-page=<id>: --current on the vitrine (page id),
+     --menu-current in a project (the project id). Nothing is hardcoded here, so
+     this file is the ONLY place the menu is defined.
+
+     Links are the FINAL site paths (/<project>/, /<page>): the target layout
+     where each project is served at ocsigen.org/<project>/ — no transitional
+     /wodoc/ prefix. -->
+<div class="page-header">
+  <p class="logo-ocsigen"><a href="/"><img src="/img/ocsigen-white.svg" alt="Ocsigen"/></a></p>
+  <p class="logo-subproject">Lwt</p>
+
+  <div class="mainmenu">
+    <p class="mainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></p>
+    <p class="mainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></p>
+    <p class="mainmenu-blog" data-wodoc-page="blog"><a href="/blog/">Blog</a></p>
+    <p data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></p>
+    <p data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></p>
+    <p data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></p>
+    <p data-wodoc-page="lwt" class="current"><a href="/lwt/">Lwt</a></p>
+    <p data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></p>
+    <p data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></p>
+  </div>
+
+  <form id="googlesearch" action="https://google.com/search">
+    <input name="q" id="gsearch-box" placeholder="Search using Google"/>
+    <label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label>
+    <input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/>
+  </form>
+
+  <aside class="how-drawer">
+    <input id="how-drawer-toggle" type="checkbox"/>
+    <label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label>
+    <nav class="how-drawer-content">
+      <ul class="drawermainmenu">
+        <li class="drawermainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></li>
+        <li class="drawermainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></li>
+        <li class="drawermainmenu-project current" data-wodoc-page="lwt"><a href="/lwt/">Lwt</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-toolkit"><a href="/ocsigen-toolkit/">Toolkit</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsipersist"><a href="/ocsipersist/">Ocsipersist</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="reactiveData"><a href="/reactiveData/">ReactiveData</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-i18n"><a href="/ocsigen-i18n/">i18n</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="wodoc"><a href="/wodoc/">Wodoc</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="projects"><a href="/projects">Other projects</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="papers"><a href="/papers">Research papers</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="credits"><a href="/credits">Who does Ocsigen?</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="contributing"><a href="/contributing">Contributing</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="blog"><a href="/blog/">Blog</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="install"><a href="/install">Installation</a></li>
+        <li class="drawermainmenu-page"><a href="https://github.com/ocsigen">Source code</a></li>
+      </ul>
+      <!-- On mobile the left column is hidden; its menu lives here in the burger
+           (.how-doctree, shown only on narrow screens), as the old site did.
+           Empty on the vitrine; the leftnav hole is filled (with the same
+           fragment as the left column) only on project pages. -->
+      <nav class="how-doctree"><div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  <nav class="odoc-toc odoc-local-toc"><ul><li><a href="#high-level-functions">High-level functions</a><ul><li><a href="#redirections">Redirections</a></li><li><a href="#executing">Executing</a></li><li><a href="#receiving">Receiving</a></li><li><a href="#sending">Sending</a></li><li><a href="#mapping">Mapping</a></li></ul></li><li><a href="#spawning-processes">Spawning processes</a></li></ul></nav>
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../../lwt/index.html">Overview</a></li>
+<li class="ml3" data-wodoc-page="lwt/manual.html"><a href="../../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3 current" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+</nav>
+    </nav>
+  </aside>
+</div>
+
+
+  <div class="project-page">
+    <div class="twocols">
+      <nav class="leftcol">
+        <div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  <nav class="odoc-toc odoc-local-toc"><ul><li><a href="#high-level-functions">High-level functions</a><ul><li><a href="#redirections">Redirections</a></li><li><a href="#executing">Executing</a></li><li><a href="#receiving">Receiving</a></li><li><a href="#sending">Sending</a></li><li><a href="#mapping">Mapping</a></li></ul></li><li><a href="#spawning-processes">Spawning processes</a></li></ul></nav>
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../../lwt/index.html">Overview</a></li>
+<li class="ml3" data-wodoc-page="lwt/manual.html"><a href="../../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3 current" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+
+      </nav>
+      <article class="rightcol">
+        <header class="odoc-preamble"><h1>Module <code><span>Lwt_process</span></code></h1><p>Process management</p></header>
+        <div class="odoc-content"><p>This module allows you to spawn processes and communicate with them.</p><p>This module makes heavy use of <a href="../Lwt_unix/index.html#val-fork"><code>Lwt_unix.fork</code></a>. Important caveats are documented there. Read them. TL;DR: no domains, no threads, no preemptive, yes <code>Async_none</code>.</p><div class="odoc-spec"><div class="spec type anchored" id="type-command"><code><span><span class="keyword">type</span> command</span><span> = string * <span>string array</span></span></code></div><div class="spec-doc"><p>A command. The first field is the name of the executable and the second is the list of arguments. For example:</p><pre class="language-ocaml"><code>  (&quot;ls&quot;, [|&quot;ls&quot;; &quot;-l&quot;|])</code></pre><p>Notes:</p><ul><li>if the name is the empty string, then the first argument will be used. You should specify a name only if you do not want the executable to be searched in the PATH. On Windows the only way to enable automatic search in PATH is to pass an empty name.</li></ul><ul><li>it is possible to ``inline'' an argument, i.e. split it into multiple arguments. To do that prefix it with <code>&quot;\000&quot;</code>. For example:</li></ul><pre class="language-ocaml"><code>  (&quot;&quot;, [|&quot;echo&quot;; &quot;\000foo bar&quot;|])</code></pre><p>is the same as:</p><pre class="language-ocaml"><code>  (&quot;&quot;, [|&quot;echo&quot;; &quot;foo&quot;; &quot;bar&quot;|])</code></pre></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-shell"><code><span><span class="keyword">val</span> shell : <span>string <span class="arrow">&#45;&gt;</span></span> <a href="#type-command">command</a></span></code></div><div class="spec-doc"><p>A command executed with the shell. (with <code>&quot;/bin/sh -c &lt;cmd&gt;&quot;</code> on Unix and <code>&quot;cmd.exe /c &lt;cmd&gt;&quot;</code> on Windows).</p></div></div><p>All the following functions take an optional argument <code>timeout</code>, in seconds. If specified, after expiration, the process will be sent a <code>Unix.sigkill</code> signal and channels will be closed. When the channels are closed, any pending I/O operations on them (such as <a href="../Lwt_io/index.html#val-read_chars"><code>Lwt_io.read_chars</code></a>) fail with exception <a href="../Lwt_io/index.html#exception-Channel_closed"><code>Lwt_io.Channel_closed</code></a>.</p><h3 id="high-level-functions">High-level functions</h3><h4 id="redirections">Redirections</h4><div class="odoc-spec"><div class="spec type anchored" id="type-redirection"><code><span><span class="keyword">type</span> redirection</span><span> = </span><span>[ </span></code><ol><li id="type-redirection.Keep" class="def variant constructor anchored"><code><span>| </span><span>`Keep</span></code><div class="def-doc"><span class="comment-delim">(*</span><p>Point to the same file as in the parent.</p><span class="comment-delim">*)</span></div></li><li id="type-redirection.Dev_null" class="def variant constructor anchored"><code><span>| </span><span>`Dev_null</span></code><div class="def-doc"><span class="comment-delim">(*</span><p>Redirect to <code>/dev/null</code> (POSIX) or <code>nul</code> (Win32).</p><span class="comment-delim">*)</span></div></li><li id="type-redirection.Close" class="def variant constructor anchored"><code><span>| </span><span>`Close</span></code><div class="def-doc"><span class="comment-delim">(*</span><p>Close the file descriptor.</p><span class="comment-delim">*)</span></div></li><li id="type-redirection.FD_copy" class="def variant constructor anchored"><code><span>| </span><span>`FD_copy <span class="keyword">of</span> <span class="xref-unresolved">Unix</span>.file_descr</span></code><div class="def-doc"><span class="comment-delim">(*</span><p>Redirect to the file pointed to by <code>fd</code>. <code>fd</code> remains open in the parent.</p><span class="comment-delim">*)</span></div></li><li id="type-redirection.FD_move" class="def variant constructor anchored"><code><span>| </span><span>`FD_move <span class="keyword">of</span> <span class="xref-unresolved">Unix</span>.file_descr</span></code><div class="def-doc"><span class="comment-delim">(*</span><p>Redirect to the file pointed to by <code>fd</code>. <code>fd</code> is then closed in the parent.</p><span class="comment-delim">*)</span></div></li></ol><code><span> ]</span></code></div><div class="spec-doc"><p>File descriptor redirections. These are used with the <code>~stdin</code>, <code>~stdout</code>, and <code>~stderr</code> arguments below to specify how the standard file descriptors should be redirected in the child process. All optional redirection arguments default to <code>`Keep</code>.</p></div></div><h4 id="executing">Executing</h4><div class="odoc-spec"><div class="spec value anchored" id="val-exec"><code><span><span class="keyword">val</span> exec : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="xref-unresolved">Unix</span>.process_status <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Executes the given command and returns its exit status.</p></div></div><h4 id="receiving">Receiving</h4><div class="odoc-spec"><div class="spec value anchored" id="val-pread"><code><span><span class="keyword">val</span> pread : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pread_chars"><code><span><span class="keyword">val</span> pread_chars : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>char <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pread_line"><code><span><span class="keyword">val</span> pread_line : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pread_lines"><code><span><span class="keyword">val</span> pread_lines : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span></span></code></div></div><h4 id="sending">Sending</h4><div class="odoc-spec"><div class="spec value anchored" id="val-pwrite"><code><span><span class="keyword">val</span> pwrite : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pwrite_chars"><code><span><span class="keyword">val</span> pwrite_chars : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>char <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pwrite_line"><code><span><span class="keyword">val</span> pwrite_line : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pwrite_lines"><code><span><span class="keyword">val</span> pwrite_lines : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>string <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><h4 id="mapping">Mapping</h4><div class="odoc-spec"><div class="spec value anchored" id="val-pmap"><code><span><span class="keyword">val</span> pmap : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span>string <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pmap_chars"><code><span><span class="keyword">val</span> pmap_chars : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>char <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span>char <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pmap_line"><code><span><span class="keyword">val</span> pmap_line : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span>string <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-pmap_lines"><code><span><span class="keyword">val</span> pmap_lines : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>string <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span></span></code></div></div><h3 id="spawning-processes">Spawning processes</h3><div class="odoc-spec"><div class="spec type anchored" id="type-state"><code><span><span class="keyword">type</span> state</span><span> = </span></code><ol><li id="type-state.Running" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">Running</span></span></code><div class="def-doc"><span class="comment-delim">(*</span><p>The process is still running</p><span class="comment-delim">*)</span></div></li><li id="type-state.Exited" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">Exited</span> <span class="keyword">of</span> <span class="xref-unresolved">Unix</span>.process_status</span></code><div class="def-doc"><span class="comment-delim">(*</span><p>The process has exited</p><span class="comment-delim">*)</span></div></li></ol></div><div class="spec-doc"><p>State of a sub-process</p></div></div><div class="odoc-spec"><div class="spec class anchored" id="class-process_none"><code><span><span class="keyword">class</span> </span><span><a href="class-process_none/index.html">process_none</a></span><span> : <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?stdout</span>:
+  <a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span> <span class="keyword">object</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-open_process_none"><code><span><span class="keyword">val</span> open_process_none : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="class-process_none/index.html">process_none</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-with_process_none"><code><span><span class="keyword">val</span> with_process_none : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><a href="class-process_none/index.html">process_none</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec class anchored" id="class-process_in"><code><span><span class="keyword">class</span> </span><span><a href="class-process_in/index.html">process_in</a></span><span> : <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?stderr</span>:
+  <a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span> <span class="keyword">object</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-open_process_in"><code><span><span class="keyword">val</span> open_process_in : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="class-process_in/index.html">process_in</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-with_process_in"><code><span><span class="keyword">val</span> with_process_in : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdin</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><a href="class-process_in/index.html">process_in</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec class anchored" id="class-process_out"><code><span><span class="keyword">class</span> </span><span><a href="class-process_out/index.html">process_out</a></span><span> : <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?stderr</span>:
+  <a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span> <span class="keyword">object</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-open_process_out"><code><span><span class="keyword">val</span> open_process_out : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="class-process_out/index.html">process_out</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-with_process_out"><code><span><span class="keyword">val</span> with_process_out : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stdout</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><a href="class-process_out/index.html">process_out</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec class anchored" id="class-process"><code><span><span class="keyword">class</span> </span><span><a href="class-process/index.html">process</a></span><span> : <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span> <span>
+  <a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span> <span class="keyword">object</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-open_process"><code><span><span class="keyword">val</span> open_process : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="class-process/index.html">process</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-with_process"><code><span><span class="keyword">val</span> with_process : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?stderr</span>:<a href="#type-redirection">redirection</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><a href="class-process/index.html">process</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec class anchored" id="class-process_full"><code><span><span class="keyword">class</span> </span><span><a href="class-process_full/index.html">process_full</a></span><span> : <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span> <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span> <span class="keyword">object</span> ... <span class="keyword">end</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-open_process_full"><code><span><span class="keyword">val</span> open_process_full : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="class-process_full/index.html">process_full</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-with_process_full"><code><span><span class="keyword">val</span> with_process_full : 
+  <span><span class="optlabel">?timeout</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?env</span>:<span>string array</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cwd</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-command">command</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><a href="class-process_full/index.html">process_full</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="type-var">'a</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div></div>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    var wodocPub = "/lwt";
+    // Switch version: keep the current page, swapping only the version segment.
+    function wodocVersion(v) {
+      if (!v) return;
+      var re = new RegExp('^(' + wodocPub + '/)[^/]+');
+      var p = location.pathname;
+      location.href =
+        re.test(p) ? p.replace(re, '$1' + v) : wodocPub + '/' + v + '/index.html';
+    }
+    // Build the version <select> from the project's versions.json (the single
+    // source of truth, refreshed on every build/release), so even older frozen
+    // pages list the current set. Falls back to the baked <option>s on failure.
+    (function () {
+      var seg = (location.pathname.match(
+        new RegExp('^' + wodocPub + '/([^/]+)')) || [])[1];
+      function select(sel) {
+        var i;
+        for (i = 0; i < sel.options.length; i++)
+          if (sel.options[i].value === seg) { sel.selectedIndex = i; return; }
+        if (seg) {
+          var o = document.createElement('option');
+          o.value = seg; o.textContent = seg; o.selected = true;
+          sel.insertBefore(o, sel.firstChild);
+        }
+      }
+      fetch(wodocPub + '/versions.json')
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (m) {
+          var list = m.list || [], latest = m.latest;
+          document.querySelectorAll('.wodoc-version').forEach(function (sel) {
+            sel.innerHTML = '';
+            list.forEach(function (v) {
+              var o = document.createElement('option');
+              if (v === latest) { o.value = 'latest'; o.textContent = v + ' (latest)'; }
+              else { o.value = v; o.textContent = v; }
+              sel.appendChild(o);
+            });
+            select(sel);
+          });
+        })
+        .catch(function () {
+          document.querySelectorAll('.wodoc-version').forEach(select);
+        });
+    })();
+  </script>
+</body>
+</html>

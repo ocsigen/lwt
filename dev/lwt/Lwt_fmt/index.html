@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Module Lwt_fmt — Lwt</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/ocsigen-odoc.css"/>
+  <link rel="alternate" type="text/markdown" href="../../lwt/Lwt_fmt.md"/>
+  <script src="../../highlight.pack.js"></script>
+  <script src="../../wodoc-highlight.js"></script>
+</head>
+<body class="wodoc-page wodoc-doc">
+  <!-- Shared site menu — THE single source of truth for the header, top menu and
+     drawer of EVERY Ocsigen doc page (vitrine + all projects). Canonical copy
+     lives here in ocsigen.github.io; each project's build fetches it. Injected
+     by `wodoc assemble --menu`. Holes filled by the tool (braces omitted here so
+     this comment is not itself rewritten by the hole-filler):
+       subproject  the sub-project name shown next to the Ocsigen logo
+                   (empty on the vitrine), via --subproject
+       leftnav     the project's left navigation, expanded into BOTH the mobile
+                   drawer (below) and the left column (in the page template),
+                   via --leftnav
+     The current entry is highlighted by adding the `current` class to the
+     element carrying data-wodoc-page=<id>: --current on the vitrine (page id),
+     --menu-current in a project (the project id). Nothing is hardcoded here, so
+     this file is the ONLY place the menu is defined.
+
+     Links are the FINAL site paths (/<project>/, /<page>): the target layout
+     where each project is served at ocsigen.org/<project>/ — no transitional
+     /wodoc/ prefix. -->
+<div class="page-header">
+  <p class="logo-ocsigen"><a href="/"><img src="/img/ocsigen-white.svg" alt="Ocsigen"/></a></p>
+  <p class="logo-subproject">Lwt</p>
+
+  <div class="mainmenu">
+    <p class="mainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></p>
+    <p class="mainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></p>
+    <p class="mainmenu-blog" data-wodoc-page="blog"><a href="/blog/">Blog</a></p>
+    <p data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></p>
+    <p data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></p>
+    <p data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></p>
+    <p data-wodoc-page="lwt" class="current"><a href="/lwt/">Lwt</a></p>
+    <p data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></p>
+    <p data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></p>
+  </div>
+
+  <form id="googlesearch" action="https://google.com/search">
+    <input name="q" id="gsearch-box" placeholder="Search using Google"/>
+    <label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label>
+    <input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/>
+  </form>
+
+  <aside class="how-drawer">
+    <input id="how-drawer-toggle" type="checkbox"/>
+    <label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label>
+    <nav class="how-drawer-content">
+      <ul class="drawermainmenu">
+        <li class="drawermainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></li>
+        <li class="drawermainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></li>
+        <li class="drawermainmenu-project current" data-wodoc-page="lwt"><a href="/lwt/">Lwt</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-toolkit"><a href="/ocsigen-toolkit/">Toolkit</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsipersist"><a href="/ocsipersist/">Ocsipersist</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="reactiveData"><a href="/reactiveData/">ReactiveData</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-i18n"><a href="/ocsigen-i18n/">i18n</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="wodoc"><a href="/wodoc/">Wodoc</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="projects"><a href="/projects">Other projects</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="papers"><a href="/papers">Research papers</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="credits"><a href="/credits">Who does Ocsigen?</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="contributing"><a href="/contributing">Contributing</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="blog"><a href="/blog/">Blog</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="install"><a href="/install">Installation</a></li>
+        <li class="drawermainmenu-page"><a href="https://github.com/ocsigen">Source code</a></li>
+      </ul>
+      <!-- On mobile the left column is hidden; its menu lives here in the burger
+           (.how-doctree, shown only on narrow screens), as the old site did.
+           Empty on the vitrine; the leftnav hole is filled (with the same
+           fragment as the left column) only on project pages. -->
+      <nav class="how-doctree"><div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  <nav class="odoc-toc odoc-local-toc"><ul><li><a href="#formatters">Formatters</a><ul><li><a href="#printing">Printing</a></li></ul></li></ul></nav>
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../../lwt/index.html">Overview</a></li>
+<li class="ml3" data-wodoc-page="lwt/manual.html"><a href="../../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3 current" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+</nav>
+    </nav>
+  </aside>
+</div>
+
+
+  <div class="project-page">
+    <div class="twocols">
+      <nav class="leftcol">
+        <div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  <nav class="odoc-toc odoc-local-toc"><ul><li><a href="#formatters">Formatters</a><ul><li><a href="#printing">Printing</a></li></ul></li></ul></nav>
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../../lwt/index.html">Overview</a></li>
+<li class="ml3" data-wodoc-page="lwt/manual.html"><a href="../../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3 current" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+
+      </nav>
+      <article class="rightcol">
+        <header class="odoc-preamble"><h1>Module <code><span>Lwt_fmt</span></code></h1><p>Format API for Lwt-powered IOs</p><ul class="at-tags"><li class="since"><span class="at-tag">since</span> 4.1.0</li></ul></header>
+        <div class="odoc-content"><p>This module bridges the gap between <code>Stdlib.Format</code> and <a href="../Lwt/index.html"><code>Lwt</code></a>. Although it is not required, it is recommended to use this module with the <a href="https://erratique.ch/software/fmt"><code>Fmt</code></a> library.</p><p>Compared to regular formatting function, the main difference is that printing statements will now return promises instead of blocking.</p><div class="odoc-spec"><div class="spec value anchored" id="val-printf"><code><span><span class="keyword">val</span> printf : 
+  <span><span><span>(<span class="type-var">'a</span>, <span class="xref-unresolved">Stdlib</span>.Format.formatter, unit, <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="xref-unresolved">Stdlib</span>.format4</span> <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'a</span></span></code></div><div class="spec-doc"><p>Returns a promise that prints on the standard output. Similar to <code>Stdlib.Format.printf</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-eprintf"><code><span><span class="keyword">val</span> eprintf : 
+  <span><span><span>(<span class="type-var">'a</span>, <span class="xref-unresolved">Stdlib</span>.Format.formatter, unit, <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="xref-unresolved">Stdlib</span>.format4</span> <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'a</span></span></code></div><div class="spec-doc"><p>Returns a promise that prints on the standard error. Similar to <code>Stdlib.Format.eprintf</code>.</p></div></div><h2 id="formatters">Formatters</h2><div class="odoc-spec"><div class="spec type anchored" id="type-formatter"><code><span><span class="keyword">type</span> formatter</span></code></div><div class="spec-doc"><p>Lwt enabled formatters</p></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-order"><code><span><span class="keyword">type</span> order</span><span> = </span></code><ol><li id="type-order.String" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">String</span> <span class="keyword">of</span> string * int * int</span></code><div class="def-doc"><span class="comment-delim">(*</span><p><code>String (s, off, len)</code> indicate the output of <code>s</code> at offset <code>off</code> and length <code>len</code>.</p><span class="comment-delim">*)</span></div></li><li id="type-order.Flush" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">Flush</span></span></code><div class="def-doc"><span class="comment-delim">(*</span><p>Flush operation</p><span class="comment-delim">*)</span></div></li></ol></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-make_stream"><code><span><span class="keyword">val</span> make_stream : <span>unit <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-order">order</a> <a href="../Lwt_stream/index.html#type-t">Lwt_stream.t</a></span> * <a href="#type-formatter">formatter</a></span></code></div><div class="spec-doc"><p><code>make_stream ()</code> returns a formatter and a stream of all the writing order given on that stream.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-of_channel"><code><span><span class="keyword">val</span> of_channel : <span><a href="../Lwt_io/index.html#type-output_channel">Lwt_io.output_channel</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-formatter">formatter</a></span></code></div><div class="spec-doc"><p><code>of_channel oc</code> creates a formatter that writes to the channel <code>oc</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-stdout"><code><span><span class="keyword">val</span> stdout : <a href="#type-formatter">formatter</a></span></code></div><div class="spec-doc"><p>Formatter printing on <a href="../Lwt_io/index.html#val-stdout"><code>Lwt_io.stdout</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-stderr"><code><span><span class="keyword">val</span> stderr : <a href="#type-formatter">formatter</a></span></code></div><div class="spec-doc"><p>Formatter printing on <a href="../Lwt_io/index.html#val-stdout"><code>Lwt_io.stdout</code></a>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-make_formatter"><code><span><span class="keyword">val</span> make_formatter : 
+  <span><span class="label">commit</span>:<span>(<span>unit <span class="arrow">&#45;&gt;</span></span> <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">fmt</span>:<span class="xref-unresolved">Stdlib</span>.Format.formatter <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-formatter">formatter</a></span></code></div><div class="spec-doc"><p><code>make_formatter ~commit ~fmt</code> creates a new lwt formatter based on the <code>Stdlib.Format.formatter</code> <code>fmt</code>. The <code>commit</code> function will be called by the printing functions to update the underlying channel.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-get_formatter"><code><span><span class="keyword">val</span> get_formatter : <span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span> <span class="xref-unresolved">Stdlib</span>.Format.formatter</span></code></div><div class="spec-doc"><p><code>get_formatter fmt</code> returns the underlying <code>Stdlib.Format.formatter</code>. To access the underlying formatter during printing, it is recommended to use <code>%t</code> and <code>%a</code>.</p></div></div><h3 id="printing">Printing</h3><div class="odoc-spec"><div class="spec value anchored" id="val-fprintf"><code><span><span class="keyword">val</span> fprintf : 
+  <span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<span class="type-var">'a</span>, <span class="xref-unresolved">Stdlib</span>.Format.formatter, unit, <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="xref-unresolved">Stdlib</span>.format4</span> <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'a</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-kfprintf"><code><span><span class="keyword">val</span> kfprintf : 
+  <span><span>(<span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span> <span><span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'a</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<span class="type-var">'b</span>, <span class="xref-unresolved">Stdlib</span>.Format.formatter, unit, <span class="type-var">'a</span>)</span> <span class="xref-unresolved">Stdlib</span>.format4</span> <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'b</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-ifprintf"><code><span><span class="keyword">val</span> ifprintf : 
+  <span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<span class="type-var">'a</span>, <span class="xref-unresolved">Stdlib</span>.Format.formatter, unit, <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span>)</span> <span class="xref-unresolved">Stdlib</span>.format4</span> <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'a</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-ikfprintf"><code><span><span class="keyword">val</span> ikfprintf : 
+  <span><span>(<span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span> <span><span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span> <span class="arrow">&#45;&gt;</span></span> <span class="type-var">'a</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(<span class="type-var">'b</span>, <span class="xref-unresolved">Stdlib</span>.Format.formatter, unit, <span class="type-var">'a</span>)</span> <span class="xref-unresolved">Stdlib</span>.format4</span> <span class="arrow">&#45;&gt;</span></span>
+  <span class="type-var">'b</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-flush"><code><span><span class="keyword">val</span> flush : <span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span> <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p><code>flush fmt</code> flushes the formatter (as with <code>Stdlib.Format.pp_print_flush</code>) and executes all the printing action on the underlying channel.</p></div></div><p>Low level functions</p><div class="odoc-spec"><div class="spec value anchored" id="val-write_order"><code><span><span class="keyword">val</span> write_order : <span><a href="../Lwt_io/index.html#type-output_channel">Lwt_io.output_channel</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-order">order</a> <span class="arrow">&#45;&gt;</span></span> <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p><code>write_order oc o</code> applies the order <code>o</code> on the channel <code>oc</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-write_pending"><code><span><span class="keyword">val</span> write_pending : <span><a href="#type-formatter">formatter</a> <span class="arrow">&#45;&gt;</span></span> <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Write all the pending orders of a formatter. Warning: This function flush neither the internal format queues nor the underlying channel and is intended for low level use only. You should probably use <a href="#val-flush"><code>flush</code></a> instead.</p></div></div></div>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    var wodocPub = "/lwt";
+    // Switch version: keep the current page, swapping only the version segment.
+    function wodocVersion(v) {
+      if (!v) return;
+      var re = new RegExp('^(' + wodocPub + '/)[^/]+');
+      var p = location.pathname;
+      location.href =
+        re.test(p) ? p.replace(re, '$1' + v) : wodocPub + '/' + v + '/index.html';
+    }
+    // Build the version <select> from the project's versions.json (the single
+    // source of truth, refreshed on every build/release), so even older frozen
+    // pages list the current set. Falls back to the baked <option>s on failure.
+    (function () {
+      var seg = (location.pathname.match(
+        new RegExp('^' + wodocPub + '/([^/]+)')) || [])[1];
+      function select(sel) {
+        var i;
+        for (i = 0; i < sel.options.length; i++)
+          if (sel.options[i].value === seg) { sel.selectedIndex = i; return; }
+        if (seg) {
+          var o = document.createElement('option');
+          o.value = seg; o.textContent = seg; o.selected = true;
+          sel.insertBefore(o, sel.firstChild);
+        }
+      }
+      fetch(wodocPub + '/versions.json')
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (m) {
+          var list = m.list || [], latest = m.latest;
+          document.querySelectorAll('.wodoc-version').forEach(function (sel) {
+            sel.innerHTML = '';
+            list.forEach(function (v) {
+              var o = document.createElement('option');
+              if (v === latest) { o.value = 'latest'; o.textContent = v + ' (latest)'; }
+              else { o.value = v; o.textContent = v; }
+              sel.appendChild(o);
+            });
+            select(sel);
+          });
+        })
+        .catch(function () {
+          document.querySelectorAll('.wodoc-version').forEach(select);
+        });
+    })();
+  </script>
+</body>
+</html>

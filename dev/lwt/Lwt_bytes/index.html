@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Module Lwt_bytes — Lwt</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/ocsigen-odoc.css"/>
+  <link rel="alternate" type="text/markdown" href="../../lwt/Lwt_bytes.md"/>
+  <script src="../../highlight.pack.js"></script>
+  <script src="../../wodoc-highlight.js"></script>
+</head>
+<body class="wodoc-page wodoc-doc">
+  <!-- Shared site menu — THE single source of truth for the header, top menu and
+     drawer of EVERY Ocsigen doc page (vitrine + all projects). Canonical copy
+     lives here in ocsigen.github.io; each project's build fetches it. Injected
+     by `wodoc assemble --menu`. Holes filled by the tool (braces omitted here so
+     this comment is not itself rewritten by the hole-filler):
+       subproject  the sub-project name shown next to the Ocsigen logo
+                   (empty on the vitrine), via --subproject
+       leftnav     the project's left navigation, expanded into BOTH the mobile
+                   drawer (below) and the left column (in the page template),
+                   via --leftnav
+     The current entry is highlighted by adding the `current` class to the
+     element carrying data-wodoc-page=<id>: --current on the vitrine (page id),
+     --menu-current in a project (the project id). Nothing is hardcoded here, so
+     this file is the ONLY place the menu is defined.
+
+     Links are the FINAL site paths (/<project>/, /<page>): the target layout
+     where each project is served at ocsigen.org/<project>/ — no transitional
+     /wodoc/ prefix. -->
+<div class="page-header">
+  <p class="logo-ocsigen"><a href="/"><img src="/img/ocsigen-white.svg" alt="Ocsigen"/></a></p>
+  <p class="logo-subproject">Lwt</p>
+
+  <div class="mainmenu">
+    <p class="mainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></p>
+    <p class="mainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></p>
+    <p class="mainmenu-blog" data-wodoc-page="blog"><a href="/blog/">Blog</a></p>
+    <p data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></p>
+    <p data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></p>
+    <p data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></p>
+    <p data-wodoc-page="lwt" class="current"><a href="/lwt/">Lwt</a></p>
+    <p data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></p>
+    <p data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></p>
+  </div>
+
+  <form id="googlesearch" action="https://google.com/search">
+    <input name="q" id="gsearch-box" placeholder="Search using Google"/>
+    <label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label>
+    <input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/>
+  </form>
+
+  <aside class="how-drawer">
+    <input id="how-drawer-toggle" type="checkbox"/>
+    <label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label>
+    <nav class="how-drawer-content">
+      <ul class="drawermainmenu">
+        <li class="drawermainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></li>
+        <li class="drawermainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></li>
+        <li class="drawermainmenu-project current" data-wodoc-page="lwt"><a href="/lwt/">Lwt</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-toolkit"><a href="/ocsigen-toolkit/">Toolkit</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsipersist"><a href="/ocsipersist/">Ocsipersist</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="reactiveData"><a href="/reactiveData/">ReactiveData</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-i18n"><a href="/ocsigen-i18n/">i18n</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="wodoc"><a href="/wodoc/">Wodoc</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="projects"><a href="/projects">Other projects</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="papers"><a href="/papers">Research papers</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="credits"><a href="/credits">Who does Ocsigen?</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="contributing"><a href="/contributing">Contributing</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="blog"><a href="/blog/">Blog</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="install"><a href="/install">Installation</a></li>
+        <li class="drawermainmenu-page"><a href="https://github.com/ocsigen">Source code</a></li>
+      </ul>
+      <!-- On mobile the left column is hidden; its menu lives here in the burger
+           (.how-doctree, shown only on narrow screens), as the old site did.
+           Empty on the vitrine; the leftnav hole is filled (with the same
+           fragment as the left column) only on project pages. -->
+      <nav class="how-doctree"><div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  <nav class="odoc-toc odoc-local-toc"><ul><li><a href="#access">Access</a></li><li><a href="#conversions">Conversions</a></li><li><a href="#copying">Copying</a></li><li><a href="#filling">Filling</a></li><li><a href="#ios">IOs</a></li><li><a href="#memory-mapped-files">Memory mapped files</a></li></ul></nav>
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../../lwt/index.html">Overview</a></li>
+<li class="ml3" data-wodoc-page="lwt/manual.html"><a href="../../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3 current" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+</nav>
+    </nav>
+  </aside>
+</div>
+
+
+  <div class="project-page">
+    <div class="twocols">
+      <nav class="leftcol">
+        <div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  <nav class="odoc-toc odoc-local-toc"><ul><li><a href="#access">Access</a></li><li><a href="#conversions">Conversions</a></li><li><a href="#copying">Copying</a></li><li><a href="#filling">Filling</a></li><li><a href="#ios">IOs</a></li><li><a href="#memory-mapped-files">Memory mapped files</a></li></ul></nav>
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../../lwt/index.html">Overview</a></li>
+<li class="ml3" data-wodoc-page="lwt/manual.html"><a href="../../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3 current" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+
+      </nav>
+      <article class="rightcol">
+        <header class="odoc-preamble"><h1>Module <code><span>Lwt_bytes</span></code></h1><p>Byte arrays</p></header>
+        <div class="odoc-content"><div class="odoc-spec"><div class="spec type anchored" id="type-t"><code><span><span class="keyword">type</span> t</span><span> =
+  <span><span>(char, <span class="xref-unresolved">Stdlib</span>.Bigarray.int8_unsigned_elt, <span class="xref-unresolved">Stdlib</span>.Bigarray.c_layout)</span>
+    <span class="xref-unresolved">Stdlib</span>.Bigarray.Array1.t</span></span></code></div><div class="spec-doc"><p>Type of array of bytes.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create"><code><span><span class="keyword">val</span> create : <span>int <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p>Creates a new byte array of the given size.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-length"><code><span><span class="keyword">val</span> length : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> int</span></code></div><div class="spec-doc"><p>Returns the length of the given byte array.</p></div></div><h3 id="access">Access</h3><div class="odoc-spec"><div class="spec value anchored" id="val-get"><code><span><span class="keyword">val</span> get : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> char</span></code></div><div class="spec-doc"><p><code>get buffer offset</code> returns the byte at offset <code>offset</code> in <code>buffer</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-set"><code><span><span class="keyword">val</span> set : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>char <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p><code>get buffer offset value</code> changes the value of the byte at offset <code>offset</code> in <code>buffer</code> to <code>value</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-unsafe_get"><code><span><span class="keyword">val</span> unsafe_get : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> char</span></code></div><div class="spec-doc"><p>Same as <a href="#val-get"><code>get</code></a> but without bounds checking.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-unsafe_set"><code><span><span class="keyword">val</span> unsafe_set : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>char <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-set"><code>set</code></a> but without bounds checking.</p></div></div><h3 id="conversions">Conversions</h3><div class="odoc-spec"><div class="spec value anchored" id="val-of_bytes"><code><span><span class="keyword">val</span> of_bytes : <span>bytes <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>of_bytes buf</code> returns a newly allocated byte array with the same contents as <code>buf</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-of_string"><code><span><span class="keyword">val</span> of_string : <span>string <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>of_string buf</code> returns a newly allocated byte array with the same contents as <code>buf</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_bytes"><code><span><span class="keyword">val</span> to_bytes : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> bytes</span></code></div><div class="spec-doc"><p><code>to_bytes buf</code> returns newly allocated bytes with the same contents as <code>buf</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-to_string"><code><span><span class="keyword">val</span> to_string : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> string</span></code></div><div class="spec-doc"><p><code>to_string buf</code> returns a newly allocated string with the same contents as <code>buf</code>.</p></div></div><h3 id="copying">Copying</h3><div class="odoc-spec"><div class="spec value anchored" id="val-blit"><code><span><span class="keyword">val</span> blit : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p><code>blit buf1 ofs1 buf2 ofs2 len</code> copies <code>len</code> bytes from <code>buf1</code> starting at offset <code>ofs1</code> to <code>buf2</code> starting at offset <code>ofs2</code>.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-blit_from_string"><code><span><span class="keyword">val</span> blit_from_string : <span>string <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-blit"><code>blit</code></a> but the first buffer is a <code>String.t</code> instead of a byte array.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-blit_from_bytes"><code><span><span class="keyword">val</span> blit_from_bytes : <span>bytes <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-blit"><code>blit</code></a> but the first buffer is a <code>Bytes.t</code> instead of a byte array.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-blit_to_bytes"><code><span><span class="keyword">val</span> blit_to_bytes : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>bytes <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-blit"><code>blit</code></a> but the second buffer is a <code>Bytes.t</code> instead of a byte array.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-unsafe_blit"><code><span><span class="keyword">val</span> unsafe_blit : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-blit"><code>blit</code></a> but without bound checking.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-unsafe_blit_from_bytes"><code><span><span class="keyword">val</span> unsafe_blit_from_bytes : <span>bytes <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-blit_from_bytes"><code>Lwt_bytes.blit_from_bytes</code></a> but without bounds checking.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-unsafe_blit_from_string"><code><span><span class="keyword">val</span> unsafe_blit_from_string : <span>string <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-blit_from_string"><code>Lwt_bytes.blit_from_string</code></a> but without bounds checking.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-unsafe_blit_to_bytes"><code><span><span class="keyword">val</span> unsafe_blit_to_bytes : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>bytes <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-blit_to_bytes"><code>Lwt_bytes.blit_to_bytes</code></a> but without bounds checking.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-proxy"><code><span><span class="keyword">val</span> proxy : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>proxy buffer offset length</code> creates a ``proxy''. The returned byte array share the data of <code>buffer</code> but with different bounds.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-extract"><code><span><span class="keyword">val</span> extract : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>extract buffer offset length</code> creates a new byte array of length <code>length</code> and copy the <code>length</code> bytes of <code>buffer</code> at <code>offset</code> into it.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-copy"><code><span><span class="keyword">val</span> copy : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>copy buffer</code> creates a copy of the given byte array.</p></div></div><h3 id="filling">Filling</h3><div class="odoc-spec"><div class="spec value anchored" id="val-fill"><code><span><span class="keyword">val</span> fill : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>char <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p><code>fill buffer offset length value</code> puts <code>value</code> in all <code>length</code> bytes of <code>buffer</code> starting at offset <code>offset</code>.</p></div></div><div class="odoc-spec"><div class="spec value external anchored" id="val-unsafe_fill"><code><span><span class="keyword">val</span> unsafe_fill : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>char <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p>Same as <a href="#val-fill"><code>fill</code></a> but without bounds checking.</p></div></div><h3 id="ios">IOs</h3><p>The following functions behave similarly to the ones in <a href="../Lwt_unix/index.html"><code>Lwt_unix</code></a>, except they use byte arrays instead of <code>Bytes.t</code>, and they never perform extra copies of the data.</p><div class="odoc-spec"><div class="spec value anchored" id="val-read"><code><span><span class="keyword">val</span> read : <span><a href="../Lwt_unix/index.html#type-file_descr">Lwt_unix.file_descr</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-write"><code><span><span class="keyword">val</span> write : <span><a href="../Lwt_unix/index.html#type-file_descr">Lwt_unix.file_descr</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-recv"><code><span><span class="keyword">val</span> recv : 
+  <span><a href="../Lwt_unix/index.html#type-file_descr">Lwt_unix.file_descr</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="xref-unresolved">Unix</span>.msg_flag list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Not implemented on Windows.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-send"><code><span><span class="keyword">val</span> send : 
+  <span><a href="../Lwt_unix/index.html#type-file_descr">Lwt_unix.file_descr</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="xref-unresolved">Unix</span>.msg_flag list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Not implemented on Windows.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-recvfrom"><code><span><span class="keyword">val</span> recvfrom : 
+  <span><a href="../Lwt_unix/index.html#type-file_descr">Lwt_unix.file_descr</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="xref-unresolved">Unix</span>.msg_flag list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(int * <span class="xref-unresolved">Unix</span>.sockaddr)</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Not implemented on Windows.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-sendto"><code><span><span class="keyword">val</span> sendto : 
+  <span><a href="../Lwt_unix/index.html#type-file_descr">Lwt_unix.file_descr</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span>int <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span class="xref-unresolved">Unix</span>.msg_flag list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="xref-unresolved">Unix</span>.sockaddr <span class="arrow">&#45;&gt;</span></span>
+  <span>int <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Not implemented on Windows.</p></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-io_vector"><code><span><span class="keyword">type</span> io_vector</span><span> = </span><span>{</span></code><ol><li id="type-io_vector.iov_buffer" class="def record field anchored"><code><span>iov_buffer : <a href="#type-t">t</a>;</span></code></li><li id="type-io_vector.iov_offset" class="def record field anchored"><code><span>iov_offset : int;</span></code></li><li id="type-io_vector.iov_length" class="def record field anchored"><code><span>iov_length : int;</span></code></li></ol><code><span>}</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-io_vector"><code><span><span class="keyword">val</span> io_vector : <span><span class="label">buffer</span>:<a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="label">offset</span>:int <span class="arrow">&#45;&gt;</span></span> <span><span class="label">length</span>:int <span class="arrow">&#45;&gt;</span></span> <a href="#type-io_vector">io_vector</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-recv_msg"><code><span><span class="keyword">val</span> recv_msg : 
+  <span><span class="label">socket</span>:<a href="../Lwt_unix/index.html#type-file_descr">Lwt_unix.file_descr</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">io_vectors</span>:<span><a href="#type-io_vector">io_vector</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(int * <span><span class="xref-unresolved">Unix</span>.file_descr list</span>)</span> <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Not implemented on Windows.</p><ul class="at-tags"><li class="deprecated"><span class="at-tag">deprecated</span> <p>Use <a href="../Lwt_unix/Versioned/index.html#val-recv_msg_2"><code>Lwt_unix.Versioned.recv_msg_2</code></a>.</p></li></ul></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-send_msg"><code><span><span class="keyword">val</span> send_msg : 
+  <span><span class="label">socket</span>:<a href="../Lwt_unix/index.html#type-file_descr">Lwt_unix.file_descr</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">io_vectors</span>:<span><a href="#type-io_vector">io_vector</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">fds</span>:<span><span class="xref-unresolved">Unix</span>.file_descr list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>int <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p>Not implemented on Windows.</p><ul class="at-tags"><li class="deprecated"><span class="at-tag">deprecated</span> <p>Use <a href="../Lwt_unix/Versioned/index.html#val-send_msg_2"><code>Lwt_unix.Versioned.send_msg_2</code></a>.</p></li></ul></div></div><h3 id="memory-mapped-files">Memory mapped files</h3><div class="odoc-spec"><div class="spec value anchored" id="val-map_file"><code><span><span class="keyword">val</span> map_file : 
+  <span><span class="label">fd</span>:<span class="xref-unresolved">Unix</span>.file_descr <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?pos</span>:int64 <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">shared</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?size</span>:int <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div><div class="spec-doc"><p><code>map_file ~fd ?pos ~shared ?size ()</code> maps the file descriptor <code>fd</code> to an array of bytes.</p></div></div><div class="odoc-spec"><div class="spec value external anchored" id="val-mapped"><code><span><span class="keyword">val</span> mapped : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> bool</span></code></div><div class="spec-doc"><p><code>mapped buffer</code> returns <code>true</code> iff <code>buffer</code> is a memory mapped file.</p></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-advice"><code><span><span class="keyword">type</span> advice</span><span> = </span></code><ol><li id="type-advice.MADV_NORMAL" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_NORMAL</span></span></code></li><li id="type-advice.MADV_RANDOM" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_RANDOM</span></span></code></li><li id="type-advice.MADV_SEQUENTIAL" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_SEQUENTIAL</span></span></code></li><li id="type-advice.MADV_WILLNEED" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_WILLNEED</span></span></code></li><li id="type-advice.MADV_DONTNEED" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_DONTNEED</span></span></code></li><li id="type-advice.MADV_MERGEABLE" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_MERGEABLE</span></span></code></li><li id="type-advice.MADV_UNMERGEABLE" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_UNMERGEABLE</span></span></code></li><li id="type-advice.MADV_HUGEPAGE" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_HUGEPAGE</span></span></code></li><li id="type-advice.MADV_NOHUGEPAGE" class="def variant constructor anchored"><code><span>| </span><span><span class="constructor">MADV_NOHUGEPAGE</span></span></code></li></ol></div><div class="spec-doc"><p>Type of advise that can be sent to the kernel by the program. See the manual madvise(2) for a description of each.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-madvise"><code><span><span class="keyword">val</span> madvise : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span><a href="#type-advice">advice</a> <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p><code>madvise buffer pos len advice</code> advises the kernel how the program will use the memory mapped file between <code>pos</code> and <code>pos + len</code>.</p><p>This call is not available on windows.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-page_size"><code><span><span class="keyword">val</span> page_size : int</span></code></div><div class="spec-doc"><p>Size of pages.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-mincore"><code><span><span class="keyword">val</span> mincore : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span><span>bool array</span> <span class="arrow">&#45;&gt;</span></span> unit</span></code></div><div class="spec-doc"><p><code>mincore buffer offset states</code> tests whether the given pages are in the system memory (the RAM). The <code>offset</code> argument must be a multiple of <a href="#val-page_size"><code>page_size</code></a>. <code>states</code> is used to store the result; each cases is <code>true</code> if the corresponding page is in RAM and <code>false</code> otherwise.</p><p>This call is not available on windows and cygwin.</p></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-wait_mincore"><code><span><span class="keyword">val</span> wait_mincore : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <span>unit <a href="../Lwt/index.html#type-t">Lwt.t</a></span></span></code></div><div class="spec-doc"><p><code>wait_mincore buffer offset</code> waits until the page containing the byte at offset <code>offset</code> is in RAM.</p><p>This functions is not available on windows and cygwin.</p></div></div></div>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    var wodocPub = "/lwt";
+    // Switch version: keep the current page, swapping only the version segment.
+    function wodocVersion(v) {
+      if (!v) return;
+      var re = new RegExp('^(' + wodocPub + '/)[^/]+');
+      var p = location.pathname;
+      location.href =
+        re.test(p) ? p.replace(re, '$1' + v) : wodocPub + '/' + v + '/index.html';
+    }
+    // Build the version <select> from the project's versions.json (the single
+    // source of truth, refreshed on every build/release), so even older frozen
+    // pages list the current set. Falls back to the baked <option>s on failure.
+    (function () {
+      var seg = (location.pathname.match(
+        new RegExp('^' + wodocPub + '/([^/]+)')) || [])[1];
+      function select(sel) {
+        var i;
+        for (i = 0; i < sel.options.length; i++)
+          if (sel.options[i].value === seg) { sel.selectedIndex = i; return; }
+        if (seg) {
+          var o = document.createElement('option');
+          o.value = seg; o.textContent = seg; o.selected = true;
+          sel.insertBefore(o, sel.firstChild);
+        }
+      }
+      fetch(wodocPub + '/versions.json')
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (m) {
+          var list = m.list || [], latest = m.latest;
+          document.querySelectorAll('.wodoc-version').forEach(function (sel) {
+            sel.innerHTML = '';
+            list.forEach(function (v) {
+              var o = document.createElement('option');
+              if (v === latest) { o.value = 'latest'; o.textContent = v + ' (latest)'; }
+              else { o.value = v; o.textContent = v; }
+              sel.appendChild(o);
+            });
+            select(sel);
+          });
+        })
+        .catch(function () {
+          document.querySelectorAll('.wodoc-version').forEach(select);
+        });
+    })();
+  </script>
+</body>
+</html>

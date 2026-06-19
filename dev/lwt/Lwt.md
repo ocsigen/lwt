@@ -1,0 +1,1424 @@
+
+# Module `Lwt`
+
+Asynchronous programming with promises.
+
+A **promise** is a placeholder for a single value which might take a long time to compute. Speaking roughly, a promise is a `ref` that can be filled in later. To make that precise, here is how promises differ from `ref`s:
+
+- A promise might not have a value yet. A promise in this state is called a *pending* promise.
+- Writing a value into a promise is called *resolving* it. A promise with a value is called a *resolved* promise.
+- Each promise can be resolved only once. After a promise has a value, the promise is immutable.
+- It's possible to attach **callbacks** to a promise. They will run when the promise has a value, i.e. is resolved. If the promise is already resolved when a callback is attached, the callback is run (almost) right away. If the promise is pending, the callback is put into a list and waits.
+So, promises are optional, write-once references, and when they don't yet have a value, they store a list of callbacks that are waiting for the value.
+
+The waiting callbacks make promises a natural data type for asynchronous programming. For example, you can ask Lwt to `read` a file. Lwt immediately returns you only a *promise* for the data.
+
+You can neglect this promise for a while. You can do some other computation, request more I/O, etc. At some point, you might decide to attach a callback to the `read` promise, maybe several callbacks.
+
+In the meantime, the `read` operation is running in the background. Once it finishes, Lwt *resolves* the `read` promise by putting the data into it. Lwt then runs the callbacks you attached.
+
+One of those might take the data, and ask Lwt to `write` it to STDOUT. Lwt gives you a promise for that, too, and the process repeats.
+
+Lwt has a small amount of syntactic sugar to make this look as natural as possible:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    let%lwt data = Lwt_io.(read_line stdin) in
+    Lwt_io.printl data;%lwt
+    Lwt.return ()
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix echo.ml && ./a.out *)
+```
+This is all explained in the next sections:
+
+- [Quick start](./#3_Quickstart) links these concepts to actual functions in Lwt – the most fundamental ones.
+- [Tutorial](./#3_Tutorial) shows how to write examples like the above, and how concurrency happens.
+- [Execution model](./#3_Executionmodel) clarifies control flow when using Lwt.
+- [Guide to the rest of Lwt](./#3_GuidetotherestofLwt) shows how *everything* else in Lwt fits into this framework.
+After that is the [reference proper](./#2_Fundamentals), which goes into *painful* levels of detail on every single type and value in this module, `Lwt`. Please be safe, and read only what you need from it :)
+
+Happy asynchronous programming\!
+
+
+#### Quick start
+
+*All* of Lwt is variations on:
+
+- **Promises** of type `'a `[`Lwt.t`](./#type-t) are placeholders for values of type `'a`.
+- [`Lwt.bind`](./#val-bind) attaches **callbacks** to promises. When a promise gets a value, its callbacks are called.
+- Separate **resolvers** of type `'a `[`Lwt.u`](./#type-u) are used to write values into promises, through [`Lwt.wakeup_later`](./#val-wakeup_later).
+- Promises and resolvers are created in pairs using [`Lwt.wait`](./#val-wait). Lwt I/O functions call [`Lwt.wait`](./#val-wait) internally, but return only the promise.
+- [`Lwt_main.run`](./Lwt_main.md#val-run) is used to wait on one “top-level” promise. When that promise gets a value, the program terminates.
+
+#### Tutorial
+
+Let's read from STDIN. The first version is written using ordinary values from the OCaml standard library. This makes the program block until the user enters a line:
+
+```ocaml
+let () =
+  let line : string = read_line () in
+  print_endline "Now unblocked!";
+  ignore line
+
+(* ocamlfind opt -linkpkg code.ml && ./a.out *)
+```
+If we use a promise instead, execution continues immediately:
+
+```ocaml
+let () =
+  let line_promise : string Lwt.t =
+    Lwt_io.(read_line stdin) in
+  print_endline "Execution just continues...";
+  ignore line_promise
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+Indeed, this program is a little *too* asynchronous – it exits right away\! Let's force it to wait for `line_promise` at the end by calling [`Lwt_main.run`](./Lwt_main.md#val-run):
+
+```ocaml
+let () =
+  let line_promise : string Lwt.t =
+    Lwt_io.(read_line stdin) in
+  print_endline "Execution just continues...";
+
+  let line : string =
+    Lwt_main.run line_promise in
+  ignore line
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+[`Lwt_main.run`](./Lwt_main.md#val-run) should only be called once, on one promise, at the top level of your program. Most of the time, waiting for promises is done using `let%lwt`. That is the recommended syntactic sugar for [`Lwt.bind`](./#val-bind), and is pronounced “bind”:
+
+```ocaml
+let () =
+  let p : unit Lwt.t =
+    let%lwt line_1 = Lwt_io.(read_line stdin) in
+    let%lwt line_2 = Lwt_io.(read_line stdin) in
+    Lwt_io.printf "%s and %s\n" line_1 line_2
+  in
+
+  Lwt_main.run p
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+The way that works is everything in scope after the “`in`” in “`let%lwt x =` ... `in` ...” goes into a callback, and “`x`” is that callback's argument. So, we could have been very explicit, and written the code like this:
+
+```ocaml
+let () =
+  let p : unit Lwt.t =
+    let line_1_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+    Lwt.bind line_1_promise (fun (line_1 : string) ->
+
+      let line_2_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+      Lwt.bind line_2_promise (fun (line_2 : string) ->
+
+        Lwt_io.printf "%s and %s\n" line_1 line_2))
+  in
+
+  Lwt_main.run p
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+But, as you can see, this is verbose, and the indentation gets a bit crazy. So, we will always use `let%lwt`.
+
+The code above reads two lines in sequence, because we ask Lwt to wait for `line_1`, before calling the second [`Lwt_io.read_line`](./Lwt_io.md#val-read_line) in the callback, to start the second I/O.
+
+We could also run I/O *concurrently*. All we have to do is not start the second I/O in a callback of the first. Because it doesn't make sense to read two lines from STDIN concurrently, let's start two waits instead:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3.
+    and five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
+
+    three_seconds;%lwt
+    Lwt_io.printl "3 seconds passed";%lwt
+    five_seconds;%lwt
+    Lwt_io.printl "Only 2 more seconds passed"
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+This program takes about five seconds to run. We are still new to `let%lwt` and `;%lwt`, so let's desugar them:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3.
+    and five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
+
+    (* Both waits have already been started at this point! *)
+
+    Lwt.bind three_seconds (fun () ->
+      (* This is 3 seconds later. *)
+      Lwt.bind (Lwt_io.printl "3 seconds passed") (fun () ->
+        Lwt.bind five_seconds (fun () ->
+          (* Only 2 seconds were left in the 5-second wait, so
+              this callback runs 2 seconds after the first callback. *)
+          Lwt_io.printl "Only 2 more seconds passed")))
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+And that's it\! Concurrency in Lwt is simply a matter of whether you start an operation in the callback of another one or not. As a convenience, Lwt provides a few [helpers](./#2_Concurrency) for common concurrency patterns.
+
+
+#### Execution model
+
+It's important to understand that promises are a pure-OCaml data type. They don't do any fancy scheduling or I/O. They are just lists of callbacks (if pending), or containers for one value (if resolved).
+
+The interesting function is [`Lwt_main.run`](./Lwt_main.md#val-run). It's a wrapper around [`select(2)`](https://man7.org/linux/man-pages/man2/select.2.html), [`epoll(7)`](https://man7.org/linux/man-pages/man7/epoll.7.html), [`kqueue(2)`](https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2), or whatever asynchronous I/O API your system provides. On browsers, the work of [`Lwt_main.run`](./Lwt_main.md#val-run) is done by the surrounding JavaScript engine, so you don't call [`Lwt_main.run`](./Lwt_main.md#val-run) from inside your program. But the execution model is still the same, and the description below applies\!
+
+To avoid writing out “underlying asynchronous I/O API,” we'll assume, in this section, that the API is `select(2)`. That's just for the sake of abbreviation. It doesn't actually matter, for most purposes, what the underlying I/O API is.
+
+Let's use the program from the tutorial that reads two lines as an example. Here it is, again, in its desugared form:
+
+```ocaml
+let () =
+  let p : unit Lwt.t =
+    let line_1_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+    Lwt.bind line_1_promise (fun (line_1 : string) ->
+
+      let line_2_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+      Lwt.bind line_2_promise (fun (line_2 : string) ->
+
+        Lwt_io.printf "%s and %s\n" line_1 line_2))
+  in
+
+  Lwt_main.run p
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+[`Lwt_main.run`](./Lwt_main.md#val-run) is your program's main I/O loop. You pass it a single promise, and it:
+
+1. Uses `select(2)` to put your process to sleep until the next I/O completes.
+2. That next I/O happens to be the one that reads `line_1`. [`Lwt_main.run`](./Lwt_main.md#val-run) knows that I/O is supposed to resolve `line_1_promise`, so it puts `line_1` into the promise and resolves it.
+3. Resolving is an ordinary OCaml operation. It causes all the callbacks of `line_1_promise` to run, one after another. Each callback is also ordinary OCaml code. In our case, there is only one callback, but in general, there might be several, and they might also resolve additional promises. So, promise resolution triggers a “cascade” of callbacks. Eventually, however, we should run out of callbacks, and control will return to [`Lwt_main.run`](./Lwt_main.md#val-run).
+4. In our example, our one callback registers a second I/O with [`Lwt_main.run`](./Lwt_main.md#val-run) – the one that will read `line_2`. There are no callbacks left to run after that, so control returns to [`Lwt_main.run`](./Lwt_main.md#val-run).
+5. [`Lwt_main.run`](./Lwt_main.md#val-run) goes back to sleep again by calling `select(2)`, now waiting for the second I/O that we just registered. The loop repeats itself from step 1\.
+This has two major implications, one good and one bad. Let's start with the bad one.
+
+**(1)** If one of your callbacks enters an infinite loop, calls an Lwt-unfriendly blocking I/O, or just runs for a really long time, it won't return control to [`Lwt_main.run`](./Lwt_main.md#val-run) anytime soon. That means [`Lwt_main.run`](./Lwt_main.md#val-run) won't get a chance to resolve any other Lwt I/O promises, even if the underlying I/O operations complete.
+
+In case your callback is just using the CPU for a really long time, you can insert a few calls to [`Lwt.pause`](./#val-pause) into it, and resume your computation in callbacks of `pause`. This is basically the same as [`Lwt_unix.sleep`](./Lwt_unix.md#val-sleep)` 0.` – it's a promise that will be resolved by [`Lwt_main.run`](./Lwt_main.md#val-run) *after* any other I/O resolutions that are already in its queue.
+
+**(2)** The good implication is that all your callbacks run in a single thread. This means that in most situations, you don't have to worry about locks, synchronization, etc. Anything that is in the same callback is guaranteed to run without interruption. Lwt programs are often *much* easier to write and refactor, than equivalent programs written with threads – but both are concurrent\!
+
+
+#### Guide to the rest of Lwt
+
+This module `Lwt` is the pure-OCaml definition of promises and callback-calling. It has a few extras on top of what's described above:
+
+- [Rejection](./#2_Rejection). Lwt promises can actually be resolved in two ways: *fulfilled* with a value, or *rejected* with an exception. There is nothing conceptually special about rejection – it's just that you can ask for callbacks to run only on fulfillment, only on rejection, etc.
+- [Cancellation](./#2_Cancellation). This is a special case of rejection, specifically with exception [`Lwt.Canceled`](./#exception-Canceled). It has extra helpers in the Lwt API.
+- [Concurrency helpers](./#2_Concurrency). All of these could be implemented on top of [`Lwt.bind`](./#val-bind). As we saw, Lwt concurrency requires only deciding whether to run something inside a callback, or outside it. These functions just implement common patterns, and make intent explicit.
+- Miscellaneous [helpers](./#2_Convenience), and [deprecated](./#2_Deprecated) APIs.
+The next layer above module `Lwt` is the pure-OCaml Lwt “core” library, which provides some promise-friendly patterns, like streams and mvars. This consists of the modules [`Lwt_list`](./Lwt_list.md), [`Lwt_stream`](./Lwt_stream.md), [`Lwt_result`](./Lwt_result.md), [`Lwt_mutex`](./Lwt_mutex.md), [`Lwt_condition`](./Lwt_condition.md), [`Lwt_mvar`](./Lwt_mvar.md), [`Lwt_pool`](./Lwt_pool.md), and [`Lwt_switch`](./Lwt_switch.md).
+
+Above that is the Lwt Unix binding, where I/O begins. This includes the module [`Lwt_main`](./Lwt_main.md), including the all-important [`Lwt_main.run`](./Lwt_main.md#val-run). The rest of the Unix binding consists of functions, each one of which...
+
+- ...starts a background I/O operation,
+- creates a promise for it and gives it to you,
+- registers with [`Lwt_main.run`](./Lwt_main.md#val-run), so if you attach callbacks to the promise, they will be called when the I/O operation completes.
+The functions are grouped into modules:
+
+- [`Lwt_unix`](./Lwt_unix.md) for Unix system calls.
+- [`Lwt_bytes`](./Lwt_bytes.md) for Unix system calls on bigarrays.
+- [`Lwt_io`](./Lwt_io.md) for `Stdlib`\-like high-level channels, TCP servers, etc.
+- [`Lwt_process`](./Lwt_process.md) for managing subprocesses.
+- [`Lwt_preemptive`](./Lwt_preemptive.md) for spawning system threads.
+- Miscellaneous modules [`Lwt_gc`](./Lwt_gc.md), [`Lwt_engine`](./Lwt_engine.md), [`Lwt_throttle`](./Lwt_throttle.md), [`Lwt_timeout`](./Lwt_timeout.md), [`Lwt_sys`](./Lwt_sys.md).
+Warning\! Introductory material ends and detailed reference begins\!
+
+
+### Fundamentals
+
+
+#### Promises
+
+```ocaml
+type +'a t
+```
+Promises for values of type `'a`.
+
+A **promise** is a memory cell that is always in one of three **states**:
+
+- *fulfilled*, and containing one value of type `'a`,
+- *rejected*, and containing one exception, or
+- *pending*, in which case it may become fulfilled or rejected later.
+A *resolved* promise is one that is either fulfilled or rejected, i.e. not pending. Once a promise is resolved, its content cannot change. So, promises are *write-once references*. The only possible state changes are (1) from pending to fulfilled and (2) from pending to rejected.
+
+Promises are typically “read” by attaching **callbacks** to them. The most basic functions for that are [`Lwt.bind`](./#val-bind), which attaches a callback that is called when a promise becomes fulfilled, and [`Lwt.catch`](./#val-catch), for rejection.
+
+Promise variables of this type, `'a Lwt.t`, are actually **read-only** in Lwt. Separate *resolvers* of type `'a `[`Lwt.u`](./#type-u) are used to write to them. Promises and their resolvers are created together by calling [`Lwt.wait`](./#val-wait). There is one exception to this: most promises can be *canceled* by calling [`Lwt.cancel`](./#val-cancel), without going through a resolver.
+
+```ocaml
+type -'a u
+```
+Resolvers for promises of type `'a `[`Lwt.t`](./#type-t).
+
+Each resolver can be thought of as the **write end** of one promise. It can be passed to [`Lwt.wakeup_later`](./#val-wakeup_later), [`Lwt.wakeup_later_exn`](./#val-wakeup_later_exn), or [`Lwt.wakeup_later_result`](./#val-wakeup_later_result) to resolve that promise.
+
+```ocaml
+val wait : unit -> 'a t * 'a u
+```
+Creates a new pending [promise](./#type-t), paired with its [resolver](./#type-u).
+
+It is rare to use this function directly. Many helpers in Lwt, and Lwt-aware libraries, call it internally, and return only the promise. You then chain the promises together using [`Lwt.bind`](./#val-bind).
+
+However, it is important to understand `Lwt.wait` as the fundamental promise “constructor.” All other functions that evaluate to a promise can be, or are, eventually implemented in terms of it.
+
+
+#### Resolving
+
+```ocaml
+val wakeup_later : 'a u -> 'a -> unit
+```
+`Lwt.wakeup_later r v` *fulfills*, with value `v`, the *pending* [promise](./#type-t) associated with [resolver](./#type-u) `r`. This triggers callbacks attached to the promise.
+
+If the promise is not pending, `Lwt.wakeup_later` raises `Stdlib.Invalid_argument`, unless the promise is [canceled](./#val-cancel). If the promise is canceled, `Lwt.wakeup_later` has no effect.
+
+If your program has multiple threads, it is important to make sure that `Lwt.wakeup_later` (and any similar function) is only called from the main thread. `Lwt.wakeup_later` can trigger callbacks attached to promises by the program, and these assume they are running in the main thread. If you need to communicate from a worker thread to the main thread running Lwt, see [`Lwt_preemptive`](./Lwt_preemptive.md) or [`Lwt_unix.send_notification`](./Lwt_unix.md#val-send_notification).
+
+```ocaml
+val wakeup_later_exn : _ u -> exn -> unit
+```
+`Lwt.wakeup_later_exn r exn` is like [`Lwt.wakeup_later`](./#val-wakeup_later), except, if the associated [promise](./#type-t) is *pending*, it is *rejected* with `exn`.
+
+```ocaml
+val return : 'a -> 'a t
+```
+`Lwt.return v` creates a new [promise](./#type-t) that is *already fulfilled* with value `v`.
+
+This is needed to satisfy the type system in some cases. For example, in a `match` expression where one case evaluates to a promise, the other cases have to evaluate to promises as well:
+
+```ocaml
+match need_input with
+| true -> Lwt_io.(read_line stdin)   (* Has type string Lwt.t... *)
+| false -> Lwt.return ""             (* ...so wrap empty string in a promise. *)
+```
+Another typical usage is in [`let%lwt`](./#val-bind). The expression after the “`in`” has to evaluate to a promise. So, if you compute an ordinary value instead, you have to wrap it:
+
+```ocaml
+let%lwt line = Lwt_io.(read_line stdin) in
+Lwt.return (line ^ ".")
+```
+```ocaml
+val fail : exn -> _ t
+```
+`Lwt.fail exn` is like [`Lwt.return`](./#val-return), except the new [promise](./#type-t) that is *already rejected* with `exn`.
+
+Whenever possible, it is recommended to use `raise exn` instead, as `raise` captures a backtrace, while `Lwt.fail` does not. If you call `raise exn` in a callback that is expected by Lwt to return a promise, Lwt will automatically wrap `exn` in a rejected promise, but the backtrace will have been recorded by the OCaml runtime.
+
+For example, `bind`'s second argument is a callback which returns a promise. And so it is recommended to use `raise` in the body of that callback. This applies to the aliases of `bind` as well: `( >>= )` and `( let* )`.
+
+Use `Lwt.fail` only when you specifically want to create a rejected promise, to pass to another function, or store in a data structure.
+
+
+#### Callbacks
+
+```ocaml
+val bind : 'a t -> ('a -> 'b t) -> 'b t
+```
+`Lwt.bind p_1 f` makes it so that `f` will run when `p_1` is [*fulfilled*](./#type-t).
+
+When `p_1` is fulfilled with value `v_1`, the callback `f` is called with that same value `v_1`. Eventually, after perhaps starting some I/O or other computation, `f` returns promise `p_2`.
+
+`Lwt.bind` itself returns immediately. It only attaches the callback `f` to `p_1` – it does not wait for `p_2`. *What* `Lwt.bind` returns is yet a third promise, `p_3`. Roughly speaking, fulfillment of `p_3` represents both `p_1` and `p_2` becoming fulfilled, one after the other.
+
+A minimal example of this is an echo program:
+
+```ocaml
+let () =
+  let p_3 =
+    Lwt.bind
+      Lwt_io.(read_line stdin)
+      (fun line -> Lwt_io.printl line)
+  in
+  Lwt_main.run p_3
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+Rejection of `p_1` and `p_2`, and raising an exception in `f`, are all forwarded to rejection of `p_3`.
+
+**Precise behavior**
+
+`Lwt.bind` returns a promise `p_3` immediately. `p_3` starts out pending, and is resolved as follows:
+
+- The first condition to wait for is that `p_1` becomes resolved. It does not matter whether `p_1` is already resolved when `Lwt.bind` is called, or becomes resolved later – the rest of the behavior is the same.
+- If and when `p_1` becomes resolved, it will, by definition, be either fulfilled or rejected.
+- If `p_1` is rejected, `p_3` is rejected with the same exception.
+- If `p_1` is fulfilled, with value `v`, `f` is applied to `v`.
+- `f` may finish by returning the promise `p_2`, or raising an exception.
+- If `f` raises an exception, `p_3` is rejected with that exception.
+- Finally, the remaining case is when `f` returns `p_2`. From that point on, `p_3` is effectively made into a reference to `p_2`. This means they have the same state, undergo the same state changes, and performing any operation on one is equivalent to performing it on the other.
+**Syntactic sugar**
+
+`Lwt.bind` is almost never written directly, because sequences of `Lwt.bind` result in growing indentation and many parentheses:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    Lwt.bind Lwt_io.(read_line stdin) (fun line ->
+      Lwt.bind (Lwt_unix.sleep 1.) (fun () ->
+        Lwt_io.printf "One second ago, you entered %s\n" line))
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+The recommended way to write `Lwt.bind` is using the `let%lwt` syntactic sugar:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    let%lwt line = Lwt_io.(read_line stdin) in
+    Lwt_unix.sleep 1.;%lwt
+    Lwt_io.printf "One second ago, you entered %s\n" line
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+This uses the Lwt `PPX` (preprocessor). Note that we had to add package `lwt_ppx` to the command line for building this program. We will do that throughout this manual.
+
+Another way to write `Lwt.bind`, that you may encounter while reading code, is with the `>>=` operator:
+
+```ocaml
+open Lwt.Infix
+
+let () =
+  Lwt_main.run begin
+    Lwt_io.(read_line stdin) >>= fun line ->
+    Lwt_unix.sleep 1. >>= fun () ->
+    Lwt_io.printf "One second ago, you entered %s\n" line
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+The `>>=` operator comes from the module [`Lwt.Infix`](./Lwt-Infix.md), which is why we opened it at the beginning of the program.
+
+See also [`Lwt.map`](./#val-map).
+
+
+### Rejection
+
+```ocaml
+val reraise : exn -> 'a
+```
+`reraise e` raises the exception `e`. Unlike `raise e`, `reraise e` preserves the existing exception backtrace and even adds a "Re-raised at" entry with the call location.
+
+This function is intended to be used in the exception handlers of `Lwt.catch` and `Lwt.try_bind`.
+
+It is also used in the code produced by Lwt\_ppx.
+
+```ocaml
+val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+```
+`Lwt.catch f h` applies `f ()`, which returns a promise, and then makes it so that `h` (“handler”) will run when that promise is [*rejected*](./#type-t).
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    Lwt.catch
+      (fun () -> raise Exit)
+      (function
+      | Exit -> Lwt_io.printl "Got Stdlib.Exit"
+      | exn -> Lwt.reraise exn)
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+Despite the above code, the recommended way to write `Lwt.catch` is using the `try%lwt` syntactic sugar from the `PPX`. Here is an equivalent example:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    try%lwt raise Exit
+    with Exit -> Lwt_io.printl "Got Stdlb.Exit"
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+A particular advantage of the PPX syntax is that it is not necessary to artificially insert a catch-all `exn -> reraise exn` case. Like in the core language's `try` expression, the catch-all case is implied in `try%lwt`.
+
+`Lwt.catch` is a counterpart to [`Lwt.bind`](./#val-bind) – [`Lwt.bind`](./#val-bind) is for fulfillment, and [`Lwt.catch`](./#val-catch) is for rejection.
+
+As with [`Lwt.bind`](./#val-bind), three promises are involved:
+
+- `p_1`, the promise returned from applying `f ()`.
+- `p_2`, the promise returned from applying `h exn`.
+- `p_3`, the promise returned by `Lwt.catch` itself.
+The remainder is (1) a precise description of how `p_3` is resolved, and (2) a warning about accidentally using ordinary `try` for exception handling in asynchronous code.
+
+**(1)** `Lwt.catch` first applies `f ()`. It then returns `p_3` immediately. `p_3` starts out pending. It is resolved as follows:
+
+- If `f ()` returned a promise `p_1`, and `p_1` becomes fulfilled, `p_3` is fulfilled with the same value.
+- `p_1` can instead become rejected. There is one other possibility: `f ()` itself raised an exception, instead of returning a promise. The behavior of `Lwt.catch` is the same whether `f ()` raised an exception, or returned a promise that is later rejected with an exception. Let's call the exception `exn`.
+- `h exn` is applied.
+- `h exn` may return a promise, or might itself raise an exception. The first case is the interesting one, but the exception case is simple, so we cover the exception case first.
+- If `h exn` raises another exception `exn'`, `p_3` is rejected with `exn'`.
+- If `h exn` instead returns the promise `p_2`, `p_3` is effectively made into a reference to `p_2`. This means `p_3` and `p_2` have the same state, undergo the same state changes, and performing any operation one is equivalent to performing it on the other.
+```ocaml
+val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
+```
+`Lwt.finalize f c` applies `f ()`, which returns a promise, and then makes it so `c` (“cleanup”) will run when that promise is [*resolved*](./#type-t).
+
+In other words, `c` runs no matter whether promise `f ()` is fulfilled or rejected. As the names suggest, `Lwt.finalize` corresponds to the `finally` construct found in many programming languages, and `c` is typically used for cleaning up resources:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    let%lwt file = Lwt_io.(open_file ~mode:Input "code.ml") in
+    Lwt.finalize
+      (fun () ->
+        let%lwt content = Lwt_io.read file in
+        Lwt_io.print content)
+      (fun () ->
+        Lwt_io.close file)
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+As with [`Lwt.bind`](./#val-bind) and [`Lwt.catch`](./#val-catch), there is a syntactic sugar for `Lwt.finalize`, though it is not as often used:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    let%lwt file = Lwt_io.(open_file ~mode:Input "code.ml") in
+    begin
+      let%lwt content = Lwt_io.read file in
+      Lwt_io.print content
+    end
+    [%lwt.finally
+      Lwt_io.close file]
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+Also as with [`Lwt.bind`](./#val-bind) and [`Lwt.catch`](./#val-catch), three promises are involved:
+
+- `p_1`, the promise returned from applying `f ()`.
+- `p_2`, the promise returned from applying `c ()`.
+- `p_3`, the promise returned by `Lwt.finalize` itself.
+`p_3` is returned immediately. It starts out pending, and is resolved as follows:
+
+- `f ()` is applied. If it finishes, it will either return a promise `p_1`, or raise an exception.
+- If `f ()` raises an exception, `p_1` is created artificially as a promise rejected with that exception. So, no matter how `f ()` finishes, there is a promise `p_1` representing the outcome.
+- After `p_1` is resolved (fulfilled or rejected), `c ()` is applied. This is meant to be the cleanup code.
+- If `c ()` finishes, it will also either return a promise, `p_2`, or raise an exception.
+- If `c ()` raises an exception, `p_2` is created artificially as a promise rejected with that exception. Again, no matter how `c ()` finishes, there is a promise `p_2` representing the outcome of cleanup.
+- If `p_2` is fulfilled, `p_3` is resolved the same way `p_1` had been resolved. In other words, `p_1` is forwarded to `p_3` when cleanup is successful.
+- If `p_2` is rejected, `p_3` is rejected with the same exception. In other words, `p_2` is forwarded to `p_3` when cleanup is unsuccessful. Note this means that if *both* the protected code and the cleanup fail, the cleanup exception has precedence.
+```ocaml
+val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
+```
+`Lwt.try_bind f g h` applies `f ()`, and then makes it so that:
+
+- `g` will run when promise `f ()` is [*fulfilled*](./#type-t),
+- `h` will run when promise `f ()` is [*rejected*](./#type-t).
+`Lwt.try_bind` is a generalized [`Lwt.finalize`](./#val-finalize). The difference is that `Lwt.try_bind` runs different callbacks depending on *how* `f ()` is resolved. This has two main implications:
+
+- The cleanup functions `g` and `h` each “know” whether `f ()` was fulfilled or rejected.
+- The cleanup functions `g` and `h` are passed the value `f ()` was fulfilled with, and, respectively, the exception `f ()` was rejected with.
+As with [`Lwt.catch`](./#val-catch), it is recommended to use [`reraise`](./#val-reraise) in the catch-all case of the exception handler:
+
+```ocaml
+let () =
+  Lwt_main.run begin
+    Lwt.try_bind
+      (fun () -> raise Exit)
+      (fun () -> Lwt_io.printl "Got Success")
+      (function
+      | Exit -> Lwt_io.printl "Got Stdlib.Exit"
+      | exn -> Lwt.reraise exn)
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+```
+The rest is a detailed description of the promises involved.
+
+As with [`Lwt.finalize`](./#val-finalize) and the several preceding functions, three promises are involved.
+
+- `p_1` is the promise returned from applying `f ()`.
+- `p_2` is the promise returned from applying `h` or `g`, depending on which one is chosen.
+- `p_3` is the promise returned by `Lwt.try_bind` itself.
+`Lwt.try_bind` returns `p_3` immediately. `p_3` starts out pending, and is resolved as follows:
+
+- `f ()` is applied. If it finishes, it either returns `p_1`, or raises an exception.
+- If `f ()` raises an exception, `p_1` is created artificially as a promise rejected with that exception. So, no matter how `f ()` finishes, there is a promise `p_1` representing the outcome.
+- If `p_1` is fulfilled, `g` is applied to the value `p_1` is fulfilled with.
+- If `p_1` is rejected, `h` is applied to the exception `p_1` is rejected with.
+- So, in either case, a callback is applied. The rest of the procedure is the same no matter which callback was chosen, so we will refer to it as “the callback.”
+- If the callback finishes, it either returns `p_2`, or raises an exception.
+- If the callback raises an exception, `p_3` is rejected with that exception.
+- If the callback returns `p_2`, `p_3` is effectively made into an reference to `p_2`. They have the same state, including any state changes, and performing any operation on one is equivalent to performing it on the other.
+```ocaml
+val dont_wait : (unit -> unit t) -> (exn -> unit) -> unit
+```
+`Lwt.dont_wait f handler` applies `f ()`, which returns a promise, and then makes it so that if the promise is [*rejected*](./#type-t), the exception is passed to `handler`.
+
+In addition, if `f ()` raises an exception, it is also passed to `handler`.
+
+As the name implies, `dont_wait (fun () -> <e>) handler` is a way to evaluate the expression `<e>` (which typically has asynchronous side-effects) *without waiting* for the resolution of the promise `<e>` evaluates to.
+
+`dont_wait` is meant as an alternative to [`async`](./#val-async) with a local, explicit, predictable exception handler.
+
+Note that `dont_wait f h` causes `f ()` to be evaluated immediately. Consequently, the non-yielding/non-pausing prefix of the body of `f` is evaluated immediately.
+
+```ocaml
+val async : (unit -> unit t) -> unit
+```
+`Lwt.async f` applies `f ()`, which returns a promise, and then makes it so that if the promise is [*rejected*](./#type-t), the exception is passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook).
+
+In addition, if `f ()` raises an exception, it is also passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook).
+
+`!`[`Lwt.async_exception_hook`](./#val-async_exception_hook) typically prints an error message and terminates the program. If you need a similar behaviour with a different exception handler, you can use [`Lwt.dont_wait`](./#val-dont_wait).
+
+`Lwt.async` is misleadingly named. Itself, it has nothing to do with asynchronous execution. It's actually a safety function for making Lwt programs more debuggable.
+
+For example, take this program, which prints messages in a loop, while waiting for one line of user input:
+
+```ocaml
+let () =
+  let rec show_nag () : _ Lwt.t =
+    Lwt_io.printl "Please enter a line";%lwt
+    Lwt_unix.sleep 1.;%lwt
+    show_nag ()
+  in
+  ignore (show_nag ());     (* Bad – see note for (1)! *)
+
+  Lwt_main.run begin
+    let%lwt line = Lwt_io.(read_line stdin) in
+    Lwt_io.printl line
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+If one of the I/O operations in `show_nag` were to fail, the promise representing the whole loop would get rejected. However, since we are ignoring that promise at **(1)**, we never find out about the rejection. If this failure and resulting rejection represents a bug in the program, we have a harder time finding out about the bug.
+
+A safer version differs only in using `Lwt.async` instead of `Stdlib.ignore`:
+
+```ocaml
+let () =
+  let rec show_nag () : _ Lwt.t =
+    Lwt_io.printl "Please enter a line";%lwt
+    Lwt_unix.sleep 1.;%lwt
+    show_nag ()
+  in
+  Lwt.async (fun () -> show_nag ());
+
+  Lwt_main.run begin
+    let%lwt line = Lwt_io.(read_line stdin) in
+    Lwt_io.printl line
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+In this version, if I/O in `show_nag` fails with an exception, the exception is printed by `Lwt.async`, and then the program exits.
+
+The general rule for when to use `Lwt.async` is:
+
+- Promises which are *not* passed *to* [`Lwt.bind`](./#val-bind), [`Lwt.catch`](./#val-catch), [`Lwt.join`](./#val-join), etc., are **top-level** promises.
+- One top-level promise is passed to [`Lwt_main.run`](./Lwt_main.md#val-run), as can be seen in most examples in this manual.
+- Every other top-level promise should be wrapped in `Lwt.async`.
+```ocaml
+val async_exception_hook : (exn -> unit) Stdlib.ref
+```
+Reference to a function, to be called on an "unhandled" exception.
+
+This reference is used by [`Lwt.async`](./#val-async), [`Lwt.on_cancel`](./#val-on_cancel), [`Lwt.on_success`](./#val-on_success), [`Lwt.on_failure`](./#val-on_failure), [`Lwt.on_termination`](./#val-on_termination), [`Lwt.on_any`](./#val-on_any), `Lwt_react.of_stream`, and the deprecated [`Lwt.ignore_result`](./#val-ignore_result).
+
+The initial, default implementation prints the exception, then terminates the process with non-zero exit status, as if the exception had reached the top level of the program:
+
+```ocaml
+let () = Lwt.async (fun () -> raise Exit)
+
+(* ocamlfind opt -linkpkg -package lwt code.ml && ./a.out *)
+```
+produces in the output:
+
+```
+Fatal error: exception Stdlib.Exit
+```
+If you are writing an application, you are welcome to reassign the reference, and replace the function with something more appropriate for your needs.
+
+If you are writing a library, you should leave this reference alone. Its behavior should be determined by the application.
+
+
+### Concurrency
+
+
+#### Multiple wait
+
+```ocaml
+val both : 'a t -> 'b t -> ('a * 'b) t
+```
+`Lwt.both p_1 p_2` returns a promise that is pending until *both* promises `p_1` and `p_2` become [*resolved*](./#type-t).
+
+```ocaml
+let () =
+  let p_1 =
+    Lwt_unix.sleep 3.;%lwt
+    Lwt_io.printl "Three seconds elapsed"
+  in
+
+  let p_2 =
+    Lwt_unix.sleep 5.;%lwt
+    Lwt_io.printl "Five seconds elapsed"
+  in
+
+  let p_3 = Lwt.both p_1 p_2 in
+  Lwt_main.run p_3
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+If both `p_1` and `p_2` become fulfilled, `Lwt.both p_1 p_2` is also fulfilled, with the pair of their final values. Otherwise, if at least one of the two promises becomes rejected, `Lwt.both p_1 p_2` is rejected with the same exception as one such promise, chosen arbitrarily. Note that this occurs only after both promises are resolved, not immediately when the first promise is rejected.
+
+since 4\.2.0
+```ocaml
+val join : unit t list -> unit t
+```
+`Lwt.join ps` returns a promise that is pending until *all* promises in the list `ps` become [*resolved*](./#type-t).
+
+```ocaml
+let () =
+  let p_1 =
+    Lwt_unix.sleep 3.;%lwt
+    Lwt_io.printl "Three seconds elapsed"
+  in
+
+  let p_2 =
+    Lwt_unix.sleep 5.;%lwt
+    Lwt_io.printl "Five seconds elapsed"
+  in
+
+  let p_3 = Lwt.join [p_1; p_2] in
+  Lwt_main.run p_3
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+If all of the promises in `ps` become fulfilled, `Lwt.join ps` is also fulfilled. Otherwise, if at least one promise in `ps` becomes rejected, `Lwt.join ps` is rejected with the same exception as one such promise, chosen arbitrarily. Note that this occurs only after all the promises are resolved, not immediately when the first promise is rejected.
+
+```ocaml
+val all : 'a t list -> 'a list t
+```
+`Lwt.all ps` is like [`Lwt.join`](./#val-join)` ps`: it waits for all promises in the list `ps` to become [*resolved*](./#type-t).
+
+It then resolves the returned promise with the list of all resulting values.
+
+Note that if any of the promises in `ps` is rejected, the returned promise is also rejected. This means that none of the values will be available, even if some of the promises in `ps` were already resolved when one of them is rejected. For more fine-grained handling of rejection, structure the program with [`Lwt_stream`](./Lwt_stream.md) or [`Lwt_list`](./Lwt_list.md), handle rejections explicitly, or use [`Lwt.join`](./#val-join) and collect values manually.
+
+since 5\.1.0
+
+#### Racing
+
+```ocaml
+val pick : 'a t list -> 'a t
+```
+`Lwt.pick ps` returns a promise that is pending until *one* promise in the list `ps` becomes [*resolved*](./#type-t).
+
+When at least one promise in `ps` is resolved, `Lwt.pick` tries to cancel all other promises that are still pending, using [`Lwt.cancel`](./#val-cancel).
+
+```ocaml
+let () =
+  let echo =
+    let%lwt line = Lwt_io.(read_line stdin) in
+    Lwt_io.printl line
+  in
+
+  let timeout = Lwt_unix.sleep 5. in
+
+  Lwt_main.run (Lwt.pick [echo; timeout])
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+If the first promise in `ps` to become resolved is fulfilled, the result promise `p` is also fulfilled, with the same value. Likewise, if the first promise in `ps` to become resolved is rejected, `p` is rejected with the same exception.
+
+If `ps` has no promises (if it is the empty list), `Lwt.pick ps` raises `Stdlib.Invalid_argument _`.
+
+It's possible for multiple promises in `ps` to become resolved simultaneously. This happens most often when some promises `ps` are already resolved at the time `Lwt.pick` is called.
+
+In that case, if at least one of the promises is rejected, the result promise `p` is rejected with the same exception as one such promise, chosen arbitrarily. If all promises are fulfilled, `p` is fulfilled with the value of one of the promises, also chosen arbitrarily.
+
+The remaining functions in this section are variations on `Lwt.pick`.
+
+```ocaml
+val choose : 'a t list -> 'a t
+```
+`Lwt.choose ps` is the same as [`Lwt.pick`](./#val-pick)` ps`, except that it does not try to cancel pending promises in `ps`.
+
+```ocaml
+val npick : 'a t list -> 'a list t
+```
+`Lwt.npick ps` is similar to [`Lwt.pick`](./#val-pick)` ps`, the difference being that when multiple promises in `ps` are fulfilled simultaneously (and none are rejected), the result promise is fulfilled with the *list* of values the promises were fulfilled with.
+
+When at least one promise is rejected, `Lwt.npick` still rejects the result promise with the same exception.
+
+```ocaml
+val nchoose : 'a t list -> 'a list t
+```
+`Lwt.nchoose ps` is the same as [`Lwt.npick`](./#val-npick)` ps`, except that it does not try to cancel pending promises in `ps`.
+
+```ocaml
+val nchoose_split : 'a t list -> ('a list * 'a t list) t
+```
+`Lwt.nchoose_split ps` is the same as [`Lwt.nchoose`](./#val-nchoose)` ps`, except that when multiple promises in `ps` are fulfilled simultaneously (and none are rejected), the result promise is fulfilled with *both* the list of values of the fulfilled promises, and the list of promises that are still pending.
+
+
+### Cancellation
+
+Note: cancelation has proved difficult to understand, explain, and maintain, so use of these functions is discouraged in new code. See [ocsigen/lwt\#283](https://github.com/ocsigen/lwt/issues/283#issuecomment-518014539).
+
+```ocaml
+exception Canceled
+```
+Canceled promises are those rejected with this exception, `Lwt.Canceled`. See [`Lwt.cancel`](./#val-cancel).
+
+```ocaml
+val task : unit -> 'a t * 'a u
+```
+`Lwt.task` is the same as [`Lwt.wait`](./#val-wait), except the resulting promise `p` is [cancelable](./#val-cancel).
+
+This is significant, because it means promises created by `Lwt.task` can be resolved (specifically, rejected) by canceling them directly, in addition to being resolved through their paired resolvers.
+
+In contrast, promises returned by [`Lwt.wait`](./#val-wait) can only be resolved through their resolvers.
+
+```ocaml
+val cancel : _ t -> unit
+```
+`Lwt.cancel p` attempts to *cancel* the pending promise `p`, without needing access to its resolver.
+
+It is recommended to avoid `Lwt.cancel`, and handle cancelation by tracking the needed extra state explicitly within your library or application.
+
+A **canceled** promise is one that has been rejected with exception [`Lwt.Canceled`](./#exception-Canceled).
+
+There are straightforward ways to make promises canceled. One could create a promise that *starts out* canceled, with [`Lwt.fail`](./#val-fail)` Lwt.Canceled`. It's also possible to *make* a promise canceled through its resolver, by calling [`Lwt.wakeup_later_exn`](./#val-wakeup_later_exn)` r Lwt.Canceled`.
+
+This function, `Lwt.cancel`, provides another method, which can cancel pending promises *without* going through their resolvers – it acts directly on promises.
+
+Like any other promise rejection, the canceled state of a promise is propagated “forwards” by [`Lwt.bind`](./#val-bind), [`Lwt.join`](./#val-join), etc., as described in the documentation of those functions.
+
+**Cancellation** is a separate phase, triggered only by [`Lwt.cancel`](./#val-cancel), that searches *backwards*, strating from `p`, for promises to reject with [`Lwt.Canceled`](./#exception-Canceled). Once those promises are found, they are canceled, and then ordinary, forwards rejection propagation takes over.
+
+All of this will be made precise, but first let's have an example:
+
+```ocaml
+let () =
+  let p =
+    Lwt_unix.sleep 5.;%lwt
+    Lwt_io.printl "Slept five seconds"
+  in
+
+  Lwt.cancel p;
+
+  Lwt_main.run p
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+At the time `Lwt.cancel` is called, `p` “depends” on the `sleep` promise (the `printl` is not yet called, so its promise hasn't been created).
+
+So, [`Lwt.cancel`](./#val-cancel) recursively tries to cancel the `sleep` promise. That is an example of the backwards search. The `sleep` promise is a pending promise that doesn't depend on anything, so backwards search stops at it. The state of the `sleep` promise is set to *rejected* with [`Lwt.Canceled`](./#exception-Canceled).
+
+[`Lwt.bind`](./#val-bind) then propagates the rejection forwards to `p`, so `p` also becomes canceled.
+
+Eventually, this rejection reaches [`Lwt_main.run`](./Lwt_main.md#val-run), which raises the [`Lwt.Canceled`](./#exception-Canceled) as an ordinary exception. The `sleep` does not complete, and the `printl` is never started.
+
+Promises, like the `sleep` promise above, that can be rejected by `Lwt.cancel` are **cancelable**. Most promises in Lwt are either cancelable, or depend on cancelable promises. The functions [`Lwt.wait`](./#val-wait) and [`Lwt.no_cancel`](./#val-no_cancel) create promises that are *not* cancelable.
+
+The rest is a detailed description of how the `Lwt.cancel` backwards search works.
+
+- If `p` is already resolved, `Lwt.cancel` does nothing.
+- If `p` was created by [`Lwt.wait`](./#val-wait) or [`Lwt.no_cancel`](./#val-no_cancel), `Lwt.cancel` does nothing.
+- If `p` was created by [`Lwt.task`](./#val-task) or [`Lwt.protected`](./#val-protected), `Lwt.cancel` rejects it with `Lwt.Canceled`. This rejection then propagates normally through any Lwt calls that depend on `p`. Most I/O promises are internally created by calling [`Lwt.task`](./#val-task).
+- Suppose `p_3` was returned by [`Lwt.bind`](./#val-bind), [`Lwt.map`](./#val-map), [`Lwt.catch`](./#val-catch), [`Lwt.finalize`](./#val-finalize), or [`Lwt.try_bind`](./#val-try_bind). Then, see those functions for the naming of the other promises involved. If `p_3` is pending, then either `p_1` is pending, or `p_2` is pending. `Lwt.cancel p_3` then tries recursively to cancel whichever of these two is still pending. If that succeeds, `p_3` *may* be canceled later by the normal propagation of rejection.
+- Suppose `p` was returned by [`Lwt.join`](./#val-join), [`Lwt.pick`](./#val-pick), or similar function, which was applied to the promise list `ps`. [`Lwt.cancel`](./#val-cancel) then recursively tries to cancel each promise in `ps`. If one of those cancellations succeeds, `p` *may* be canceled later by the normal propagation of rejection.
+```ocaml
+val on_cancel : _ t -> (unit -> unit) -> unit
+```
+`Lwt.on_cancel p f` makes it so that `f` will run when `p` becomes [*canceled*](./#exception-Canceled).
+
+Callbacks scheduled with `on_cancel` are guaranteed to run before any other callbacks that are triggered by rejection, such as those added by [`Lwt.catch`](./#val-catch).
+
+Note that this does not interact directly with the *cancellation* mechanism, the backwards search described in [`Lwt.cancel`](./#val-cancel). For example, manually rejecting a promise with [`Lwt.Canceled`](./#exception-Canceled) is sufficient to trigger `f`.
+
+`f` should not raise exceptions. If it does, they are passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook), which terminates the process by default.
+
+```ocaml
+val protected : 'a t -> 'a t
+```
+`Lwt.protected p` creates a [cancelable](./#val-cancel) promise `p'`. The original state of `p'` is the same as the state of `p` at the time of the call.
+
+The state of `p'` can change in one of two ways: a. if `p` changes state (i.e., is resolved), then `p'` eventually changes state to match `p`'s, and b. during cancellation, if the backwards search described in [`Lwt.cancel`](./#val-cancel) reaches `p'` then it changes state to rejected `Canceled` and the search stops.
+
+As a consequence of the b. case, `Lwt.cancel (protected p)` does not cancel `p`.
+
+The promise `p` can still be canceled either directly (through `Lwt.cancel p`) or being reached by the backwards cancellation search via another path. `Lwt.protected` only prevents cancellation of `p` through `p'`.
+
+```ocaml
+val no_cancel : 'a t -> 'a t
+```
+`Lwt.no_cancel p` creates a non-[cancelable](./#val-cancel) promise `p'`. The original state of `p'` is the same as `p` at the time of the call.
+
+If the state of `p` changes, then the state of `p'` eventually changes too to match `p`'s.
+
+Note that even though `p'` is non-[cancelable](./#val-cancel), it can still become canceled if `p` is canceled. `Lwt.no_cancel` only prevents cancellation of `p` and `p'` through `p'`.
+
+```ocaml
+val wrap_in_cancelable : 'a t -> 'a t
+```
+`Lwt.wrap_in_cancelable p` creates a [cancelable](./#val-cancel) promise `p'`. The original state of `p'` is the same as `p`.
+
+The state of `p'` can change in one of two ways: a. if `p` changes state (i.e., is resolved), then `p'` eventually changes state to match `p`'s, and b. during cancellation, if the backwards search described in [`Lwt.cancel`](./#val-cancel) reaches `p'` then it changes state to rejected `Canceled` and the search continues to `p`.
+
+
+#### Cancellation tweaks
+
+The primitives `protected`, `no_cancel`, and `wrap_in_cancelable` give you some level of control over the cancellation mechanism of Lwt. Note that promises passed as arguments to either of these three functions are unchanged. The functions return new promises with a specific cancellation behaviour.
+
+The three behaviour of all three functions are summarised in the following table.
+
+```ocaml
+  +----------------------------+--------------------+--------------------+
+  |     setup - action         | cancel p           | cancel p'          |
+  +----------------------------+--------------------+--------------------+
+  | p is cancelable            | p is canceled      | p is not canceled  |
+  | p' = protected p           | p'  is canceled    | p' is canceled     |
+  +----------------------------+--------------------+--------------------+
+  | p is not cancelable        | p is not canceled  | p is not canceled  |
+  | p' = protected p           | p' is not canceled | p' is canceled     |
+  +----------------------------+--------------------+--------------------+
+  | p is cancelable            | p is canceled      | p is not canceled  |
+  | p' = no_cancel p           | p' is canceled     | p' is not canceled |
+  +----------------------------+--------------------+--------------------+
+  | p is not cancelable        | p is not canceled  | p is not canceled  |
+  | p' = no_cancel p           | p' is not canceled | p' is not canceled |
+  +----------------------------+--------------------+--------------------+
+  | p is cancelable            | p is canceled      | p is canceled      |
+  | p' = wrap_in_cancelable p  | p' is canceled     | p' is canceled     |
+  +----------------------------+--------------------+--------------------+
+  | p is not cancelable        | p is not canceled  | p is not canceled  |
+  | p' = wrap_in_cancelable p  | p' is not canceled | p' is canceled     |
+  +----------------------------+--------------------+--------------------+
+```
+
+### Convenience
+
+
+#### Callback helpers
+
+```ocaml
+val map : ('a -> 'b) -> 'a t -> 'b t
+```
+`Lwt.map f p_1` is similar to [`Lwt.bind`](./#val-bind)` p_1 f`, but `f` is not expected to return a promise.
+
+This function is more convenient than [`Lwt.bind`](./#val-bind) when `f` inherently does not return a promise. An example is `Stdlib.int_of_string`:
+
+```ocaml
+let read_int : unit -> int Lwt.t = fun () ->
+  Lwt.map
+    int_of_string
+    Lwt_io.(read_line stdin)
+
+let () =
+  Lwt_main.run begin
+    let%lwt number = read_int () in
+    Lwt_io.printf "%i\n" number
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+By comparison, the [`Lwt.bind`](./#val-bind) version is more awkward:
+
+```ocaml
+let read_int : unit -> int Lwt.t = fun () ->
+  Lwt.bind
+    Lwt_io.(read_line stdin)
+    (fun line -> Lwt.return (int_of_string line))
+```
+As with [`Lwt.bind`](./#val-bind), sequences of calls to `Lwt.map` result in excessive indentation and parentheses. The recommended syntactic sugar for avoiding this is the [`>|=`](./Lwt-Infix.md#val-\(>|=\)) operator, which comes from module `Lwt.Infix`:
+
+```ocaml
+open Lwt.Infix
+
+let read_int : unit -> int Lwt.t = fun () ->
+  Lwt_io.(read_line stdin) >|= int_of_string
+```
+The detailed operation follows. For consistency with the promises in [`Lwt.bind`](./#val-bind), the *two* promises involved are named `p_1` and `p_3`:
+
+- `p_1` is the promise passed to `Lwt.map`.
+- `p_3` is the promise returned by `Lwt.map`.
+`Lwt.map` returns a promise `p_3`. `p_3` starts out pending. It is resolved as follows:
+
+- `p_1` may be, or become, resolved. In that case, by definition, it will become fulfilled or rejected. Fulfillment is the interesting case, but the behavior on rejection is simpler, so we focus on rejection first.
+- When `p_1` becomes rejected, `p_3` is rejected with the same exception.
+- When `p_1` instead becomes fulfilled, call the value it is fulfilled with `v`.
+- `f v` is applied. If this finishes, it may either return another value, or raise an exception.
+- If `f v` returns another value `v'`, `p_3` is fulfilled with `v'`.
+- If `f v` raises exception `exn`, `p_3` is rejected with `exn`.
+```ocaml
+val on_success : 'a t -> ('a -> unit) -> unit
+```
+`Lwt.on_success p f` makes it so that `f` will run when `p` is [*fulfilled*](./#type-t).
+
+It is similar to [`Lwt.bind`](./#val-bind), except no new promises are created. `f` is a plain, arbitrary function attached to `p`, to perform some side effect.
+
+If `f` raises an exception, it is passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook). By default, this will terminate the process.
+
+```ocaml
+val on_failure : _ t -> (exn -> unit) -> unit
+```
+`Lwt.on_failure p f` makes it so that `f` will run when `p` is [*rejected*](./#type-t).
+
+It is similar to [`Lwt.catch`](./#val-catch), except no new promises are created.
+
+If `f` raises an exception, it is passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook). By default, this will terminate the process.
+
+```ocaml
+val on_termination : _ t -> (unit -> unit) -> unit
+```
+`Lwt.on_termination p f` makes it so that `f` will run when `p` is [*resolved*](./#type-t) – that is, fulfilled *or* rejected.
+
+It is similar to [`Lwt.finalize`](./#val-finalize), except no new promises are created.
+
+If `f` raises an exception, it is passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook). By default, this will terminate the process.
+
+```ocaml
+val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
+```
+`Lwt.on_any p f g` makes it so that:
+
+- `f` will run when `p` is [*fulfilled*](./#type-t),
+- `g` will run when `p` is, alternatively, [*rejected*](./#type-t).
+It is similar to [`Lwt.try_bind`](./#val-try_bind), except no new promises are created.
+
+If `f` or `g` raise an exception, the exception is passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook). By default, this will terminate the process.
+
+
+#### Infix operators
+
+```ocaml
+module Infix : sig ... end
+```
+This module provides several infix operators for making programming with Lwt more convenient.
+
+```ocaml
+module Let_syntax : sig ... end
+```
+```ocaml
+module Syntax : sig ... end
+```
+
+#### Pre-allocated promises
+
+```ocaml
+val return_unit : unit t
+```
+`Lwt.return_unit` is defined as [`Lwt.return`](./#val-return)` ()`, but this definition is evaluated only once, during initialization of module `Lwt`, at the beginning of your program.
+
+This means the promise is allocated only once. By contrast, each time [`Lwt.return`](./#val-return)` ()` is evaluated, it allocates a new promise.
+
+It is recommended to use `Lwt.return_unit` only where you know the allocations caused by an instance of [`Lwt.return`](./#val-return)` ()` are a performance bottleneck. Generally, the cost of I/O tends to dominate the cost of [`Lwt.return`](./#val-return)` ()` anyway.
+
+In future Lwt, we hope to perform this optimization, of using a single, pre-allocated promise, automatically, wherever [`Lwt.return`](./#val-return)` ()` is written.
+
+```ocaml
+val return_none : _ option t
+```
+`Lwt.return_none` is like [`Lwt.return_unit`](./#val-return_unit), but for [`Lwt.return`](./#val-return)` None`.
+
+```ocaml
+val return_nil : _ list t
+```
+`Lwt.return_nil` is like [`Lwt.return_unit`](./#val-return_unit), but for [`Lwt.return`](./#val-return)` []`.
+
+```ocaml
+val return_true : bool t
+```
+`Lwt.return_true` is like [`Lwt.return_unit`](./#val-return_unit), but for [`Lwt.return`](./#val-return)` true`.
+
+```ocaml
+val return_false : bool t
+```
+`Lwt.return_false` is like [`Lwt.return_unit`](./#val-return_unit), but for [`Lwt.return`](./#val-return)` false`.
+
+
+#### Trivial promises
+
+```ocaml
+val return_some : 'a -> 'a option t
+```
+Counterpart to [`Lwt.return_none`](./#val-return_none). However, unlike [`Lwt.return_none`](./#val-return_none), this function performs no [optimization](./#val-return_unit). This is because it takes an argument, so it cannot be evaluated at initialization time, at which time the argument is not yet available.
+
+```ocaml
+val return_ok : 'a -> ('a, _) Stdlib.result t
+```
+Like [`Lwt.return_some`](./#val-return_some), this function performs no optimization.
+
+since Lwt 2.6.0
+```ocaml
+val return_error : 'e -> (_, 'e) Stdlib.result t
+```
+Like [`Lwt.return_some`](./#val-return_some), this function performs no optimization.
+
+since Lwt 2.6.0
+```ocaml
+val fail_with : string -> _ t
+```
+`Lwt.fail_with s` is an abbreviation for
+
+```ocaml
+Lwt.fail (Stdlib.Failure s)
+```
+In most cases, it is better to use `failwith s` from the standard library. See [`Lwt.fail`](./#val-fail) for an explanation.
+
+```ocaml
+val fail_invalid_arg : string -> _ t
+```
+`Lwt.invalid_arg s` is an abbreviation for
+
+```ocaml
+Lwt.fail (Stdlib.Invalid_argument s)
+```
+In most cases, it is better to use `invalid_arg s` from the standard library. See [`Lwt.fail`](./#val-fail) for an explanation.
+
+
+#### Result type
+
+A resolved promise of type `'a `[`Lwt.t`](./#type-t) is either fulfilled with a value of type `'a`, or rejected with an exception.
+
+This corresponds to the cases of a `('a, exn)``Stdlib.result`: fulfilled corresponds to `Ok of 'a`, and rejected corresponds to `Error of exn`.
+
+For Lwt programming with `result` where the `Error` constructor can carry arbitrary error types, see module [`Lwt_result`](./Lwt_result.md).
+
+```ocaml
+val of_result : ('a, exn) Stdlib.result -> 'a t
+```
+`Lwt.of_result r` converts an r to a resolved promise.
+
+- If `r` is `Ok v`, `Lwt.of_result r` is `Lwt.return v`, i.e. a promise fulfilled with `v`.
+- If `r` is `Error exn`, `Lwt.of_result r` is `Lwt.fail exn`, i.e. a promise rejected with `exn`.
+```ocaml
+val wakeup_later_result : 'a u -> ('a, exn) Stdlib.result -> unit
+```
+`Lwt.wakeup_later_result r result` resolves the pending promise `p` associated to resolver `r`, according to `result`:
+
+- If `result` is `Ok v`, `p` is fulfilled with `v`.
+- If `result` is `Error exn`, `p` is rejected with `exn`.
+If `p` is not pending, `Lwt.wakeup_later_result` raises `Stdlib.Invalid_argument _`, except if `p` is [canceled](./#val-cancel). If `p` is canceled, `Lwt.wakeup_later_result` has no effect.
+
+
+#### State query
+
+```ocaml
+type 'a state = 
+  | Return of 'a
+  | Fail of exn
+  | Sleep
+```
+```ocaml
+val state : 'a t -> 'a state
+```
+`Lwt.state p` evaluates to the current state of promise `p`:
+
+- If `p` is [fulfilled](./#type-t) with value `v`, the result is `Lwt.Return v`.
+- If `p` is [rejected](./#type-t) with exception `exn`, the result is `Lwt.Fail exn`.
+- If `p` is [pending](./#type-t), the result is `Lwt.Sleep`.
+The constructor names are historical holdovers.
+
+
+### Deprecated
+
+
+#### Implicit callback arguments
+
+Using this mechanism is discouraged, because it is non-syntactic, and because it manipulates hidden state in module `Lwt`. It is recommended instead to pass additional values explicitly in tuples, or maintain explicit associative maps for them.
+
+```ocaml
+type 'a key
+```
+Keys into the implicit callback argument map, for implicit arguments of type `'a option`.
+
+The keys are abstract, but they are basically integers that are all distinct from each other.
+
+See [`Lwt.with_value`](./#val-with_value).
+
+```ocaml
+val new_key : unit -> 'a key
+```
+Creates a fresh implicit callback argument key.
+
+The key is distinct from any other key created by the current process. The value `None` of type `'a option` is immediately associated with the key.
+
+See [`Lwt.with_value`](./#val-with_value).
+
+```ocaml
+val get : 'a key -> 'a option
+```
+Retrieves the value currently associated with the given implicit callback argument key.
+
+See [`Lwt.with_value`](./#val-with_value).
+
+```ocaml
+val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
+```
+`Lwt.with_value k v f` sets `k` to `v` in Lwt's internal implicit callback argument map, then runs `f ()`, then restores the previous value associated with `k`.
+
+Lwt maintains a single, global map, that can be used to “pass” extra arguments to callbacks:
+
+```ocaml
+let () =
+  let k : string Lwt.key = Lwt.new_key () in
+
+  let say_hello () =
+    match Lwt.get k with
+    | None -> assert false
+    | Some s -> Lwt_io.printl s
+  in
+
+  Lwt_main.run begin
+    Lwt.with_value k (Some "Hello world!") begin fun () ->
+      Lwt.bind
+        (Lwt_unix.sleep 1.)
+        (fun () -> say_hello ())
+    end
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+Note that the string `Hello world!` was passed to `say_hello` through the key `k`. Meanwhile, the only *explicit* argument of the callback `say_hello` is `()`.
+
+The way this works is functions like [`Lwt.bind`](./#val-bind) take a **snapshot** of the implicit argument map. Later, right before the callback is run, the map is *restored* to that snapshot. In other words, the map has the same state inside the callback as it did at the time the callback was registered.
+
+To be more precise:
+
+- `Lwt.with_value` associates `Some "Hello world!"` with `k`, and runs the function passed to it.
+- This function contains the [`Lwt.bind`](./#val-bind).
+- OCaml's eager evaluation means the arguments are evaluated first. In particular, the `Lwt_unix.sleep 1.` promise is created.
+- [`Lwt.bind`](./#val-bind) then attaches the callback in its second argument, the one which calls `say_hello`, to that `sleep` promise.
+- [`Lwt.bind`](./#val-bind) also takes a snapshot of the current state of the implicit argument map, and pairs the callback with that snapshot.
+- The callback will not run for another second or so, when the `sleep` promise will be resolved.
+- Instead, [`Lwt.bind`](./#val-bind) returns its result promise `p_3`. This causes `Lwt.with_value` to also return `p_3`, first restoring `k` to be associated with `None`.
+- [`Lwt_main.run`](./Lwt_main.md#val-run) gets the pending `p_3`, and blocks the whole process, with `k` associated with `None`.
+- One second later, the `sleep` I/O completes, resolving the `sleep` promise.
+- This triggers the `say_hello` callback. Right before the callback is called, the implicit argument map is restored to its snapshot, so `k` is associated with `Some "Hello world!"`.
+- After the callback completes, Lwt again restores `k` to be associated with `None`.
+The Lwt functions that take snapshots of the implicit callback argument map are exactly those which attach callbacks to promises: [`Lwt.bind`](./#val-bind) and its variants `>>=` and `let%lwt`, [`Lwt.map`](./#val-map) and its variant `>|=`, [`Lwt.catch`](./#val-catch) and its variant `try%lwt`, [`Lwt.finalize`](./#val-finalize) and its variant `%lwt.finally`, [`Lwt.try_bind`](./#val-try_bind), [`Lwt.on_success`](./#val-on_success), [`Lwt.on_failure`](./#val-on_failure), [`Lwt.on_termination`](./#val-on_termination), and [`Lwt.on_any`](./#val-on_any).
+
+`Lwt.with_value` should only be called in the main thread, i.e. do not call it inside [`Lwt_preemptive.detach`](./Lwt_preemptive.md#val-detach).
+
+
+#### Immediate resolving
+
+```ocaml
+val wakeup : 'a u -> 'a -> unit
+```
+`Lwt.wakeup r v` is like [`Lwt.wakeup_later`](./#val-wakeup_later)` r v`, except it guarantees that callbacks associated with `r` will be called immediately, deeper on the current stack.
+
+In contrast, [`Lwt.wakeup_later`](./#val-wakeup_later) *may* call callbacks immediately, or may queue them for execution on a shallower stack – though still before the next time Lwt blocks the process on I/O.
+
+Using this function is discouraged, because calling it in a loop can exhaust the stack. The loop might be difficult to detect or predict, due to combined mutually-recursive calls between multiple modules and libraries.
+
+Also, trying to use this function to guarantee the timing of callback calls for synchronization purposes is discouraged. This synchronization effect is obscure to readers. It is better to use explicit promises, or [`Lwt_mutex`](./Lwt_mutex.md), [`Lwt_condition`](./Lwt_condition.md), and/or [`Lwt_mvar`](./Lwt_mvar.md).
+
+```ocaml
+val wakeup_exn : _ u -> exn -> unit
+```
+`Lwt.wakeup_exn r exn` is like [`Lwt.wakeup_later_exn`](./#val-wakeup_later_exn)` r exn`, but has the same problems as [`Lwt.wakeup`](./#val-wakeup).
+
+```ocaml
+val wakeup_result : 'a u -> ('a, exn) Stdlib.result -> unit
+```
+`Lwt.wakeup_result r result` is like [`Lwt.wakeup_later_result`](./#val-wakeup_later_result)` r result`, but has the same problems as [`Lwt.wakeup`](./#val-wakeup).
+
+
+#### Linked lists of promises
+
+```ocaml
+val add_task_r : 'a u Lwt_sequence.t -> 'a t
+```
+`Lwt.add_task_r sequence` is equivalent to
+
+```ocaml
+let p, r = Lwt.task () in
+let node = Lwt_sequence.add_r r sequence in
+Lwt.on_cancel p (fun () -> Lwt_sequence.remove node);
+p
+```
+deprecated Use of this function is discouraged for two reasons:
+- [`Lwt_sequence`](./Lwt_sequence.md) should not be used outside Lwt.
+- This function only exists because it performs a minor internal optimization, which may be removed.
+```ocaml
+val add_task_l : 'a u Lwt_sequence.t -> 'a t
+```
+Like [`Lwt.add_task_r`](./#val-add_task_r), but the equivalent code calls [`Lwt_sequence.add_l`](./Lwt_sequence.md#val-add_l) instead.
+
+deprecated See add\_task\_r.
+
+#### Yielding
+
+```ocaml
+val pause : unit -> unit t
+```
+`Lwt.pause ()` creates a pending promise that is fulfilled after Lwt finishes calling all currently ready callbacks, i.e. it is fulfilled on the next “tick.”
+
+Putting the rest of your computation into a callback of `Lwt.pause ()` creates a “yield” that gives other callbacks a chance to run first.
+
+For example, to break up a long-running computation, allowing I/O to be handled between chunks:
+
+```ocaml
+let () =
+  let rec handle_io () =
+    Lwt_io.printl "Handling I/O";%lwt
+    Lwt_unix.sleep 0.1;%lwt
+    handle_io ()
+  in
+
+  let rec compute n =
+    if n = 0 then
+      Lwt.return ()
+    else
+      (if n mod 1_000_000 = 0 then
+        Lwt.pause ()
+      else
+        Lwt.return ());%lwt
+      compute (n - 1)
+  in
+
+  Lwt.async handle_io;
+  Lwt_main.run (compute 100_000_000)
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+```
+If you replace the call to `Lwt.pause` by `Lwt.return` in the program above, `"Handling I/O"` is printed only once. With `Lwt.pause`, it is printed several times, depending on the speed of your machine.
+
+An alternative way to handle long-running computations is to detach them to preemptive threads using [`Lwt_preemptive`](./Lwt_preemptive.md).
+
+
+#### Function lifters
+
+```ocaml
+val wrap : (unit -> 'a) -> 'a t
+```
+`Lwt.wrap f` applies `f ()`. If `f ()` returns a value `v`, `Lwt.wrap` returns [`Lwt.return`](./#val-return)` v`. If `f ()` raises an exception exn, `Lwt.wrap` returns [`Lwt.fail`](./#val-fail)` exn`.
+
+```ocaml
+val wrap1 : ('a -> 'b) -> 'a -> 'b t
+```
+```ocaml
+val wrap2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c t
+```
+```ocaml
+val wrap3 : ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd t
+```
+```ocaml
+val wrap4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e t
+```
+```ocaml
+val wrap5 : 
+  ('a -> 'b -> 'c -> 'd -> 'e -> 'f) ->
+  'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e ->
+  'f t
+```
+```ocaml
+val wrap6 : 
+  ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) ->
+  'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e ->
+  'f ->
+  'g t
+```
+```ocaml
+val wrap7 : 
+  ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) ->
+  'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e ->
+  'f ->
+  'g ->
+  'h t
+```
+As a “prototype,” `Lwt_wrap1 f` creates a promise-valued function `g`:
+
+```ocaml
+let g v =
+  try
+    let v' = f v in
+    Lwt.return v'
+  with exn ->
+    Lwt.fail exn
+```
+The remainder of the functions work analogously – they just work on `f` with larger numbers of arguments.
+
+Note that there is an important difference to [`Lwt.wrap`](./#val-wrap). These functions don't run `f`, nor create the final promise, immediately. In contrast, [`Lwt.wrap`](./#val-wrap) runs its argument `f` eagerly.
+
+To get a suspended function instead of the eager execution of [`Lwt.wrap`](./#val-wrap), use `Lwt.wrap1`.
+
+
+#### Unscoped infix operators
+
+Use the operators in module [`Lwt.Infix`](./Lwt-Infix.md) instead. Using these instances of the operators directly requires opening module `Lwt`, which brings an excessive number of other names into scope.
+
+```ocaml
+val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+```
+```ocaml
+val (>|=) : 'a t -> ('a -> 'b) -> 'b t
+```
+```ocaml
+val (<?>) : 'a t -> 'a t -> 'a t
+```
+```ocaml
+val (<&>) : unit t -> unit t -> unit t
+```
+```ocaml
+val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
+```
+```ocaml
+val (=|<) : ('a -> 'b) -> 'a t -> 'b t
+```
+
+#### Miscellaneous
+
+```ocaml
+val is_sleeping : _ t -> bool
+```
+`Lwt.is_sleeping p` is equivalent to [`Lwt.state`](./#val-state)` p = Lwt.Sleep`.
+
+```ocaml
+val ignore_result : _ t -> unit
+```
+An obsolete variant of [`Lwt.async`](./#val-async).
+
+`Lwt.ignore_result p` behaves as follows:
+
+- If `p` is already fulfilled, `Lwt.ignore_result p` does nothing.
+- If `p` is already rejected with `exn`, `Lwt.ignore_result p` raises `exn` immediately.
+- If `p` is pending, `Lwt.ignore_result p` does nothing, but if `p` becomes rejected later, the exception is passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook).
+Use of this function is discouraged for two reasons:
+
+- The behavior is different depending on whether `p` is rejected now or later.
+- The name is misleading, and has led to users thinking this function is analogous to `Stdlib.ignore`, i.e. that it waits for `p` to become resolved, completing any associated side effects along the way. In fact, the function that does *that* is ordinary [`Lwt.bind`](./#val-bind).
+
+##### Runtime exception filters
+
+Depending on the kind of programs that you write, you may need to treat exceptions thrown by the OCaml runtime (namely `Out_of_memory` and `Stack_overflow`) differently than all the other exceptions. This is because (a) these exceptions are not reproducible (in that they are thrown at different points of your program depending on the machine that your program runs on) and (b) recovering from these errors may be impossible.
+
+The helpers below allow you to change the way that Lwt handles the two OCaml runtime exceptions `Out_of_memory` and `Stack_overflow`.
+
+```ocaml
+module Exception_filter : sig ... end
+```
+```ocaml
+val with_tracing_context : string -> (unit -> 'a t) -> 'a t
+```
+`with_tracing_context name (fun () -> <e>)` causes the span events emitted inside of \<e\> to bear the name `name`.

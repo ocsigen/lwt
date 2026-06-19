@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Lwt manual — Lwt</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/ocsigen-odoc.css"/>
+  <link rel="alternate" type="text/markdown" href="../lwt/manual.md"/>
+  <script src="../highlight.pack.js"></script>
+  <script src="../wodoc-highlight.js"></script>
+</head>
+<body class="wodoc-page wodoc-doc">
+  <!-- Shared site menu — THE single source of truth for the header, top menu and
+     drawer of EVERY Ocsigen doc page (vitrine + all projects). Canonical copy
+     lives here in ocsigen.github.io; each project's build fetches it. Injected
+     by `wodoc assemble --menu`. Holes filled by the tool (braces omitted here so
+     this comment is not itself rewritten by the hole-filler):
+       subproject  the sub-project name shown next to the Ocsigen logo
+                   (empty on the vitrine), via --subproject
+       leftnav     the project's left navigation, expanded into BOTH the mobile
+                   drawer (below) and the left column (in the page template),
+                   via --leftnav
+     The current entry is highlighted by adding the `current` class to the
+     element carrying data-wodoc-page=<id>: --current on the vitrine (page id),
+     --menu-current in a project (the project id). Nothing is hardcoded here, so
+     this file is the ONLY place the menu is defined.
+
+     Links are the FINAL site paths (/<project>/, /<page>): the target layout
+     where each project is served at ocsigen.org/<project>/ — no transitional
+     /wodoc/ prefix. -->
+<div class="page-header">
+  <p class="logo-ocsigen"><a href="/"><img src="/img/ocsigen-white.svg" alt="Ocsigen"/></a></p>
+  <p class="logo-subproject">Lwt</p>
+
+  <div class="mainmenu">
+    <p class="mainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></p>
+    <p class="mainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></p>
+    <p class="mainmenu-blog" data-wodoc-page="blog"><a href="/blog/">Blog</a></p>
+    <p data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></p>
+    <p data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></p>
+    <p data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></p>
+    <p data-wodoc-page="lwt" class="current"><a href="/lwt/">Lwt</a></p>
+    <p data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></p>
+    <p data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></p>
+  </div>
+
+  <form id="googlesearch" action="https://google.com/search">
+    <input name="q" id="gsearch-box" placeholder="Search using Google"/>
+    <label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label>
+    <input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/>
+  </form>
+
+  <aside class="how-drawer">
+    <input id="how-drawer-toggle" type="checkbox"/>
+    <label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label>
+    <nav class="how-drawer-content">
+      <ul class="drawermainmenu">
+        <li class="drawermainmenu-home" data-wodoc-page="githubio"><a href="/">Home</a></li>
+        <li class="drawermainmenu-doc" data-wodoc-page="tuto"><a href="/tuto/">Doc</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="eliom"><a href="/eliom/">Eliom</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="js_of_ocaml"><a href="/js_of_ocaml/">Js_of_ocaml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigenserver"><a href="/ocsigenserver/">Server</a></li>
+        <li class="drawermainmenu-project current" data-wodoc-page="lwt"><a href="/lwt/">Lwt</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="tyxml"><a href="/tyxml/">Tyxml</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-toolkit"><a href="/ocsigen-toolkit/">Toolkit</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-start"><a href="/ocsigen-start/">Start</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsipersist"><a href="/ocsipersist/">Ocsipersist</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="reactiveData"><a href="/reactiveData/">ReactiveData</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="ocsigen-i18n"><a href="/ocsigen-i18n/">i18n</a></li>
+        <li class="drawermainmenu-project" data-wodoc-page="wodoc"><a href="/wodoc/">Wodoc</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="projects"><a href="/projects">Other projects</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="papers"><a href="/papers">Research papers</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="credits"><a href="/credits">Who does Ocsigen?</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="contributing"><a href="/contributing">Contributing</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="blog"><a href="/blog/">Blog</a></li>
+        <li class="drawermainmenu-page" data-wodoc-page="install"><a href="/install">Installation</a></li>
+        <li class="drawermainmenu-page"><a href="https://github.com/ocsigen">Source code</a></li>
+      </ul>
+      <!-- On mobile the left column is hidden; its menu lives here in the burger
+           (.how-doctree, shown only on narrow screens), as the old site did.
+           Empty on the vitrine; the leftnav hole is filled (with the same
+           fragment as the left column) only on project pages. -->
+      <nav class="how-doctree"><div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  <nav class="odoc-toc odoc-local-toc"><ul><li><a href="#introduction">Introduction</a><ul><li><a href="#finding-examples">Finding examples</a></li></ul></li><li><a href="#the-lwt-core-library">The Lwt core library</a><ul><li><a href="#lwt-concepts">Lwt concepts</a></li><li><a href="#primitives-for-promise-creation">Primitives for promise creation</a><ul><li><a href="#primitives-for-promise-composition">Primitives for promise composition</a></li><li><a href="#cancelable-promises">Cancelable promises</a></li><li><a href="#primitives-for-concurrent-composition">Primitives for concurrent composition</a></li><li><a href="#rules">Rules</a></li></ul></li><li><a href="#the-syntax-extension">The syntax extension</a><ul><li><a href="#correspondence-table">Correspondence table</a></li></ul></li><li><a href="#backtrace-support">Backtrace support</a></li><li><a href="#let*-syntax">let* syntax</a></li><li><a href="#other-modules-of-the-core-library">Other modules of the core library</a><ul><li><a href="#mutexes">Mutexes</a></li><li><a href="#lists">Lists</a></li><li><a href="#data-streams">Data streams</a></li><li><a href="#mailbox-variables">Mailbox variables</a></li></ul></li></ul></li><li><a href="#running-an-lwt-program">Running an Lwt program</a></li><li><a href="#the-lwt.unix-library">The lwt.unix library</a><ul><li><a href="#unix-primitives">Unix primitives</a></li><li><a href="#the-lwt-scheduler">The Lwt scheduler</a></li><li><a href="#logging">Logging</a></li></ul></li><li><a href="#the-lwt.react-library">The Lwt.react library</a></li><li><a href="#other-libraries">Other libraries</a><ul><li><a href="#parallelise-computations-to-other-cores">Parallelise computations to other cores</a></li><li><a href="#detaching-computation-to-preemptive-threads">Detaching computation to preemptive threads</a></li><li><a href="#ssl-support">SSL support</a></li></ul></li><li><a href="#writing-stubs-using-lwt">Writing stubs using Lwt</a><ul><li><a href="#thread-safe-notifications">Thread-safe notifications</a></li><li><a href="#jobs">Jobs</a></li></ul></li></ul></nav>
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../lwt/index.html">Overview</a></li>
+<li class="ml3 current" data-wodoc-page="lwt/manual.html"><a href="../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+</nav>
+    </nav>
+  </aside>
+</div>
+
+
+  <div class="project-page">
+    <div class="twocols">
+      <nav class="leftcol">
+        <div class="docversion">
+  <label>Version:
+    <select class="wodoc-version" onchange="wodocVersion(this.value)">
+      <option value="dev">dev</option>
+    </select>
+  </label>
+</div>
+<div class="page-toc">
+  <h3>On this page</h3>
+  <nav class="odoc-toc odoc-local-toc"><ul><li><a href="#introduction">Introduction</a><ul><li><a href="#finding-examples">Finding examples</a></li></ul></li><li><a href="#the-lwt-core-library">The Lwt core library</a><ul><li><a href="#lwt-concepts">Lwt concepts</a></li><li><a href="#primitives-for-promise-creation">Primitives for promise creation</a><ul><li><a href="#primitives-for-promise-composition">Primitives for promise composition</a></li><li><a href="#cancelable-promises">Cancelable promises</a></li><li><a href="#primitives-for-concurrent-composition">Primitives for concurrent composition</a></li><li><a href="#rules">Rules</a></li></ul></li><li><a href="#the-syntax-extension">The syntax extension</a><ul><li><a href="#correspondence-table">Correspondence table</a></li></ul></li><li><a href="#backtrace-support">Backtrace support</a></li><li><a href="#let*-syntax">let* syntax</a></li><li><a href="#other-modules-of-the-core-library">Other modules of the core library</a><ul><li><a href="#mutexes">Mutexes</a></li><li><a href="#lists">Lists</a></li><li><a href="#data-streams">Data streams</a></li><li><a href="#mailbox-variables">Mailbox variables</a></li></ul></li></ul></li><li><a href="#running-an-lwt-program">Running an Lwt program</a></li><li><a href="#the-lwt.unix-library">The lwt.unix library</a><ul><li><a href="#unix-primitives">Unix primitives</a></li><li><a href="#the-lwt-scheduler">The Lwt scheduler</a></li><li><a href="#logging">Logging</a></li></ul></li><li><a href="#the-lwt.react-library">The Lwt.react library</a></li><li><a href="#other-libraries">Other libraries</a><ul><li><a href="#parallelise-computations-to-other-cores">Parallelise computations to other cores</a></li><li><a href="#detaching-computation-to-preemptive-threads">Detaching computation to preemptive threads</a></li><li><a href="#ssl-support">SSL support</a></li></ul></li><li><a href="#writing-stubs-using-lwt">Writing stubs using Lwt</a><ul><li><a href="#thread-safe-notifications">Thread-safe notifications</a></li><li><a href="#jobs">Jobs</a></li></ul></li></ul></nav>
+</div>
+<nav class="api-nav manual-nav">
+<h3>Manual</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/index.html"><a href="../lwt/index.html">Overview</a></li>
+<li class="ml3 current" data-wodoc-page="lwt/manual.html"><a href="../lwt/manual.html">Lwt manual</a></li>
+</ul>
+<h3>Core library [lwt]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt/index.html"><a href="../lwt/Lwt/index.html">Lwt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_list/index.html"><a href="../lwt/Lwt_list/index.html">Lwt_list</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_stream/index.html"><a href="../lwt/Lwt_stream/index.html">Lwt_stream</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_result/index.html"><a href="../lwt/Lwt_result/index.html">Lwt_result</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_seq/index.html"><a href="../lwt/Lwt_seq/index.html">Lwt_seq</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mutex/index.html"><a href="../lwt/Lwt_mutex/index.html">Lwt_mutex</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_condition/index.html"><a href="../lwt/Lwt_condition/index.html">Lwt_condition</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_mvar/index.html"><a href="../lwt/Lwt_mvar/index.html">Lwt_mvar</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_switch/index.html"><a href="../lwt/Lwt_switch/index.html">Lwt_switch</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_pool/index.html"><a href="../lwt/Lwt_pool/index.html">Lwt_pool</a></li>
+</ul>
+<h3>Unix library [lwt.unix]</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt/Lwt_unix/index.html"><a href="../lwt/Lwt_unix/index.html">Lwt_unix</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_main/index.html"><a href="../lwt/Lwt_main/index.html">Lwt_main</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_io/index.html"><a href="../lwt/Lwt_io/index.html">Lwt_io</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_process/index.html"><a href="../lwt/Lwt_process/index.html">Lwt_process</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_bytes/index.html"><a href="../lwt/Lwt_bytes/index.html">Lwt_bytes</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_preemptive/index.html"><a href="../lwt/Lwt_preemptive/index.html">Lwt_preemptive</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_fmt/index.html"><a href="../lwt/Lwt_fmt/index.html">Lwt_fmt</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_throttle/index.html"><a href="../lwt/Lwt_throttle/index.html">Lwt_throttle</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_timeout/index.html"><a href="../lwt/Lwt_timeout/index.html">Lwt_timeout</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_engine/index.html"><a href="../lwt/Lwt_engine/index.html">Lwt_engine</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_gc/index.html"><a href="../lwt/Lwt_gc/index.html">Lwt_gc</a></li>
+<li class="ml3" data-wodoc-page="lwt/Lwt_sys/index.html"><a href="../lwt/Lwt_sys/index.html">Lwt_sys</a></li>
+</ul>
+<h3>Other libraries</h3>
+<ul class="api-section">
+<li class="ml3" data-wodoc-page="lwt_react/Lwt_react/index.html"><a href="../lwt_react/Lwt_react/index.html">Lwt_react</a></li>
+<li class="ml3" data-wodoc-page="lwt_ppx/Lwt_ppx/index.html"><a href="../lwt_ppx/Lwt_ppx/index.html">Lwt_ppx</a></li>
+<li class="ml3" data-wodoc-page="lwt_retry/Lwt_retry/index.html"><a href="../lwt_retry/Lwt_retry/index.html">Lwt_retry</a></li>
+</ul>
+</nav>
+
+      </nav>
+      <article class="rightcol">
+        <header class="odoc-preamble"><h1 id="lwt-manual">Lwt manual</h1></header>
+        <div class="odoc-content"><h2 id="introduction">Introduction</h2><p>When writing a program, a common developer's task is to handle I/O operations. Indeed, most software interacts with several different resources, such as:</p><ul><li>the kernel, by doing system calls,</li><li>the user, by reading the keyboard, the mouse, or any input device,</li><li>a graphical server, to build graphical user interface,</li><li>other computers, by using the network,</li><li>…and so on.</li></ul><p>When this list contains only one item, it is pretty easy to handle. However as this list grows it becomes harder and harder to make everything work together. Several choices have been proposed to solve this problem:</p><ul><li>using a main loop, and integrating all components we are interacting with into this main loop,</li><li>using preemptive system threads.</li></ul><p>Both solutions have their advantages and their drawbacks. For the first one, it may work, but it becomes very complicated to write a piece of asynchronous sequential code. The typical example is graphical user interfaces freezing and not redrawing themselves because they are waiting for some blocking part of the code to complete.</p><p>If you already wrote code using preemptive threads, you should know that doing it right with threads is a difficult job. Moreover, system threads consume non-negligible resources, and so you can only launch a limited number of threads at the same time. Thus, this is not a general solution.</p><p><code>Lwt</code> offers a third alternative. It provides promises, which are very fast: a promise is just a reference that will be filled asynchronously, and calling a function that returns a promise does not require a new stack, new process, or anything else. It is just a normal, fast, function call. Promises compose nicely, allowing us to write highly asynchronous programs.</p><p>In the first part, we will explain the concepts of <code>Lwt</code>, then we will describe the main modules <code>Lwt</code> consists of.</p><h3 id="finding-examples">Finding examples</h3><p>Additional sources of examples:</p><ul><li><a href="https://github.com/dkim/rwo-lwt#readme">Concurrent Programming with Lwt</a></li><li><a href="https://mirage.io/docs/tutorial-lwt">Mirage Lwt Tutorial</a></li><li><a href="https://baturin.org/code/lwt-counter-server/">Simple Server with Lwt</a></li></ul><h2 id="the-lwt-core-library">The Lwt core library</h2><p>In this section we describe the basics of <code>Lwt</code>. It is advised to start <code>utop</code> and try the given code examples.</p><h3 id="lwt-concepts">Lwt concepts</h3><p>Let's take a classic function of the <code>Stdlib</code> module:</p><pre class="language-ocaml"><code># Stdlib.input_char;;
+- : in_channel -&gt; char = &lt;fun&gt;</code></pre><p>This function will wait for a character to come on the given input channel, and then return it. The problem with this function is that it is blocking: while it is being executed, the whole program will be blocked, and other events will not be handled until it returns.</p><p>Now, let's look at the lwt equivalent:</p><pre class="language-ocaml"><code># Lwt_io.read_char;;
+- : Lwt_io.input_channel -&gt; char Lwt.t = &lt;fun&gt;</code></pre><p>As you can see, it does not return just a character, but something of type <code>char Lwt.t</code>. The type <code>'a Lwt.t</code> is the type of promises that can be fulfilled later with a value of type <code>'a</code>. <code>Lwt_io.read_char</code> will try to read a character from the given input channel and <em>immediately</em> return a promise, without blocking, whether a character is available or not. If a character is not available, the promise will just not be fulfilled <em>yet</em>.</p><p>Now, let's see what we can do with a <code>Lwt</code> promise. The following code creates a pipe, creates a promise that is fulfilled with the result of reading the input side:</p><pre class="language-ocaml"><code># let ic, oc = Lwt_io.pipe ();;
+val ic : Lwt_io.input_channel = &lt;abstr&gt;
+val oc : Lwt_io.output_channel = &lt;abstr&gt;
+# let p = Lwt_io.read_char ic;;
+val p : char Lwt.t = &lt;abstr&gt;</code></pre><p>We can now look at the state of our newly created promise:</p><pre class="language-ocaml"><code># Lwt.state p;;
+- : char Lwt.state = Lwt.Sleep</code></pre><p>A promise may be in one of the following states:</p><ul><li><code>Return x</code>, which means that the promise has been fulfilled with the value <code>x</code>. This usually implies that the asynchronous operation, that you started by calling the function that returned the promise, has completed successfully.</li><li><code>Fail exn</code>, which means that the promise has been rejected with the exception <code>exn</code>. This usually means that the asynchronous operation associated with the promise has failed.</li><li><code>Sleep</code>, which means that the promise is has not yet been fulfilled or rejected, so it is <em>pending</em>.</li></ul><p>The above promise <code>p</code> is pending because there is nothing yet to read from the pipe. Let's write something:</p><pre class="language-ocaml"><code># Lwt_io.write_char oc 'a';;
+- : unit Lwt.t = &lt;abstr&gt;
+# Lwt.state p;;
+- : char Lwt.state = Lwt.Return 'a'</code></pre><p>So, after we write something, the reading promise has been fulfilled with the value <code>'a'</code>.</p><h3 id="primitives-for-promise-creation">Primitives for promise creation</h3><p>There are several primitives for creating <code>Lwt</code> promises. These functions are located in the module <code>Lwt</code>.</p><p>Here are the main primitives:</p><ul><li><code>Lwt.return : 'a -&gt; 'a Lwt.t</code> creates a promise which is already fulfilled with the given value</li><li><code>Lwt.fail : exn -&gt; 'a Lwt.t</code> creates a promise which is already rejected with the given exception</li><li><code>Lwt.wait : unit -&gt; 'a Lwt.t * 'a Lwt.u</code> creates a pending promise, and returns it, paired with a resolver (of type <code>'a Lwt.u</code>), which must be used to resolve (fulfill or reject) the promise.</li></ul><p>To resolve a pending promise, use one of the following functions:</p><ul><li><code>Lwt.wakeup : 'a Lwt.u -&gt; 'a -&gt; unit</code> fulfills the promise with a value.</li><li><code>Lwt.wakeup_exn : 'a Lwt.u -&gt; exn -&gt; unit</code> rejects the promise with an exception.</li></ul><p>Note that it is an error to try to resolve the same promise twice. <code>Lwt</code> will raise <code>Invalid_argument</code> if you try to do so.</p><p>With this information, try to guess the result of each of the following expressions:</p><pre class="language-ocaml"><code># Lwt.state (Lwt.return 42);;
+# Lwt.state (Lwt.fail Exit);;
+# let p, r = Lwt.wait ();;
+# Lwt.state p;;
+# Lwt.wakeup r 42;;
+# Lwt.state p;;
+# let p, r = Lwt.wait ();;
+# Lwt.state p;;
+# Lwt.wakeup_exn r Exit;;
+# Lwt.state p;;</code></pre><h4 id="primitives-for-promise-composition">Primitives for promise composition</h4><p>The most important operation you need to know is <code>bind</code>:</p><pre class="language-ocaml"><code>val bind : 'a Lwt.t -&gt; ('a -&gt; 'b Lwt.t) -&gt; 'b Lwt.t</code></pre><p><code>bind p f</code> creates a promise which waits for <code>p</code> to become become fulfilled, then passes the resulting value to <code>f</code>. If <code>p</code> is a pending promise, then <code>bind p f</code> will be a pending promise too, until <code>p</code> is resolved. If <code>p</code> is rejected, then the resulting promise will be rejected with the same exception. For example, consider the following expression:</p><pre class="language-ocaml"><code>Lwt.bind
+  (Lwt_io.read_line Lwt_io.stdin)
+  (fun str -&gt; Lwt_io.printlf &quot;You typed %S&quot; str)</code></pre><p>This code will first wait for the user to enter a line of text, then print a message on the standard output.</p><p>Similarly to <code>bind</code>, there is a function to handle the case when <code>p</code> is rejected:</p><pre class="language-ocaml"><code>val catch : (unit -&gt; 'a Lwt.t) -&gt; (exn -&gt; 'a Lwt.t) -&gt; 'a Lwt.t</code></pre><p><code>catch f g</code> will call <code>f ()</code>, then wait for it to become resolved, and if it was rejected with an exception <code>exn</code>, call <code>g exn</code> to handle it. Note that both exceptions raised with <code>Pervasives.raise</code> and <code>Lwt.fail</code> are caught by <code>catch</code>.</p><h4 id="cancelable-promises">Cancelable promises</h4><p>In some case, we may want to cancel a promise. For example, because it has not resolved after a timeout. This can be done with cancelable promises. To create a cancelable promise, you must use the <code>Lwt.task</code> function:</p><pre class="language-ocaml"><code>val task : unit -&gt; 'a Lwt.t * 'a Lwt.u</code></pre><p>It has the same semantics as <code>Lwt.wait</code>, except that the pending promise can be canceled with <code>Lwt.cancel</code>:</p><pre class="language-ocaml"><code>val cancel : 'a Lwt.t -&gt; unit</code></pre><p>The promise will then be rejected with the exception <code>Lwt.Canceled</code>. To execute a function when the promise is canceled, you must use <code>Lwt.on_cancel</code>:</p><pre class="language-ocaml"><code>val on_cancel : 'a Lwt.t -&gt; (unit -&gt; unit) -&gt; unit</code></pre><p>Note that canceling a promise does not automatically cancel the asynchronous operation that is going to resolve it. It does, however, prevent any further chained operations from running. The asynchronous operation associated with a promise can only be canceled if its implementation has taken care to set an <code>on_cancel</code> callback on the promise that it returned to you. In practice, most operations (such as system calls) can't be canceled once they are started anyway, so promise cancellation is useful mainly for interrupting future operations once you know that a chain of asynchronous operations will not be needed.</p><p>It is also possible to cancel a promise which has not been created directly by you with <code>Lwt.task</code>. In this case, the deepest cancelable promise that the given promise depends on will be canceled.</p><p>For example, consider the following code:</p><pre class="language-ocaml"><code># let p, r = Lwt.task ();;
+val p : '_a Lwt.t = &lt;abstr&gt;
+val r : '_a Lwt.u = &lt;abstr&gt;
+# let p' = Lwt.bind p (fun x -&gt; Lwt.return (x + 1));;
+val p' : int Lwt.t = &lt;abstr&gt;</code></pre><p>Here, cancelling <code>p'</code> will in fact cancel <code>p</code>, rejecting it with <code>Lwt.Canceled</code>. <code>Lwt.bind</code> will then propagate the exception forward to <code>p'</code>:</p><pre class="language-ocaml"><code># Lwt.cancel p';;
+- : unit = ()
+# Lwt.state p;;
+- : int Lwt.state = Lwt.Fail Lwt.Canceled
+# Lwt.state p';;
+- : int Lwt.state = Lwt.Fail Lwt.Canceled</code></pre><p>It is possible to prevent a promise from being canceled by using the function <code>Lwt.protected</code>:</p><pre class="language-ocaml"><code>val protected : 'a Lwt.t -&gt; 'a Lwt.t</code></pre><p>Canceling <code>(protected p)</code> will have no effect on <code>p</code>.</p><h4 id="primitives-for-concurrent-composition">Primitives for concurrent composition</h4><p>We now show how to compose several promises concurrently. The main functions for this are in the <code>Lwt</code> module: <code>join</code>, <code>choose</code> and <code>pick</code>.</p><p>The first one, <code>join</code> takes a list of promises and returns a promise that is waiting for all of them to resolve:</p><pre class="language-ocaml"><code>val join : unit Lwt.t list -&gt; unit Lwt.t</code></pre><p>Moreover, if at least one promise is rejected, <code>join l</code> will be rejected with the same exception as the first one, after all the promises are resolved.</p><p>Conversely, <code>choose</code> waits for at least <em>one</em> promise to become resolved, then resolves with the same value or exception:</p><pre class="language-ocaml"><code>val choose : 'a Lwt.t list -&gt; 'a Lwt.t</code></pre><p>For example:</p><pre class="language-ocaml"><code># let p1, r1 = Lwt.wait ();;
+val p1 : '_a Lwt.t = &lt;abstr&gt;
+val r1 : '_a Lwt.u = &lt;abstr&gt;
+# let p2, r2 = Lwt.wait ();;
+val p2 : '_a Lwt.t = &lt;abstr&gt;
+val r2 : '_a Lwt.u = &lt;abstr&gt;
+# let p3 = Lwt.choose [p1; p2];;
+val p3 : '_a Lwt.t = &lt;abstr&gt;
+# Lwt.state p3;;
+- : '_a Lwt.state = Lwt.Sleep
+# Lwt.wakeup r2 42;;
+- : unit = ()
+# Lwt.state p3;;
+- : int Lwt.state = Lwt.Return 42</code></pre><p>The last one, <code>pick</code>, is the same as <code>choose</code>, except that it tries to cancel all other promises when one resolves. Promises created via <code>Lwt.wait()</code> are not cancellable and are thus not cancelled.</p><h4 id="rules">Rules</h4><p>A callback, like the <code>f</code> that you might pass to <code>Lwt.bind</code>, is an ordinary OCaml function. <code>Lwt</code> just handles ordering calls to these functions.</p><p><code>Lwt</code> uses some preemptive threading internally, but all of your code runs in the main thread, except when you explicitly opt into additional threads with <code>Lwt_preemptive</code>.</p><p>This simplifies reasoning about critical sections: all the code in one callback cannot be interrupted by any of the code in another callback. However, it also carries the danger that if a single callback takes a very long time, it will not give <code>Lwt</code> a chance to run your other callbacks. In particular:</p><ul><li>do not write functions that may take time to complete, without splitting them up using <code>Lwt.pause</code> or performing some <code>Lwt</code> I/O,</li><li>do not do I/O that may block, otherwise the whole program will hang inside that callback. You must instead use the asynchronous I/O operations provided by <code>Lwt</code>.</li></ul><h3 id="the-syntax-extension">The syntax extension</h3><p><code>Lwt</code> offers a PPX syntax extension which increases code readability and makes coding using <code>Lwt</code> easier. The syntax extension is documented in <a href="../lwt_ppx/Lwt_ppx/Ppx_lwt/index.html"><code>Ppx_lwt</code></a>.</p><p>To use the PPX syntax extension, add the <code>lwt_ppx</code> package when compiling:</p><pre class="language-ocaml"><code>$ ocamlfind ocamlc -package lwt_ppx -linkpkg -o foo foo.ml</code></pre><p>Or, in <code>utop</code>:</p><pre class="language-ocaml"><code># #require &quot;lwt_ppx&quot;;;</code></pre><p><code>lwt_ppx</code> is distributed in a separate opam package of that same name.</p><p>For a brief overview of the syntax, see the Correspondence table below.</p><h4 id="correspondence-table">Correspondence table</h4><table class="odoc-table"><tr><th><p>Without Lwt</p></th><th><p>With Lwt</p></th></tr><tr><td><pre class="language-ocaml"><code>        let pattern_1 = expr_1
+and pattern_2 = expr2
+…
+and pattern_n = expr_n in
+expr</code></pre></td><td><pre class="language-ocaml"><code>        let%lwt pattern_1 = expr_1
+and pattern_2 = expr2
+…
+and pattern_n = expr_n in
+expr</code></pre></td></tr><tr><td><pre class="language-ocaml"><code>        try expr with
+| pattern_1 = expr_1
+| pattern_2 = expr2
+…
+| pattern_n = expr_n</code></pre></td><td><pre class="language-ocaml"><code>        try%lwt expr with
+| pattern_1 = expr_1
+| pattern_2 = expr2
+…
+| pattern_n = expr_n</code></pre></td></tr><tr><td><pre class="language-ocaml"><code>        match expr with
+| pattern_1 = expr_1
+| pattern_2 = expr2
+…
+| pattern_n = expr_n</code></pre></td><td><pre class="language-ocaml"><code>        match%lwt expr with
+| pattern_1 = expr_1
+| pattern_2 = expr2
+…
+| pattern_n = expr_n</code></pre></td></tr><tr><td><pre class="language-ocaml"><code>        for ident = expr_init to expr_final do
+  expr
+done</code></pre></td><td><pre class="language-ocaml"><code>        for%lwt ident = expr_init to expr_final do
+  expr
+done</code></pre></td></tr><tr><td><pre class="language-ocaml"><code>while expr do expr done</code></pre></td><td><pre class="language-ocaml"><code>while%lwt expr do expr done</code></pre></td></tr><tr><td><pre class="language-ocaml"><code>if expr then expr else expr</code></pre></td><td><pre class="language-ocaml"><code>if%lwt expr then expr else expr</code></pre></td></tr><tr><td><pre class="language-ocaml"><code>assert expr</code></pre></td><td><pre class="language-ocaml"><code>assert%lwt expr</code></pre></td></tr><tr><td><pre class="language-ocaml"><code>raise exn</code></pre></td><td><pre class="language-ocaml"><code>[%lwt raise exn]</code></pre></td></tr></table><h3 id="backtrace-support">Backtrace support</h3><p>If an exception is raised inside a callback called by Lwt, the backtrace provided by OCaml will not be very useful. It will end inside the Lwt scheduler instead of continuing into the code that started the operations that led to the callback call. To avoid this, and get good backtraces from Lwt, use the syntax extension. The <code>let%lwt</code> construct will properly propagate backtraces.</p><p>As always, to get backtraces from an OCaml program, you need to either declare the environment variable <code>OCAMLRUNPARAM=b</code> or call <code>Printexc.record_backtrace true</code> at the start of your program, and be sure to compile it with <code>-g</code>. Most modern build systems add <code>-g</code> by default.</p><h3 id="let*-syntax"><code>let*</code> syntax</h3><p>To use Lwt with the <code>let*</code> syntax introduced in OCaml 4.08, you can open the <code>Syntax</code> module:</p><pre class="language-ocaml"><code>open Syntax</code></pre><p>Then, you can write</p><pre class="language-ocaml"><code>let* () = Lwt_io.printl &quot;Hello,&quot; in
+let* () = Lwt_io.printl &quot;world!&quot; in
+Lwt.return ()</code></pre><h3 id="other-modules-of-the-core-library">Other modules of the core library</h3><p>The core library contains several modules that only depend on <code>Lwt</code>. The following naming convention is used in <code>Lwt</code>: when a function takes as argument a function, returning a promise, that is going to be executed sequentially, it is suffixed with “<code>_s</code>”. And when it is going to be executed concurrently, it is suffixed with “<code>_p</code>”. For example, in the <code>Lwt_list</code> module we have:</p><pre class="language-ocaml"><code>val map_s : ('a -&gt; 'b Lwt.t) -&gt; 'a list -&gt; 'b list Lwt.t
+val map_p : ('a -&gt; 'b Lwt.t) -&gt; 'a list -&gt; 'b list Lwt.t</code></pre><h4 id="mutexes">Mutexes</h4><p><code>Lwt_mutex</code> provides mutexes for <code>Lwt</code>. Its use is almost the same as the <code>Mutex</code> module of the thread library shipped with OCaml. In general, programs using <code>Lwt</code> do not need a lot of mutexes, because callbacks run without preempting each other. They are only useful for synchronising or sequencing complex operations spread over multiple callback calls.</p><h4 id="lists">Lists</h4><p>The <code>Lwt_list</code> module defines iteration and scanning functions over lists, similar to the ones of the <code>List</code> module, but using functions that return a promise. For example:</p><pre class="language-ocaml"><code>val iter_s : ('a -&gt; unit Lwt.t) -&gt; 'a list -&gt; unit Lwt.t
+val iter_p : ('a -&gt; unit Lwt.t) -&gt; 'a list -&gt; unit Lwt.t</code></pre><p>In <code>iter_s f l</code>, <code>iter_s</code> will call f on each elements of <code>l</code>, waiting for resolution between each element. On the contrary, in <code>iter_p f l</code>, <code>iter_p</code> will call f on all elements of <code>l</code>, only then wait for all the promises to resolve.</p><h4 id="data-streams">Data streams</h4><p><code>Lwt</code> streams are used in a lot of places in <code>Lwt</code> and its submodules. They offer a high-level interface to manipulate data flows.</p><p>A stream is an object which returns elements sequentially and lazily. Lazily means that the source of the stream is touched only for new elements when needed. This module contains a lot of stream transformation, iteration, and scanning functions.</p><p>The common way of creating a stream is by using <code>Lwt_stream.from</code> or by using <code>Lwt_stream.create</code>:</p><pre class="language-ocaml"><code>val from : (unit -&gt; 'a option Lwt.t) -&gt; 'a Lwt_stream.t
+val create : unit -&gt; 'a Lwt_stream.t * ('a option -&gt; unit)</code></pre><p>As for streams of the standard library, <code>from</code> takes as argument a function which is used to create new elements.</p><p><code>create</code> returns a function used to push new elements into the stream and the stream which will receive them.</p><p>For example:</p><pre class="language-ocaml"><code># let stream, push = Lwt_stream.create ();;
+val stream : '_a Lwt_stream.t = &lt;abstr&gt;
+val push : '_a option -&gt; unit = &lt;fun&gt;
+# push (Some 1);;
+- : unit = ()
+# push (Some 2);;
+- : unit = ()
+# push (Some 3);;
+- : unit = ()
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Lwt.Return 1
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Lwt.Return 2
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Lwt.Return 3
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Lwt.Sleep</code></pre><p>Note that streams are consumable. Once you take an element from a stream, it is removed from the stream. So, if you want to iterate two times over a stream, you may consider “cloning” it, with <code>Lwt_stream.clone</code>. Cloned stream will return the same elements in the same order. Consuming one will not consume the other. For example:</p><pre class="language-ocaml"><code># let s = Lwt_stream.of_list [1; 2];;
+val s : int Lwt_stream.t = &lt;abstr&gt;
+# let s' = Lwt_stream.clone s;;
+val s' : int Lwt_stream.t = &lt;abstr&gt;
+# Lwt.state (Lwt_stream.next s);;
+- : int Lwt.state = Lwt.Return 1
+# Lwt.state (Lwt_stream.next s);;
+- : int Lwt.state = Lwt.Return 2
+# Lwt.state (Lwt_stream.next s');;
+- : int Lwt.state = Lwt.Return 1
+# Lwt.state (Lwt_stream.next s');;
+- : int Lwt.state = Lwt.Return 2</code></pre><h4 id="mailbox-variables">Mailbox variables</h4><p>The <code>Lwt_mvar</code> module provides mailbox variables. A mailbox variable, also called a “mvar”, is a cell which may contain 0 or 1 element. If it contains no elements, we say that the mvar is empty, if it contains one, we say that it is full. Adding an element to a full mvar will block until one is taken. Taking an element from an empty mvar will block until one is added.</p><p>Mailbox variables are commonly used to pass messages between chains of callbacks being executed concurrently.</p><p>Note that a mailbox variable can be seen as a pushable stream with a limited memory.</p><h2 id="running-an-lwt-program">Running an Lwt program</h2><p>An <code>Lwt</code> computation you have created will give you something of type <code>Lwt.t</code>, a promise. However, even though you have the promise, the computation may not have run yet, and the promise might still be pending.</p><p>For example if your program is just:</p><pre class="language-ocaml"><code>let _ = Lwt_io.printl &quot;Hello, world!&quot;</code></pre><p>you have no guarantee that the promise for writing <code>&quot;Hello, world!&quot;</code> on the terminal will be resolved before the program exits. In order to wait for the promise to resolve, you have to call the function <code>Lwt_main.run</code>:</p><pre class="language-ocaml"><code>val Lwt_main.run : 'a Lwt.t -&gt; 'a</code></pre><p>This function waits for the given promise to resolve and returns its result. In fact it does more than that; it also runs the scheduler which is responsible for making asynchronous computations progress when events are received from the outside world.</p><p>So basically, when you write a <code>Lwt</code> program, you must call <code>Lwt_main.run</code> on your top-level, outer-most promise. For instance:</p><pre class="language-ocaml"><code>let () = Lwt_main.run (Lwt_io.printl &quot;Hello, world!&quot;)</code></pre><p>Note that you must not make nested calls to <code>Lwt_main.run</code>. It cannot be used anywhere else to get the result of a promise.</p><h2 id="the-lwt.unix-library">The <code>lwt.unix</code> library</h2><p>The package <code>lwt.unix</code> contains all <code>Unix</code>-dependent modules of <code>Lwt</code>. Among all its features, it implements Lwt-friendly, non-blocking versions of functions of the OCaml standard and Unix libraries.</p><h3 id="unix-primitives">Unix primitives</h3><p>Module <code>Lwt_unix</code> provides non-blocking system calls. For example, the <code>Lwt</code> counterpart of <code>Unix.read</code> is:</p><pre class="language-ocaml"><code>val read : file_descr -&gt; string -&gt; int -&gt; int -&gt; int Lwt.t</code></pre><p><code>Lwt_io</code> provides features similar to buffered channels of the standard library (of type <code>in_channel</code> or <code>out_channel</code>), but with non-blocking semantics.</p><p><code>Lwt_gc</code> allows you to register a finalizer that returns a promise. At the end of the program, <code>Lwt</code> will wait for all these finalizers to resolve.</p><h3 id="the-lwt-scheduler">The Lwt scheduler</h3><p>Operations doing I/O have to be resumed when some events are received by the process, so they can resolve their associated pending promises. For example, when you read from a file descriptor, you may have to wait for the file descriptor to become readable if no data are immediately available on it.</p><p><code>Lwt</code> contains a scheduler which is responsible for managing multiple operations waiting for events, and restarting them when needed. This scheduler is implemented by the two modules <code>Lwt_engine</code> and <code>Lwt_main</code>. <code>Lwt_engine</code> is a low-level module, it provides a signature for custom I/O multiplexers as well as two built-in implementations, <code>libev</code> and <code>select</code>. The signature is given by the class <code>Lwt_engine.t</code>.</p><p><code>libev</code> is used by default on Linux, because it supports any number of file descriptors, while <code>select</code> supports only 1024. <code>libev</code> is also much more efficient. On Windows, <code>Unix.select</code> is used because <code>libev</code> does not work properly. The user may change the backend in use at any time.</p><p>If you see an <code>Invalid_argument</code> error on <code>Unix.select</code>, it may be because the 1024 file descriptor limit was exceeded. Try switching to <code>libev</code>, if possible.</p><p>The engine can also be used directly in order to integrate other libraries with <code>Lwt</code>. For example, <code>GTK</code> needs to be notified when some events are received. If you use <code>Lwt</code> with <code>GTK</code> you need to use the <code>Lwt</code> scheduler to monitor <code>GTK</code> sources. This is what is done by the <code>Lwt_glib</code> library.</p><p>The <code>Lwt_main</code> module contains the <em>main loop</em> of <code>Lwt</code>. It is run by calling the function <code>Lwt_main.run</code>:</p><pre class="language-ocaml"><code>val Lwt_main.run : 'a Lwt.t -&gt; 'a</code></pre><p>This function continuously runs the scheduler until the promise passed as argument is resolved.</p><p>To make sure <code>Lwt</code> is compiled with <code>libev</code> support, tell opam that the library is available on the system by installing the <a href="https://opam.ocaml.org/packages/conf-libev/conf-libev.4-11/">conf-libev</a> package. You may get the actual library with your system package manager:</p><ul><li><code>brew install libev</code> on MacOSX,</li><li><code>apt-get install libev-dev</code> on Debian/Ubuntu, or</li><li><code>yum install libev-devel</code> on CentOS, which requires to set <code>export C_INCLUDE_PATH=/usr/include/libev/</code> and <code>export LIBRARY_PATH=/usr/lib64/</code> before calling <code>opam install conf-libev</code>.</li></ul><h3 id="logging">Logging</h3><p>For logging, we recommend the <code>logs</code> package from opam, which includes an Lwt-aware module <code>Logs_lwt</code>.</p><h2 id="the-lwt.react-library">The Lwt.react library</h2><p>The <a href="../lwt_react/Lwt_react/index.html"><code>Lwt_react</code></a> module provides helpers for using the <code>react</code> library with <code>Lwt</code>. It extends the <code>React</code> module by adding <code>Lwt</code>-specific functions. It can be used as a replacement of <code>React</code>. For example you can add at the beginning of your program:</p><pre class="language-ocaml"><code>open Lwt_react</code></pre><p>instead of:</p><pre class="language-ocaml"><code>open React</code></pre><p>or:</p><pre class="language-ocaml"><code>module React = Lwt_react</code></pre><p>Among the added functionalities we have <a href="../lwt_react/Lwt_react/E/index.html#val-next"><code>Lwt_react.E.next</code></a>, which takes an event and returns a promise which will be pending until the next occurrence of this event. For example:</p><pre class="language-ocaml"><code># open Lwt_react;;
+# let event, push = E.create ();;
+val event : '_a React.event = &lt;abstr&gt;
+val push : '_a -&gt; unit = &lt;fun&gt;
+# let p = E.next event;;
+val p : '_a Lwt.t = &lt;abstr&gt;
+# Lwt.state p;;
+- : '_a Lwt.state = Lwt.Sleep
+# push 42;;
+- : unit = ()
+# Lwt.state p;;
+- : int Lwt.state = Lwt.Return 42</code></pre><p>Another interesting feature is the ability to limit events (resp. signals) from occurring (resp. changing) too often. For example, suppose you are doing a program which displays something on the screen each time a signal changes. If at some point the signal changes 1000 times per second, you probably don't want to render it 1000 times per second. For that you use <a href="../lwt_react/Lwt_react/S/index.html#val-limit"><code>Lwt_react.S.limit</code></a>:</p><pre class="language-ocaml"><code>val limit : (unit -&gt; unit Lwt.t) -&gt; 'a React.signal -&gt; 'a React.signal</code></pre><p><code>Lwt_react.S.limit f signal</code> returns a signal which varies as <code>signal</code> except that two consecutive updates are separated by a call to <code>f</code>. For example if <code>f</code> returns a promise which is pending for 0.1 seconds, then there will be no more than 10 changes per second:</p><pre class="language-ocaml"><code>open Lwt_react
+
+let draw x =
+  (* Draw the screen *)
+  …
+
+let () =
+  (* The signal we are interested in: *)
+  let signal = … in
+
+  (* The limited signal: *)
+  let signal' = S.limit (fun () -&gt; Lwt_unix.sleep 0.1) signal in
+
+  (* Redraw the screen each time the limited signal change: *)
+  S.notify_p draw signal'</code></pre><h2 id="other-libraries">Other libraries</h2><h3 id="parallelise-computations-to-other-cores">Parallelise computations to other cores</h3><p>If you have some compute-intensive steps within your program, you can execute them on a separate core. You can get performance benefits from the parallelisation. In addition, whilst your compute-intensive function is running on a different core, your normal I/O-bound tasks continue running on the original core.</p><p>The module <code>Lwt_domain</code> from the <code>lwt_domain</code> package provides all the necessary helpers to achieve this. It is based on the <code>Domainslib</code> library and uses similar concepts (such as tasks and pools).</p><p>First, you need to create a task pool:</p><pre class="language-ocaml"><code>val setup_pool : ?name:string -&gt; int -&gt; pool</code></pre><p>Then you simple detach the function calls to the created pool:</p><pre class="language-ocaml"><code>val detach : pool -&gt; ('a -&gt; 'b) -&gt; 'a -&gt; 'b Lwt.t</code></pre><p>The returned promise resolves as soon as the function returns.</p><h3 id="detaching-computation-to-preemptive-threads">Detaching computation to preemptive threads</h3><p>It may happen that you want to run a function which will take time to compute or that you want to use a blocking function that cannot be used in a non-blocking way. For these situations, <code>Lwt</code> allows you to <em>detach</em> the computation to a preemptive thread.</p><p>This is done by the module <code>Lwt_preemptive</code> of the <code>lwt.unix</code> package which maintains a pool of system threads. The main function is:</p><pre class="language-ocaml"><code>val detach : ('a -&gt; 'b) -&gt; 'a -&gt; 'b Lwt.t</code></pre><p><code>detach f x</code> will execute <code>f x</code> in another thread and return a pending promise, usable from the main thread, which will be fulfilled with the result of the preemptive thread.</p><p>If you want to trigger some <code>Lwt</code> operations from your detached thread, you have to call back into the main thread using <code>Lwt_preemptive.run_in_main</code>:</p><pre class="language-ocaml"><code>val run_in_main : (unit -&gt; 'a Lwt.t) -&gt; 'a</code></pre><p>This is roughly the equivalent of <code>Lwt.main_run</code>, but for detached threads, rather than for the whole process. Note that you must not call <code>Lwt_main.run</code> in a detached thread.</p><h3 id="ssl-support">SSL support</h3><p>The library <code>Lwt_ssl</code> allows use of SSL asynchronously.</p><h2 id="writing-stubs-using-lwt">Writing stubs using <code>Lwt</code></h2><h3 id="thread-safe-notifications">Thread-safe notifications</h3><p>If you want to notify the main thread from another thread, you can use the <code>Lwt</code> thread safe notification system. First you need to create a notification identifier (which is just an integer) from the OCaml side using the <code>Lwt_unix.make_notification</code> function, then you can send it from either the OCaml code with <code>Lwt_unix.send_notification</code> function, or from the C code using the function <code>lwt_unix_send_notification</code> (defined in <code>lwt_unix_.h</code>).</p><p>Notifications are received and processed asynchronously by the main thread.</p><h3 id="jobs">Jobs</h3><p>For operations that cannot be executed asynchronously, <code>Lwt</code> uses a system of jobs that can be executed in a different threads. A job is composed of three functions:</p><ul><li>A stub function to create the job. It must allocate a new job structure and fill its <code>worker</code> and <code>result</code> fields. This function is executed in the main thread. The return type for the OCaml external must be of the form <code>'a job</code>.</li><li><p>A function which executes the job. This one may be executed asynchronously in another thread. This function must not:</p><ul><li>access or allocate OCaml block values (tuples, strings, …),</li><li>call OCaml code.</li></ul></li><li>A function which reads the result of the job, frees resources and returns the result as an OCaml value. This function is executed in the main thread.</li></ul><p>With <code>Lwt &lt; 2.3.3</code>, 4 functions (including 3 stubs) were required. It is still possible to use this mode but it is deprecated.</p><p>We show as example the implementation of <code>Lwt_unix.mkdir</code>. On the C side we have:</p><pre class="language-c"><code>/**/
+/* Structure holding informations for calling [mkdir]. */
+struct job_mkdir {
+  /* Informations used by lwt.
+     It must be the first field of the structure. */
+  struct lwt_unix_job job;
+  /* This field store the result of the call. */
+  int result;
+  /* This field store the value of [errno] after the call. */
+  int errno_copy;
+  /* Pointer to a copy of the path parameter. */
+  char* path;
+  /* Copy of the mode parameter. */
+  int mode;
+  /* Buffer for storing the path. */
+  char data[];
+};
+
+/* The function calling [mkdir]. */
+static void worker_mkdir(struct job_mkdir* job)
+{
+  /* Perform the blocking call. */
+  job-&gt;result = mkdir(job-&gt;path, job-&gt;mode);
+  /* Save the value of errno. */
+  job-&gt;errno_copy = errno;
+}
+
+/* The function building the caml result. */
+static value result_mkdir(struct job_mkdir* job)
+{
+  /* Check for errors. */
+  if (job-&gt;result &lt; 0) {
+    /* Save the value of errno so we can use it
+       once the job has been freed. */
+    int error = job-&gt;errno_copy;
+    /* Copy the contents of job-&gt;path into a caml string. */
+    value string_argument = caml_copy_string(job-&gt;path);
+    /* Free the job structure. */
+    lwt_unix_free_job(&amp;job-&gt;job);
+    /* Raise the error. */
+    unix_error(error, &quot;mkdir&quot;, string_argument);
+  }
+  /* Free the job structure. */
+  lwt_unix_free_job(&amp;job-&gt;job);
+  /* Return the result. */
+  return Val_unit;
+}
+
+/* The stub creating the job structure. */
+CAMLprim value lwt_unix_mkdir_job(value path, value mode)
+{
+  /* Get the length of the path parameter. */
+  mlsize_t len_path = caml_string_length(path) + 1;
+  /* Allocate a new job. */
+  struct job_mkdir* job =
+    (struct job_mkdir*)lwt_unix_new_plus(struct job_mkdir, len_path);
+  /* Set the offset of the path parameter inside the job structure. */
+  job-&gt;path = job-&gt;data;
+  /* Copy the path parameter inside the job structure. */
+  memcpy(job-&gt;path, String_val(path), len_path);
+  /* Initialize function fields. */
+  job-&gt;job.worker = (lwt_unix_job_worker)worker_mkdir;
+  job-&gt;job.result = (lwt_unix_job_result)result_mkdir;
+  /* Copy the mode parameter. */
+  job-&gt;mode = Int_val(mode);
+  /* Wrap the structure into a caml value. */
+  return lwt_unix_alloc_job(&amp;job-&gt;job);
+}</code></pre><p>and on the ocaml side:</p><pre class="language-ocaml"><code>(* The stub for creating the job. *)
+external mkdir_job : string -&gt; int -&gt; unit job = &quot;lwt_unix_mkdir_job&quot;
+
+(* The ocaml function. *)
+let mkdir name perms = Lwt_unix.run_job (mkdir_job name perms)</code></pre></div>
+      </article>
+    </div>
+  </div>
+
+  <script>
+    var wodocPub = "/lwt";
+    // Switch version: keep the current page, swapping only the version segment.
+    function wodocVersion(v) {
+      if (!v) return;
+      var re = new RegExp('^(' + wodocPub + '/)[^/]+');
+      var p = location.pathname;
+      location.href =
+        re.test(p) ? p.replace(re, '$1' + v) : wodocPub + '/' + v + '/index.html';
+    }
+    // Build the version <select> from the project's versions.json (the single
+    // source of truth, refreshed on every build/release), so even older frozen
+    // pages list the current set. Falls back to the baked <option>s on failure.
+    (function () {
+      var seg = (location.pathname.match(
+        new RegExp('^' + wodocPub + '/([^/]+)')) || [])[1];
+      function select(sel) {
+        var i;
+        for (i = 0; i < sel.options.length; i++)
+          if (sel.options[i].value === seg) { sel.selectedIndex = i; return; }
+        if (seg) {
+          var o = document.createElement('option');
+          o.value = seg; o.textContent = seg; o.selected = true;
+          sel.insertBefore(o, sel.firstChild);
+        }
+      }
+      fetch(wodocPub + '/versions.json')
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (m) {
+          var list = m.list || [], latest = m.latest;
+          document.querySelectorAll('.wodoc-version').forEach(function (sel) {
+            sel.innerHTML = '';
+            list.forEach(function (v) {
+              var o = document.createElement('option');
+              if (v === latest) { o.value = 'latest'; o.textContent = v + ' (latest)'; }
+              else { o.value = v; o.textContent = v; }
+              sel.appendChild(o);
+            });
+            select(sel);
+          });
+        })
+        .catch(function () {
+          document.querySelectorAll('.wodoc-version').forEach(select);
+        });
+    })();
+  </script>
+</body>
+</html>
