@@ -7,8 +7,9 @@
 [github-actions]:     https://github.com/ocsigen/lwt/actions
 [github-actions-img]: https://github.com/ocsigen/lwt/actions/workflows/workflow.yml/badge.svg?branch=master
 
-Lwt is a concurrent programming library for OCaml. It provides a single data
-type: the *promise*, which is a value that will become resolved in the future.
+Lwt is a concurrent programming library for OCaml. It is part of the [Ocsigen](https://ocsigen.org) project and its main documentation can be read [here](https://ocsigen.org/lwt).
+
+Lwt provides a single data type: the *promise*, which is a value that will become resolved in the future.
 Creating a promise spawns a computation. When that computation is I/O, Lwt runs
 it in parallel with your OCaml code.
 
@@ -198,6 +199,7 @@ parser combinators
 - [cohttp](https://github.com/mirage/ocaml-cohttp) — HTTP client and server
 - [cstruct](https://github.com/mirage/ocaml-cstruct) —
 interop with C-like structures
+- [eliom](https://ocsigen.org/eliom), [Server](https://ocsigen.org/ocsigenserver) and the full Ocsigen Web suite
 - [ezjsonm](https://github.com/mirage/ezjsonm) —
 JSON parsing and output
 - [faraday](https://github.com/inhabitedtype/faraday) —
@@ -211,3 +213,4 @@ distributed computing
 web framework
 - [lwt_domain](https://github.com/ocsigen/lwt_domain) — domain parallelism when
   using Lwt with OCaml 5
+- and many other projects, see "Used by" section of the [lwt package page](https://ocaml.org/p/lwt/latest)
