@@ -17,3 +17,6 @@ lib/
 
 # wodoc themed-site build output (doc/build.sh).
 /_doc-site/
+
+# legacy doc building directory
+/docs/api/
