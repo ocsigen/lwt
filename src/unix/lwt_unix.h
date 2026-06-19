@@ -124,7 +124,7 @@ typedef struct lwt_unix_condition lwt_unix_condition;
 int lwt_unix_launch_thread(void *(*start)(void *), void *data);
 
 /* Return a handle to the currently running thread. */
-lwt_unix_thread lwt_unix_thread_self();
+lwt_unix_thread lwt_unix_thread_self(void);
 
 /* Returns whether two thread handles refer to the same thread. */
 int lwt_unix_thread_equal(lwt_unix_thread thread1, lwt_unix_thread thread2);

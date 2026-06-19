@@ -65,7 +65,7 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   DWORD flags = 0, err;
-  HANDLE hp, fd0, fd1, fd2;
+  HANDLE fd0, fd1, fd2;
   HANDLE to_close0 = INVALID_HANDLE_VALUE, to_close1 = INVALID_HANDLE_VALUE,
     to_close2 = INVALID_HANDLE_VALUE;
 
@@ -170,6 +170,6 @@ CAMLprim value lwt_process_terminate_process(value handle, value code) {
 
 /* This is used to suppress a warning from ranlib about the object file having
    no symbols. */
-void lwt_process_dummy_symbol() {}
+void lwt_process_dummy_symbol(void) {}
 
 #endif /* defined(LWT_ON_WINDOWS) */

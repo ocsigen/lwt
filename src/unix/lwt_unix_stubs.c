@@ -152,7 +152,7 @@ CAMLprim value lwt_unix_mapped(value v_bstr) {
    | Byte order                                                      |
    +-----------------------------------------------------------------+ */
 
-value lwt_unix_system_byte_order() {
+value lwt_unix_system_byte_order(void) {
 #ifdef ARCH_BIG_ENDIAN
   return Val_int(1);
 #else
@@ -193,7 +193,7 @@ int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
   return zero_if_created_otherwise_errno;
 }
 
-lwt_unix_thread lwt_unix_thread_self() { return pthread_self(); }
+lwt_unix_thread lwt_unix_thread_self(void) { return pthread_self(); }
 
 int lwt_unix_thread_equal(lwt_unix_thread thread1, lwt_unix_thread thread2) {
   return pthread_equal(thread1, thread2);
@@ -239,12 +239,15 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition,
 int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
   HANDLE handle =
       CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start, data, 0, NULL);
-  if (handle)
+  if (handle) {
     CloseHandle(handle);
-  return 0;
+    return 0;
+  }
+  win32_maperr(GetLastError());
+  return errno;
 }
 
-lwt_unix_thread lwt_unix_thread_self() { return GetCurrentThreadId(); }
+lwt_unix_thread lwt_unix_thread_self(void) { return GetCurrentThreadId(); }
 
 int lwt_unix_thread_equal(lwt_unix_thread thread1, lwt_unix_thread thread2) {
   return thread1 == thread2;
@@ -527,19 +530,19 @@ static enum notification_mode notification_mode =
     NOTIFICATION_MODE_NOT_INITIALIZED;
 
 /* Send one notification. */
-static int (*notification_send)();
+static int (*notification_send)(void);
 
 /* Read one notification. */
-static int (*notification_recv)();
+static int (*notification_recv)(void);
 
-static void init_notifications() {
+static void init_notifications(void) {
   lwt_unix_mutex_init(&notification_mutex);
   notification_count = 4096;
   notifications =
       (intnat *)lwt_unix_malloc(notification_count * sizeof(intnat));
 }
 
-static void resize_notifications() {
+static void resize_notifications(void) {
   long new_notification_count = notification_count * 2;
   intnat *new_notifications =
       (intnat *)lwt_unix_malloc(new_notification_count * sizeof(intnat));
@@ -600,7 +603,7 @@ value lwt_unix_send_notification_stub(value id) {
   return Val_unit;
 }
 
-value lwt_unix_recv_notifications() {
+value lwt_unix_recv_notifications(void) {
   int ret, i, current_index;
   value result;
 #if !defined(LWT_ON_WINDOWS)
@@ -661,17 +664,17 @@ value lwt_unix_recv_notifications() {
 
 static SOCKET socket_r, socket_w;
 
-static int windows_notification_send() {
+static int windows_notification_send(void) {
   char buf = '!';
   return send(socket_w, &buf, 1, 0);
 }
 
-static int windows_notification_recv() {
+static int windows_notification_recv(void) {
   char buf;
   return recv(socket_r, &buf, 1, 0);
 }
 
-value lwt_unix_init_notification() {
+value lwt_unix_init_notification(void) {
   SOCKET sockets[2];
 
   switch (notification_mode) {
@@ -714,12 +717,12 @@ static void set_close_on_exec(int fd) {
 
 static int notification_fd;
 
-static int eventfd_notification_send() {
+static int eventfd_notification_send(void) {
   uint64_t buf = 1;
   return write(notification_fd, (char *)&buf, 8);
 }
 
-static int eventfd_notification_recv() {
+static int eventfd_notification_recv(void) {
   uint64_t buf;
   return read(notification_fd, (char *)&buf, 8);
 }
@@ -728,17 +731,17 @@ static int eventfd_notification_recv() {
 
 static int notification_fds[2];
 
-static int pipe_notification_send() {
+static int pipe_notification_send(void) {
   char buf = 0;
   return write(notification_fds[1], &buf, 1);
 }
 
-static int pipe_notification_recv() {
+static int pipe_notification_recv(void) {
   char buf;
   return read(notification_fds[0], &buf, 1);
 }
 
-value lwt_unix_init_notification() {
+value lwt_unix_init_notification(void) {
   switch (notification_mode) {
 #if defined(HAVE_EVENTFD)
     case NOTIFICATION_MODE_EVENTFD:
@@ -975,7 +978,7 @@ static lwt_unix_mutex pool_mutex;
 static int threading_initialized = 0;
 
 /* Initialize the pool of thread. */
-void initialize_threading() {
+void initialize_threading(void) {
   if (threading_initialized == 0) {
     lwt_unix_mutex_init(&pool_mutex);
     lwt_unix_condition_init(&pool_condition);
