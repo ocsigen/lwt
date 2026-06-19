@@ -192,7 +192,6 @@ repo for "Releases only" is also an option.
 
 ## Libraries to use with Lwt
 
-- [eliom](https://ocsigen.org/eliom), [Server](https://ocsigen.org/ocsigenserver) and the full Ocsigen Web suite
 - [alcotest](https://github.com/mirage/alcotest/) —
 unit testing
 - [angstrom](https://github.com/inhabitedtype/angstrom) —
@@ -200,6 +199,7 @@ parser combinators
 - [cohttp](https://github.com/mirage/ocaml-cohttp) — HTTP client and server
 - [cstruct](https://github.com/mirage/ocaml-cstruct) —
 interop with C-like structures
+- [eliom](https://ocsigen.org/eliom), [Server](https://ocsigen.org/ocsigenserver) and the full Ocsigen Web suite
 - [ezjsonm](https://github.com/mirage/ezjsonm) —
 JSON parsing and output
 - [faraday](https://github.com/inhabitedtype/faraday) —
