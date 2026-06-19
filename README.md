@@ -213,4 +213,4 @@ distributed computing
 web framework
 - [lwt_domain](https://github.com/ocsigen/lwt_domain) — domain parallelism when
   using Lwt with OCaml 5
-- ...
+- and many other projects, see "Used by" section of the [lwt package page](https://ocaml.org/p/lwt/latest)
