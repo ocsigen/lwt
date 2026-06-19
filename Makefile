@@ -26,23 +26,12 @@ promote :
 dev-deps :
 	opam install . --deps-only --yes
 
-# Use Dune+odoc to generate static html documentation.
-# Currently requires ocaml 4.03.0 to install odoc.
+# Use Dune+odoc to generate static html documentation (manual + API). The themed
+# site published at ocsigen.org/lwt/ is built from this by doc/build.sh (wodoc);
+# see doc/README.md. This replaces the former ocamldoc/wikidoc pipeline.
 .PHONY: doc
 doc:
 	dune build @doc
-
-# Build HTML documentation with ocamldoc
-.PHONY: doc-api-html
-doc-api-html: build
-	$(MAKE) -C docs api/html/index.html
-
-# Build wiki documentation with wikidoc
-# requires ocaml 4.03.0 and pinning the repo
-# https://github.com/ocsigen/wikidoc
-.PHONY: doc-api-wiki
-doc-api-wiki: build
-	$(MAKE) -C docs api/wiki/index.wiki
 
 # ppx_let integration test.
 .PHONY : ppx_let-test
@@ -53,7 +42,6 @@ ppx_let-test :
 .PHONY: clean
 clean :
 	dune clean
-	rm -fr docs/api
 	rm -f src/unix/discover_arguments
 
 EXPECTED_FILES := \

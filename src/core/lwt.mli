@@ -550,7 +550,7 @@ let () =
 (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
-    This uses the Lwt {{: Ppx_lwt.html} PPX} (preprocessor). Note that we had to
+    This uses the Lwt {{!Ppx_lwt} PPX} (preprocessor). Note that we had to
     add package [lwt_ppx] to the command line for building this program. We will
     do that throughout this manual.
 
@@ -607,7 +607,7 @@ let () =
 ]}
 
     Despite the above code, the recommended way to write [Lwt.catch] is using
-    the [try%lwt] syntactic sugar from the {{: Ppx_lwt.html} PPX}. Here is an
+    the [try%lwt] syntactic sugar from the {{!Ppx_lwt} PPX}. Here is an
     equivalent example:
 
 {[
@@ -1177,7 +1177,7 @@ let () =
 
 val on_cancel : _ t -> (unit -> unit) -> unit
 (** [Lwt.on_cancel p f] makes it so that [f] will run when [p] becomes
-    {{: #EXCEPTIONCanceled} {e canceled}}.
+    {{!Canceled} {e canceled}}.
 
     Callbacks scheduled with [on_cancel] are guaranteed to run before any other
     callbacks that are triggered by rejection, such as those added by
@@ -1563,7 +1563,7 @@ val return_false : bool t
 
 val return_some : 'a -> ('a option) t
 (** Counterpart to {!Lwt.return_none}. However, unlike {!Lwt.return_none}, this
-    function performs no {{: #VALreturn_unit} optimization}. This is because it
+    function performs no {{!return_unit} optimization}. This is because it
     takes an argument, so it cannot be evaluated at initialization time, at
     which time the argument is not yet available. *)
 

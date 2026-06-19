@@ -15,5 +15,8 @@ scratch/
 # BuckleScript output.
 lib/
 
-# Wikidoc output.
+# wodoc themed-site build output (doc/build.sh).
+/_doc-site/
+
+# legacy doc building directory
 /docs/api/
