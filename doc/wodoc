@@ -5,7 +5,8 @@
 ;; (wodoc build runs `dune build @doc` itself when --src is not given.)
 (project lwt)
 (title Lwt)
-(pub /lwt)
+(url-prefix /lwt)
+(css /css/style.css /css/ocsigen-odoc.css)  ; shared Ocsigen theme (wodoc css default changed)
 (landing lwt/index.html)
 ;; no (highlight …): wodoc's default starter already colours lwt/jsoo/eliom syntax.
 ;; lwt's sibling packages are not dependency edges, so odoc leaves their refs
