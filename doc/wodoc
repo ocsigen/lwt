@@ -46,3 +46,17 @@
     (link "Lwt_react" lwt_react/Lwt_react/index.html)
     (link "Lwt_ppx"   lwt_ppx/Lwt_ppx/index.html)
     (link "Lwt_retry" lwt_retry/Lwt_retry/index.html)))
+
+;; Sibling Ocsigen projects, so wodoc rewrites their ocaml.org cross-references
+;; to relative links into their deployed docs on ocsigen.org. The full family is
+;; listed (not only the ones this doc currently links to) so that adding a link
+;; later never silently breaks. (pkg deploy-dir layout wrapper-module)
+(hosted
+  (eliom           eliom           true  Eliom)
+  (ocsigen-toolkit ocsigen-toolkit true  Ot)
+  (ocsigen-start   ocsigen-start   true  Os)
+  (ocsigenserver   ocsigenserver   false Ocsigen)
+  (js_of_ocaml     js_of_ocaml     subdir)
+  (tyxml           tyxml           subdir)
+  (lwt             lwt             subdir)
+  (reactiveData    reactiveData    root))
