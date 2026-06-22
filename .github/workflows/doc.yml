@@ -27,7 +27,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up OCaml
         uses: ocaml/setup-ocaml@v3
@@ -78,7 +78,7 @@ jobs:
           opam install wodoc
 
       - name: Checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: gh-pages
           path: site
