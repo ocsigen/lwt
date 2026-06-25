@@ -104,6 +104,7 @@ This is the system-independent, pure-OCaml core of Lwt. To link with it, use `(l
 
 [`Lwt`](./Lwt.md) Asynchronous programming with promises.
 [`Lwt_list`](./Lwt_list.md) List helpers
+[`Lwt_seq`](./Lwt_seq.md) 
 [`Lwt_stream`](./Lwt_stream.md) Data streams
 [`Lwt_result`](./Lwt_result.md) Explicit error handling
 [`Lwt_mutex`](./Lwt_mutex.md) Cooperative locks for mutual exclusion
