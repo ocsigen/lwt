@@ -127,6 +127,7 @@ This is the system-independent, pure-OCaml core of Lwt. To link with it, use
 {!modules:
   Lwt
   Lwt_list
+  Lwt_seq
   Lwt_stream
   Lwt_result
   Lwt_mutex
