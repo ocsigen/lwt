@@ -8,6 +8,7 @@
 #if defined(LWT_ON_WINDOWS)
 
 #include <caml/fail.h>
+#include <caml/misc.h>
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>

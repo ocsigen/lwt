@@ -23,9 +23,18 @@ let read () =
 let write fd =
   assert (test_input_len = Unix.write fd test_input 0 test_input_len)
 
+let printenv () =
+  (* stdout is in text mode by default, which converts \n to \r\n on Windows.
+    switch to binary mode to prevent this, so the output is the same across
+    platforms. *)
+  set_binary_mode_out stdout true;
+  Array.iter (Printf.printf "%s\n") (Unix.unsafe_environment ());
+  flush stdout
+
 let () =
   match Sys.argv.(1) with
   | "read" -> exit @@ if read () then 0 else 1
   | "write" -> write Unix.stdout
   | "errwrite" -> write Unix.stderr
+  | "printenv" -> printenv ()
   | _ -> invalid_arg "Sys.argv"
