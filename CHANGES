@@ -1,3 +1,9 @@
+===== 5.10.1 =====
+
+====== Misc ======
+
+  * (backport from 6.1.1) lwt.unix: fix build error on OCaml.5.5. (Kate Deplaix, #1100)
+
 ===== 5.10.0 =====
 
 ====== Additions ======
