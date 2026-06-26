@@ -1063,11 +1063,21 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
   lwt_unix_async_method async_method = Int_val(val_async_method);
   int done = 0;
 
+  /* Ensure threading is initialized before using pool_mutex.
+     On Windows, CRITICAL_SECTION must be initialized before use;
+     unlike pthreads, zero-initialized CRITICAL_SECTIONs are invalid. */
+  if (async_method != LWT_UNIX_ASYNC_METHOD_NONE) {
+    initialize_threading();
+  }
+
   /* Fallback to synchronous call if there is no worker available and
      we can not launch more threads. */
-  if (async_method != LWT_UNIX_ASYNC_METHOD_NONE && thread_waiting_count == 0 &&
-      thread_count >= pool_size)
-    async_method = LWT_UNIX_ASYNC_METHOD_NONE;
+  if (async_method != LWT_UNIX_ASYNC_METHOD_NONE) {
+    lwt_unix_mutex_lock(&pool_mutex);
+  	if (thread_waiting_count == 0 && thread_count >= pool_size)
+      async_method = LWT_UNIX_ASYNC_METHOD_NONE;
+    lwt_unix_mutex_unlock(&pool_mutex);
+	}
 
   /* Initialises job parameters. */
   job->state = LWT_UNIX_JOB_STATE_PENDING;
@@ -1084,8 +1094,6 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
 
     case LWT_UNIX_ASYNC_METHOD_DETACH:
     case LWT_UNIX_ASYNC_METHOD_SWITCH:
-      initialize_threading();
-
       lwt_unix_mutex_init(&job->mutex);
 
       lwt_unix_mutex_lock(&pool_mutex);
@@ -1123,7 +1131,9 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
         lwt_unix_mutex_unlock(&pool_mutex);
       }
 
+      lwt_unix_mutex_lock(&job->mutex);
       done = job->state == LWT_UNIX_JOB_STATE_DONE;
+      lwt_unix_mutex_unlock(&job->mutex);
       if (done) {
         /* Wait for the mutex to be released because the job is going to
            be freed immediately. */
