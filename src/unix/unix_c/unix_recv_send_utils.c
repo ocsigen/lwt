@@ -76,7 +76,7 @@ value wrapper_send_msg(int fd, int n_iovs, struct iovec *iovs,
     if (Is_some(dest)) {
       union sock_addr_union addr;
       socklen_t addr_len;
-      get_sockaddr(Some_val(dest), &addr, &addr_len);
+      caml_unix_get_sockaddr(Some_val(dest), &addr, &addr_len);
 
       msg.msg_name = &addr.s_gen;
       msg.msg_namelen = addr_len;
