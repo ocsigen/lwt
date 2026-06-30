@@ -34,7 +34,26 @@ jobs:
         with:
           ocaml-compiler: "5.4.0"
 
+      # The bottleneck of this job is compiling the dependency tree plus wodoc and
+      # odoc from source; setup-ocaml only caches the base switch (the compiler),
+      # so they recompiled on every push. Cache the whole _opam switch keyed on the
+      # *.opam files (the dep set) and wodoc's HEAD commit; on a cache hit the
+      # install is skipped and only the project itself is (re)built by the doc step
+      # below. The key changes -- and the deps/wodoc rebuild once -- only when an
+      # *.opam file or wodoc move.
+      - name: Resolve wodoc HEAD commit
+        id: wodoc
+        run: echo "sha=$(git ls-remote https://github.com/ocsigen/wodoc.git HEAD | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the opam switch (deps + wodoc)
+        id: switch-cache
+        uses: actions/cache@v4
+        with:
+          path: _opam
+          key: opam-switch-${{ runner.os }}-ocaml5.4.0-${{ hashFiles('*.opam') }}-wodoc-${{ steps.wodoc.outputs.sha }}
+
       - name: Install dependencies
+        if: steps.switch-cache.outputs.cache-hit != 'true'
         run: |
           opam install . --deps-only --with-doc   # odoc is a with-doc dep
           # wodoc: the odoc driver that themes the pages with the Ocsigen chrome.
