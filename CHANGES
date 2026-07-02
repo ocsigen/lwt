@@ -1,3 +1,9 @@
+===== 5.10.2 =====
+
+====== Misc ======
+
+  * (backport from master) Better cygwin handling in discover (Kate Deplaix, #1081, #1119)
+
 ===== 5.10.1 =====
 
 ====== Misc ======
