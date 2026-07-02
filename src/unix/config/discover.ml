@@ -268,8 +268,7 @@ struct
         extend unicode ["ws2_32.lib"]
       else
         extend unicode ["-lws2_32"]
-    | "Cygwin" -> ()
-    | "Unix" -> extend ["-fPIC"; "-pthread"] []
+    | "Cygwin" | "Unix" -> extend ["-fPIC"; "-pthread"] []
     | s -> Configurator.die "unknown os_type: %S" s
 
   let c_flags () =
