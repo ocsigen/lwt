@@ -176,4 +176,25 @@ let suite = suite "lwt_pool" [
     Lwt.return (v = 1))
   end;
 
+  test "no starvation for waiters if pool member fails" begin fun () ->
+    let use p f = Lwt.catch
+      (fun () -> Lwt_pool.use p (fun _ -> f ()))
+      (fun _ -> Lwt.return_unit)
+    in
+    let gen = (fun () -> Lwt.return_unit) in
+    let p = Lwt_pool.create 1 ~check:(fun _ is_ok -> is_ok false) gen in
+    let holder = use p (fun _ ->
+      Lwt.bind
+        (Lwt_unix.sleep 1.)
+        (fun () -> failwith "op timeout"))
+    in
+    let waiter = use p (fun _ -> Lwt.return_unit) in
+    let no_starvation = Lwt.bind
+      (Lwt.join [holder; waiter])
+      (fun () -> Lwt.return_true)
+    in
+    let hanging = Lwt.bind (Lwt_unix.sleep 3.0) (fun () -> Lwt.return_false) in
+    Lwt.pick [no_starvation; hanging]
+  end;
+
   ]

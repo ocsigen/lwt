@@ -130,7 +130,9 @@ let check_and_release p c cleared =
   p.check c (fun result -> ok := result);
   if cleared || not !ok then (
     (* Element is not ok or the pool was cleared - dispose of it *)
-    dispose p c
+    dispose p c >>= fun () ->
+    replace_disposed p;
+    Lwt.return_unit
   )
   else (
     (* Element is ok - release it back to the pool *)
