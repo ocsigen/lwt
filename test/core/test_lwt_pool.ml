@@ -183,18 +183,15 @@ let suite = suite "lwt_pool" [
     in
     let gen = (fun () -> Lwt.return_unit) in
     let p = Lwt_pool.create 1 ~check:(fun _ is_ok -> is_ok false) gen in
-    let holder = use p (fun _ ->
-      Lwt.bind
-        (Lwt_unix.sleep 1.)
-        (fun () -> failwith "op timeout"))
-    in
+    let yielder, stop_yielding = Lwt.wait () in
+    let holder = use p (fun _ -> Lwt.bind yielder (fun () -> failwith "op timeout")) in
     let waiter = use p (fun _ -> Lwt.return_unit) in
-    let no_starvation = Lwt.bind
-      (Lwt.join [holder; waiter])
-      (fun () -> Lwt.return_true)
-    in
-    let hanging = Lwt.bind (Lwt_unix.sleep 3.0) (fun () -> Lwt.return_false) in
-    Lwt.pick [no_starvation; hanging]
+    let no_starvation = Lwt.join [holder; waiter] in
+    Lwt.wakeup stop_yielding ();
+    Lwt.bind (Lwt.pause ())
+      (fun () -> match Lwt.state no_starvation with
+      | Lwt.Return _ -> Lwt.return_true
+      | Lwt.Fail _ | Lwt.Sleep -> Lwt.return_false)
   end;
 
-  ]
+]
