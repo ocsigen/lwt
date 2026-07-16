@@ -1,3 +1,9 @@
+===== 5.10.dev =====
+
+====== Fixes ======
+
+  * (backported from 6+) Fix Lwt_pool starvation on use failures (Koon Wen Lee, #1121)
+
 ===== 5.10.1 =====
 
 ====== Misc ======
