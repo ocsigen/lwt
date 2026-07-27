@@ -24,7 +24,7 @@ module E = struct
 
   let next ev =
     let waiter, wakener = Lwt.task () in
-    let ev = map (fun x -> Lwt.wakeup wakener x) (once ev) in
+    let ev = map (fun x -> (Lwt.Private.resolve_immediately__just_unit[@ocaml.alert "-trespassing"]) wakener x) (once ev) in
     Lwt.on_cancel waiter (fun () -> stop ev);
     waiter
 
