@@ -1549,7 +1549,7 @@ let recv ch buf pos len flags =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.recv"
   else
-    let do_recv = if Sys.win32 then Unix.recv else stub_recv in
+    let do_recv fd buf pos len fl = if Sys.win32 then Unix.recv fd buf pos len fl else stub_recv fd buf pos len fl in
     wrap_syscall Read ch (fun () -> do_recv ch.fd buf pos len flags)
 
 external stub_send : Unix.file_descr -> Bytes.t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_send"
@@ -1558,7 +1558,7 @@ let send ch buf pos len flags =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.send"
   else
-    let do_send = if Sys.win32 then Unix.send else stub_send in
+    let do_send fd buf pos len fl = if Sys.win32 then Unix.send fd buf pos len fl else stub_send fd buf pos len fl in
     wrap_syscall Write ch (fun () -> do_send ch.fd buf pos len flags)
 
 external stub_recvfrom : Unix.file_descr -> Bytes.t -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_recvfrom"
@@ -1567,7 +1567,7 @@ let recvfrom ch buf pos len flags =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.recvfrom"
   else
-    let do_recvfrom = if Sys.win32 then Unix.recvfrom else stub_recvfrom in
+    let do_recvfrom fd buf pos len fl = if Sys.win32 then Unix.recvfrom fd buf pos len fl else stub_recvfrom fd buf pos len fl in
     wrap_syscall Read ch (fun () -> do_recvfrom ch.fd buf pos len flags)
 
 external stub_sendto : Unix.file_descr -> Bytes.t -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_sendto_byte" "lwt_unix_sendto"
@@ -1576,7 +1576,7 @@ let sendto ch buf pos len flags addr =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.sendto"
   else
-    let do_sendto = if Sys.win32 then Unix.sendto else stub_sendto in
+    let do_sendto fd buf pos len fl a = if Sys.win32 then Unix.sendto fd buf pos len fl a else stub_sendto fd buf pos len fl a in
     wrap_syscall Write ch (fun () -> do_sendto ch.fd buf pos len flags addr)
 
 external stub_recv_msg :
