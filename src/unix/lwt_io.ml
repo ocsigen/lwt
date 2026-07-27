@@ -1624,8 +1624,17 @@ let establish_server_generic
     ?(prepare_listening_fd=ignore)
     ?(prepare_client_fd=ignore)
     ?(backlog = Lwt_unix.somaxconn () [@ocaml.warning "-3"])
+    ?max_connections
     listening_address
     connection_handler_callback =
+
+  begin match max_connections with
+  | Some n when n < 1 ->
+    invalid_arg
+      (Printf.sprintf
+        "Lwt_io.establish_server: ~max_connections:%i must be positive" n)
+  | _ -> ()
+  end;
 
   let listening_socket =
     match preexisting_socket_for_listening with
@@ -1643,13 +1652,66 @@ let establish_server_generic
   let should_stop, notify_should_stop =
     Lwt.wait () in
 
+  let when_should_stop () =
+    should_stop >|= fun `Should_stop -> `Should_stop
+  in
+
   (* Some time after Lwt_io.shutdown_server is called, this function
      establish_server_generic will actually close the listening socket. At that
      point, this promise is resolved. This ends the shutdown procedure. *)
   let wait_until_listening_socket_closed, notify_listening_socket_closed =
     Lwt.wait () in
 
+  let live_connections = ref 0 in
+  let notify_connection_ended = ref None in
+
+  let at_max_connections () =
+    match max_connections with
+    | Some limit -> !live_connections >= limit
+    | None -> false
+  in
+
+  let wait_for_connection_to_end () =
+    match !notify_connection_ended with
+    | Some (promise, _) -> promise
+    | None ->
+      let promise, resolver = Lwt.wait () in
+      notify_connection_ended := Some (promise, resolver);
+      promise
+  in
+
+  let connection_ended () =
+    decr live_connections;
+    match !notify_connection_ended with
+    | None -> ()
+    | Some (_, resolver) ->
+      notify_connection_ended := None;
+      Lwt.wakeup_later resolver `Connection_ended
+  in
+
+  let stop () =
+    Lwt_unix.close listening_socket >>= fun () ->
+
+    begin match listening_address with
+    | Unix.ADDR_UNIX path when path <> "" && path.[0] <> '\x00' ->
+      Unix.unlink path
+    | _ ->
+      ()
+    end;
+
+    Lwt.wakeup_later notify_listening_socket_closed ();
+    Lwt.return_unit
+  in
+
   let rec accept_loop () =
+    if at_max_connections () then
+      Lwt.pick [wait_for_connection_to_end (); when_should_stop ()] >>= function
+      | `Connection_ended -> accept_loop ()
+      | `Should_stop -> stop ()
+    else
+      accept_one ()
+
+  and accept_one () =
     let try_to_accept =
       Lwt.catch
         (fun () ->
@@ -1661,7 +1723,7 @@ let establish_server_generic
           | e -> Lwt.reraise e)
     in
 
-    Lwt.pick [try_to_accept; should_stop] >>= function
+    Lwt.pick [try_to_accept; when_should_stop ()] >>= function
     | `Accepted (client_socket, client_address) ->
       begin
         try
@@ -1671,23 +1733,16 @@ let establish_server_generic
 
       optionally_set_tcp_nodelay set_tcp_nodelay client_socket;
       prepare_client_fd client_socket;
+      incr live_connections;
       Lwt.async (fun () ->
-        connection_handler_callback client_address client_socket);
+        Lwt.finalize
+          (fun () -> connection_handler_callback client_address client_socket)
+          (fun () -> connection_ended (); Lwt.return_unit));
 
       accept_loop ()
 
     | `Should_stop ->
-      Lwt_unix.close listening_socket >>= fun () ->
-
-      begin match listening_address with
-      | Unix.ADDR_UNIX path when path <> "" && path.[0] <> '\x00' ->
-        Unix.unlink path
-      | _ ->
-        ()
-      end;
-
-      Lwt.wakeup_later notify_listening_socket_closed ();
-      Lwt.return_unit
+      stop ()
     | `Try_again ->
       accept_loop ()
   in
@@ -1714,7 +1769,7 @@ let establish_server_generic
 
 let establish_server_with_client_socket
     ?server_fd ?backlog ?(no_close = false)
-    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd ?max_connections
     sockaddr f =
   let handler client_address client_socket =
     (* Not using Lwt.finalize here, to make sure that exceptions from [f]
@@ -1743,6 +1798,7 @@ let establish_server_with_client_socket
     establish_server_generic
       Lwt_unix.bind ?fd:server_fd ?backlog
         ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+        ?max_connections
         sockaddr handler
   in
   server_started >>= fun () ->
@@ -1754,7 +1810,7 @@ let establish_server_with_client_address_generic
     ?(buffer_size = !default_buffer_size)
     ?backlog
     ?(no_close = false)
-    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd ?max_connections
     sockaddr
     handler =
 
@@ -1810,17 +1866,17 @@ let establish_server_with_client_address_generic
   in
 
   establish_server_generic bind_function ?fd ?backlog
-    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd ?max_connections
     sockaddr handler
 
 let establish_server_with_client_address
     ?fd ?buffer_size ?backlog ?no_close
-    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+    ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd ?max_connections
     sockaddr handler =
   let server, server_started =
     establish_server_with_client_address_generic
       Lwt_unix.bind ?fd ?buffer_size ?backlog ?no_close
-      ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd
+      ?set_tcp_nodelay ?prepare_listening_fd ?prepare_client_fd ?max_connections
       sockaddr handler
   in
   server_started >>= fun () ->
