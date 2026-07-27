@@ -21,6 +21,11 @@ let local =
     incr last_port;
     Unix.ADDR_INET (Unix.inet_addr_loopback, !last_port)
 
+let completes_promptly promise =
+  Lwt.pick
+    [(promise >|= fun () -> true);
+     (Lwt_unix.sleep 2. >|= fun () -> false)]
+
 (* Helpers for [establish_server] tests. *)
 module Establish_server =
 struct
@@ -302,6 +307,243 @@ let suite = suite "lwt_io" [
       is_closed_in !in_channel' >>= fun in_closed ->
       is_closed_out !out_channel' >|= fun out_closed ->
       in_closed && out_closed);
+
+  test "establish_server: max_connections: limits concurrent connections"
+    (fun () ->
+      let limit = 3 in
+      let clients = 3 * limit in
+      let local = local () in
+
+      let live = ref 0 in
+      let peak = ref 0 in
+      let served = ref 0 in
+      let release, notify_release = Lwt.wait () in
+
+      Lwt_io.establish_server_with_client_address
+        ~max_connections:limit
+        local
+        (fun _client_address (in_channel, out_channel) ->
+          incr live;
+          if !live > !peak then peak := !live;
+          release >>= fun () ->
+          Lwt_io.read_char in_channel >>= fun c ->
+          Lwt_io.write_char out_channel c >>= fun () ->
+          Lwt_io.flush out_channel >|= fun () ->
+          decr live)
+      >>= fun server ->
+
+      Lwt_list.map_p
+        (fun () -> Lwt_io.open_connection local)
+        (List.init clients (fun _ -> ()))
+      >>= fun connections ->
+
+      Lwt_unix.sleep 0.2 >>= fun () ->
+      let respected_limit_while_saturated = !live = limit in
+
+      Lwt.wakeup_later notify_release ();
+
+      completes_promptly
+        (Lwt_list.iter_p
+          (fun (in_channel, out_channel) ->
+            Lwt_io.write_char out_channel 'x' >>= fun () ->
+            Lwt_io.flush out_channel >>= fun () ->
+            Lwt_io.read_char in_channel >>= fun c ->
+            if c = 'x' then incr served;
+            Lwt_io.close in_channel >>= fun () ->
+            Lwt_io.close out_channel)
+          connections)
+      >>= fun all_clients_done ->
+
+      Lwt_io.shutdown_server server >|= fun () ->
+      respected_limit_while_saturated
+      && all_clients_done
+      && !served = clients
+      && !peak = limit);
+
+  test "establish_server: max_connections: excess connections wait"
+    (fun () ->
+      let local = local () in
+
+      let events = ref [] in
+      let record event = events := event :: !events in
+
+      let first_started, notify_first_started = Lwt.wait () in
+      let release_first, notify_release_first = Lwt.wait () in
+      let second_started, notify_second_started = Lwt.wait () in
+
+      let connections = ref 0 in
+
+      Lwt_io.establish_server_with_client_address
+        ~max_connections:1
+        local
+        (fun _client_address _channels ->
+          incr connections;
+          if !connections = 1 then begin
+            record `First_started;
+            Lwt.wakeup_later notify_first_started ();
+            release_first >|= fun () ->
+            record `First_ended
+          end
+          else begin
+            record `Second_started;
+            Lwt.wakeup_later notify_second_started ();
+            Lwt.return_unit
+          end)
+      >>= fun server ->
+
+      Lwt_io.open_connection local >>= fun (first_in, first_out) ->
+      first_started >>= fun () ->
+
+      Lwt_io.open_connection local >>= fun (second_in, second_out) ->
+      Lwt_unix.sleep 0.2 >>= fun () ->
+      let second_waiting = Lwt.state second_started = Lwt.Sleep in
+
+      Lwt.wakeup_later notify_release_first ();
+      completes_promptly second_started >>= fun second_served ->
+
+      Lwt_io.close first_in >>= fun () ->
+      Lwt_io.close first_out >>= fun () ->
+      Lwt_io.close second_in >>= fun () ->
+      Lwt_io.close second_out >>= fun () ->
+      Lwt_io.shutdown_server server >|= fun () ->
+
+      second_waiting && second_served
+      && List.rev !events = [`First_started; `First_ended; `Second_started]);
+
+  test "establish_server: max_connections: shutdown while at capacity"
+    (fun () ->
+      let local = local () in
+
+      let started, notify_started = Lwt.wait () in
+      let release, notify_release = Lwt.wait () in
+      let connections = ref 0 in
+
+      Lwt_io.establish_server_with_client_address
+        ~max_connections:1
+        local
+        (fun _client_address _channels ->
+          incr connections;
+          if !connections = 1 then Lwt.wakeup_later notify_started ();
+          release)
+      >>= fun server ->
+
+      Lwt_io.open_connection local >>= fun (first_in, first_out) ->
+      started >>= fun () ->
+
+      Lwt_io.open_connection local >>= fun (second_in, second_out) ->
+
+      completes_promptly (Lwt_io.shutdown_server server)
+      >>= fun shut_down_promptly ->
+
+      Lwt.wakeup_later notify_release ();
+      Lwt_io.close first_in >>= fun () ->
+      Lwt_io.close first_out >>= fun () ->
+      Lwt_io.close second_in >>= fun () ->
+      Lwt_io.close second_out >|= fun () ->
+
+      shut_down_promptly);
+
+  test ~sequential:true
+    "establish_server: max_connections: slot released on exception"
+    (fun () ->
+      let local = local () in
+
+      let handled = ref 0 in
+      let exceptions = ref 0 in
+
+      let run () =
+        Lwt_io.establish_server_with_client_address
+          ~max_connections:1
+          local
+          (fun _client_address _channels ->
+            incr handled;
+            raise Dummy_error)
+        >>= fun server ->
+
+        let client () =
+          Lwt_io.with_connection local (fun (in_channel, _out_channel) ->
+            Lwt.catch
+              (fun () -> Lwt_io.read_char in_channel >|= fun _ -> ())
+              (function
+                | End_of_file -> Lwt.return_unit
+                | exn -> Lwt.reraise exn))
+        in
+
+        completes_promptly
+          (client () >>= fun () -> client () >>= fun () -> client ())
+        >>= fun all_served ->
+
+        Lwt_io.shutdown_server server >|= fun () ->
+        all_served
+      in
+
+      with_async_exception_hook
+        (function
+          | Dummy_error -> incr exceptions
+          | _ -> ())
+        run
+
+      >|= fun all_served ->
+      all_served && !handled = 3 && !exceptions = 3);
+
+  test "establish_server: max_connections: slot released with no_close"
+    (fun () ->
+      let local = local () in
+
+      let handled = ref 0 in
+      let sockets = ref [] in
+
+      Lwt_io.establish_server_with_client_socket
+        ~max_connections:1
+        ~no_close:true
+        local
+        (fun _client_address client_socket ->
+          incr handled;
+          sockets := client_socket :: !sockets;
+          Lwt.return_unit)
+      >>= fun server ->
+
+      let client () =
+        Lwt_io.open_connection local >>= fun (in_channel, out_channel) ->
+        Lwt_io.close in_channel >>= fun () ->
+        Lwt_io.close out_channel
+      in
+
+      completes_promptly
+        (client () >>= fun () -> client () >>= fun () -> client ())
+      >>= fun all_served ->
+
+      Lwt_io.shutdown_server server >>= fun () ->
+      Lwt_list.iter_s
+        (fun socket ->
+          Lwt.catch
+            (fun () -> Lwt_unix.close socket)
+            (fun _ -> Lwt.return_unit))
+        !sockets
+      >|= fun () ->
+
+      all_served && !handled = 3);
+
+  test "establish_server: max_connections: must be positive"
+    (fun () ->
+      let rejects value =
+        Lwt.catch
+          (fun () ->
+            Lwt_io.establish_server_with_client_address
+              ~max_connections:value
+              (local ())
+              (fun _client_address _channels -> Lwt.return_unit)
+            >>= fun server ->
+            Lwt_io.shutdown_server server >|= fun () ->
+            false)
+          (function
+            | Invalid_argument _ -> Lwt.return_true
+            | exn -> Lwt.reraise exn)
+      in
+
+      rejects 0 >>= fun rejects_zero ->
+      rejects (-1) >|= fun rejects_negative ->
+      rejects_zero && rejects_negative);
 
   (* Makes the channel fail with EBADF on close. Tries to close the channel
      manually, and handles the exception. When with_close_connection tries to
