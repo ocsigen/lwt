@@ -670,10 +670,11 @@ f client_address client_socket
     is [SOMAXCONN], which varies by platform and socket kind.
 
     [~max_connections] bounds the number of connections the server handles
-    simultaneously. By default there is no bound, so a server can be brought
-    down by a client opening enough connections to exhaust the process's file
-    descriptors: [accept] then fails with [EMFILE], which reaches
-    {!Lwt.async_exception_hook}.
+    simultaneously. By default there is no bound, so a client can drive a server
+    into exhausting the process's file descriptors just by opening enough
+    connections. The server itself survives that (see below), but every other
+    part of the process that needs a file descriptor starts failing, so a server
+    exposed to untrusted clients should set a limit.
 
     A connection counts against the limit from the moment it is accepted until
     the promise returned by [f] resolves {e and} [client_socket] has been closed
@@ -689,6 +690,11 @@ f client_address client_socket
     To reject excess clients explicitly instead, leave [~max_connections] unset
     and have [f] count connections itself, replying and closing when it is
     called above the intended limit.
+
+    If [accept] fails because the process or the system is out of file
+    descriptors or memory ([EMFILE], [ENFILE], [ENOBUFS], [ENOMEM]), the server
+    does not stop serving: it waits briefly and then resumes accepting. Such a
+    failure is not reported to {!Lwt.async_exception_hook}.
 
     The returned promise (a [server Lwt.t]) resolves when the server has just
     started listening on [listen_address]: right after the internal call to

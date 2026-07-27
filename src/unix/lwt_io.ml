@@ -1614,6 +1614,8 @@ let shutdown_server server = Lazy.force server.shutdown
 let shutdown_server_deprecated server =
   Lwt.async (fun () -> shutdown_server server)
 
+let retry_accept_after_error_delay = 0.5
+
 (* There are several variants of establish_server that have accumulated over the
    years in Lwt_io. This is their underlying implementation. The functions
    exposed in the API are various wrappers around this one. *)
@@ -1720,6 +1722,11 @@ let establish_server_generic
         (function
           | Unix.Unix_error (Unix.ECONNABORTED, _, _) ->
             Lwt.return `Try_again
+
+          | Unix.Unix_error
+              ((Unix.EMFILE | Unix.ENFILE | Unix.ENOBUFS | Unix.ENOMEM), _, _) ->
+            Lwt.return `Try_again_after_delay
+
           | e -> Lwt.reraise e)
     in
 
@@ -1745,6 +1752,13 @@ let establish_server_generic
       stop ()
     | `Try_again ->
       accept_loop ()
+    | `Try_again_after_delay ->
+      Lwt.pick
+        [(Lwt_unix.sleep retry_accept_after_error_delay >|= fun () -> `Try_again);
+         when_should_stop ()]
+      >>= function
+      | `Try_again -> accept_loop ()
+      | `Should_stop -> stop ()
   in
 
   let server =
