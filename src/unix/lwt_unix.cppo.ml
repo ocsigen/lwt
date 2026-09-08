@@ -621,6 +621,10 @@ let read ch buf pos len =
     invalid_arg "Lwt_unix.read"
   else
     Lazy.force ch.blocking >>= function
+    | true when Sys.win32 ->
+      (* On Windows, select() doesn't work with pipe handles, so skip
+         wait_read and let the worker thread handle blocking directly. *)
+      run_job (read_job ch.fd buf pos len)
     | true ->
       wait_read ch >>= fun () ->
       run_job (read_job ch.fd buf pos len)
@@ -632,6 +636,8 @@ let pread ch buf ~file_offset pos len =
     invalid_arg "Lwt_unix.pread"
   else
     Lazy.force ch.blocking >>= function
+    | true when Sys.win32 ->
+      run_job (pread_job ch.fd buf ~file_offset pos len)
     | true ->
       wait_read ch >>= fun () ->
       run_job (pread_job ch.fd buf ~file_offset pos len)
@@ -649,6 +655,8 @@ let read_bigarray function_name fd buf pos len =
     invalid_arg function_name
   else
     blocking fd >>= function
+    | true when Sys.win32 ->
+      run_job (read_bigarray_job (unix_file_descr fd) buf pos len)
     | true ->
       wait_read fd >>= fun () ->
       run_job (read_bigarray_job (unix_file_descr fd) buf pos len)
@@ -679,6 +687,8 @@ let write ch buf pos len =
     invalid_arg "Lwt_unix.write"
   else
     Lazy.force ch.blocking >>= function
+    | true when Sys.win32 ->
+      run_job (write_job ch.fd buf pos len)
     | true ->
       wait_write ch >>= fun () ->
       run_job (write_job ch.fd buf pos len)
@@ -690,6 +700,8 @@ let pwrite ch buf ~file_offset pos len =
     invalid_arg "Lwt_unix.pwrite"
   else
     Lazy.force ch.blocking >>= function
+    | true when Sys.win32 ->
+      run_job (pwrite_job ch.fd buf ~file_offset pos len)
     | true ->
       wait_write ch >>= fun () ->
       run_job (pwrite_job ch.fd buf ~file_offset pos len)
@@ -715,6 +727,8 @@ let write_bigarray function_name fd buf pos len =
     invalid_arg function_name
   else
     blocking fd >>= function
+    | true when Sys.win32 ->
+      run_job (write_bigarray_job (unix_file_descr fd) buf pos len)
     | true ->
       wait_write fd >>= fun () ->
       run_job (write_bigarray_job (unix_file_descr fd) buf pos len)
@@ -1698,31 +1712,36 @@ let accept_n ?cloexec ch n =
     (fun exn -> Lwt.return (List.rev !l, Some exn))
 
 let connect ch addr =
-  if Sys.win32 then
-    (* [in_progress] tell whether connection has started but not
-       terminated: *)
-    let in_progress = ref false in
-    wrap_syscall Write ch begin fun () ->
-      if !in_progress then
-        (* Nothing works without this test and i have no idea why... *)
-        if writable ch then
-          try
-            Unix.connect ch.fd addr
-          with
-          | Unix.Unix_error (Unix.EISCONN, _, _) ->
-            (* This is the windows way of telling that the connection
-               has completed. *)
-            ()
-        else
-          raise Retry
-      else
-        try
-          Unix.connect ch.fd addr
-        with
-        | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
-          in_progress := true;
-          raise Retry
-    end
+  if Sys.win32 then begin
+    (* Windows signals a *failed* asynchronous connect through the exception
+       fd set, not the write set. [wrap_syscall Write] only ever waits for
+       writability, so a refused or unroutable connect is never signalled at
+       all: the promise stays pending for ever and the caller hangs with no
+       error and no exception. Connecting to a closed port on localhost, which
+       raises ECONNREFUSED immediately on Unix, never returns.
+
+       Drive the completion here instead, watching the write and exception
+       sets together and reporting the outcome via [getsockopt_error]. select
+       is reliable for sockets on Windows; it is pipe handles it cannot
+       handle. *)
+    check_descriptor ch;
+    let outcome () =
+      match Unix.getsockopt_error ch.fd with
+      | None -> Lwt.return_unit
+      | Some err -> Lwt.fail (Unix.Unix_error (err, "connect", ""))
+    in
+    let rec wait () =
+      check_descriptor ch;
+      match Unix.select [] [ch.fd] [ch.fd] 0.0 with
+      | (_, [], []) -> sleep 0.01 >>= wait
+      | (_, _, _) -> outcome ()
+    in
+    match Unix.connect ch.fd addr with
+    | () -> Lwt.return_unit
+    | exception Unix.Unix_error
+        ((Unix.EWOULDBLOCK | Unix.EINPROGRESS | Unix.EAGAIN), _, _) -> wait ()
+    | exception Unix.Unix_error (Unix.EISCONN, _, _) -> Lwt.return_unit
+  end
   else
     (* [in_progress] tell whether connection has started but not
        terminated: *)
@@ -2354,6 +2373,13 @@ let sigchld_handler_installer =
     end
   end
 
+external win32_waitpid_job :
+  Unix.wait_flag list -> int -> (int * Unix.process_status) job =
+  "lwt_unix_waitpid_job"
+
+let _win32_waitpid flags pid =
+  run_job (win32_waitpid_job flags pid)
+
 let _waitpid flags pid =
   Lwt.catch
     (fun () -> Lwt.return (Unix.waitpid flags pid))
@@ -2361,7 +2387,7 @@ let _waitpid flags pid =
 
 let waitpid =
   if Sys.win32 then
-    _waitpid
+    _win32_waitpid
   else
     fun flags pid ->
       Lazy.force sigchld_handler_installer;
