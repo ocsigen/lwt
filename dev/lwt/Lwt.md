@@ -1,4 +1,3 @@
-
 # Module `Lwt`
 
 Asynchronous programming with promises.
@@ -40,7 +39,6 @@ This is all explained in the next sections:
 After that is the [reference proper](./#2_Fundamentals), which goes into *painful* levels of detail on every single type and value in this module, `Lwt`. Please be safe, and read only what you need from it :)
 
 Happy asynchronous programming\!
-
 
 #### Quick start
 
@@ -164,7 +162,6 @@ let () =
 ```
 And that's it\! Concurrency in Lwt is simply a matter of whether you start an operation in the callback of another one or not. As a convenience, Lwt provides a few [helpers](./#2_Concurrency) for common concurrency patterns.
 
-
 #### Execution model
 
 It's important to understand that promises are a pure-OCaml data type. They don't do any fancy scheduling or I/O. They are just lists of callbacks (if pending), or containers for one value (if resolved).
@@ -206,7 +203,6 @@ In case your callback is just using the CPU for a really long time, you can inse
 
 **(2)** The good implication is that all your callbacks run in a single thread. This means that in most situations, you don't have to worry about locks, synchronization, etc. Anything that is in the same callback is guaranteed to run without interruption. Lwt programs are often *much* easier to write and refactor, than equivalent programs written with threads – but both are concurrent\!
 
-
 #### Guide to the rest of Lwt
 
 This module `Lwt` is the pure-OCaml definition of promises and callback-calling. It has a few extras on top of what's described above:
@@ -232,9 +228,7 @@ The functions are grouped into modules:
 - Miscellaneous modules [`Lwt_gc`](./Lwt_gc.md), [`Lwt_engine`](./Lwt_engine.md), [`Lwt_throttle`](./Lwt_throttle.md), [`Lwt_timeout`](./Lwt_timeout.md), [`Lwt_sys`](./Lwt_sys.md).
 Warning\! Introductory material ends and detailed reference begins\!
 
-
 ### Fundamentals
-
 
 #### Promises
 
@@ -269,7 +263,6 @@ Creates a new pending [promise](./#type-t), paired with its [resolver](./#type-u
 It is rare to use this function directly. Many helpers in Lwt, and Lwt-aware libraries, call it internally, and return only the promise. You then chain the promises together using [`Lwt.bind`](./#val-bind).
 
 However, it is important to understand `Lwt.wait` as the fundamental promise “constructor.” All other functions that evaluate to a promise can be, or are, eventually implemented in terms of it.
-
 
 #### Resolving
 
@@ -315,7 +308,6 @@ Whenever possible, it is recommended to use `raise exn` instead, as `raise` capt
 For example, `bind`'s second argument is a callback which returns a promise. And so it is recommended to use `raise` in the body of that callback. This applies to the aliases of `bind` as well: `( >>= )` and `( let* )`.
 
 Use `Lwt.fail` only when you specifically want to create a rejected promise, to pass to another function, or store in a data structure.
-
 
 #### Callbacks
 
@@ -399,7 +391,6 @@ let () =
 The `>>=` operator comes from the module [`Lwt.Infix`](./Lwt-Infix.md), which is why we opened it at the beginning of the program.
 
 See also [`Lwt.map`](./#val-map).
-
 
 ### Rejection
 
@@ -645,9 +636,7 @@ If you are writing an application, you are welcome to reassign the reference, an
 
 If you are writing a library, you should leave this reference alone. Its behavior should be determined by the application.
 
-
 ### Concurrency
-
 
 #### Multiple wait
 
@@ -765,7 +754,6 @@ val nchoose_split : 'a t list -> ('a list * 'a t list) t
 ```
 `Lwt.nchoose_split ps` is the same as [`Lwt.nchoose`](./#val-nchoose)` ps`, except that when multiple promises in `ps` are fulfilled simultaneously (and none are rejected), the result promise is fulfilled with *both* the list of values of the fulfilled promises, and the list of promises that are still pending.
 
-
 ### Cancellation
 
 Note: cancelation has proved difficult to understand, explain, and maintain, so use of these functions is discouraged in new code. See [ocsigen/lwt\#283](https://github.com/ocsigen/lwt/issues/283#issuecomment-518014539).
@@ -871,7 +859,6 @@ val wrap_in_cancelable : 'a t -> 'a t
 
 The state of `p'` can change in one of two ways: a. if `p` changes state (i.e., is resolved), then `p'` eventually changes state to match `p`'s, and b. during cancellation, if the backwards search described in [`Lwt.cancel`](./#val-cancel) reaches `p'` then it changes state to rejected `Canceled` and the search continues to `p`.
 
-
 #### Cancellation tweaks
 
 The primitives `protected`, `no_cancel`, and `wrap_in_cancelable` give you some level of control over the cancellation mechanism of Lwt. Note that promises passed as arguments to either of these three functions are unchanged. The functions return new promises with a specific cancellation behaviour.
@@ -903,7 +890,6 @@ The three behaviour of all three functions are summarised in the following table
 ```
 
 ### Convenience
-
 
 #### Callback helpers
 
@@ -994,7 +980,6 @@ It is similar to [`Lwt.try_bind`](./#val-try_bind), except no new promises are c
 
 If `f` or `g` raise an exception, the exception is passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook). By default, this will terminate the process.
 
-
 #### Infix operators
 
 ```ocaml
@@ -1042,7 +1027,6 @@ val return_false : bool t
 ```
 `Lwt.return_false` is like [`Lwt.return_unit`](./#val-return_unit), but for [`Lwt.return`](./#val-return)` false`.
 
-
 #### Trivial promises
 
 ```ocaml
@@ -1082,7 +1066,6 @@ Lwt.fail (Stdlib.Invalid_argument s)
 ```
 In most cases, it is better to use `invalid_arg s` from the standard library. See [`Lwt.fail`](./#val-fail) for an explanation.
 
-
 #### Result type
 
 A resolved promise of type `'a `[`Lwt.t`](./#type-t) is either fulfilled with a value of type `'a`, or rejected with an exception.
@@ -1107,7 +1090,6 @@ val wakeup_later_result : 'a u -> ('a, exn) Stdlib.result -> unit
 - If `result` is `Error exn`, `p` is rejected with `exn`.
 If `p` is not pending, `Lwt.wakeup_later_result` raises `Stdlib.Invalid_argument _`, except if `p` is [canceled](./#val-cancel). If `p` is canceled, `Lwt.wakeup_later_result` has no effect.
 
-
 #### State query
 
 ```ocaml
@@ -1126,9 +1108,7 @@ val state : 'a t -> 'a state
 - If `p` is [pending](./#type-t), the result is `Lwt.Sleep`.
 The constructor names are historical holdovers.
 
-
 ### Deprecated
-
 
 #### Implicit callback arguments
 
@@ -1207,7 +1187,6 @@ The Lwt functions that take snapshots of the implicit callback argument map are 
 
 `Lwt.with_value` should only be called in the main thread, i.e. do not call it inside [`Lwt_preemptive.detach`](./Lwt_preemptive.md#val-detach).
 
-
 #### Immediate resolving
 
 ```ocaml
@@ -1230,7 +1209,6 @@ val wakeup_exn : _ u -> exn -> unit
 val wakeup_result : 'a u -> ('a, exn) Stdlib.result -> unit
 ```
 `Lwt.wakeup_result r result` is like [`Lwt.wakeup_later_result`](./#val-wakeup_later_result)` r result`, but has the same problems as [`Lwt.wakeup`](./#val-wakeup).
-
 
 #### Linked lists of promises
 
@@ -1293,7 +1271,6 @@ let () =
 If you replace the call to `Lwt.pause` by `Lwt.return` in the program above, `"Handling I/O"` is printed only once. With `Lwt.pause`, it is printed several times, depending on the speed of your machine.
 
 An alternative way to handle long-running computations is to detach them to preemptive threads using [`Lwt_preemptive`](./Lwt_preemptive.md).
-
 
 #### Function lifters
 
@@ -1362,7 +1339,6 @@ The remainder of the functions work analogously – they just work on `f` with l
 Note that there is an important difference to [`Lwt.wrap`](./#val-wrap). These functions don't run `f`, nor create the final promise, immediately. In contrast, [`Lwt.wrap`](./#val-wrap) runs its argument `f` eagerly.
 
 To get a suspended function instead of the eager execution of [`Lwt.wrap`](./#val-wrap), use `Lwt.wrap1`.
-
 
 #### Unscoped infix operators
 

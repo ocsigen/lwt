@@ -1,4 +1,3 @@
-
 # Module `Lwt_gc`
 
 Interaction with the garbage collector

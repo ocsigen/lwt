@@ -1,8 +1,6 @@
-
 # Module `Lwt_pqueue.Make`
 
 Generates priority queue types from ordered types.
-
 
 ## Parameters
 

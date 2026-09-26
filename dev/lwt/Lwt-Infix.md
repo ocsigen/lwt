@@ -1,4 +1,3 @@
-
 # Module `Lwt.Infix`
 
 This module provides several infix operators for making programming with Lwt more convenient.

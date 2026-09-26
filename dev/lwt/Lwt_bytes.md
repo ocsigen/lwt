@@ -1,4 +1,3 @@
-
 # Module `Lwt_bytes`
 
 Byte arrays
@@ -19,7 +18,6 @@ Creates a new byte array of the given size.
 val length : t -> int
 ```
 Returns the length of the given byte array.
-
 
 ### Access
 
@@ -43,7 +41,6 @@ val unsafe_set : t -> int -> char -> unit
 ```
 Same as [`set`](./#val-set) but without bounds checking.
 
-
 ### Conversions
 
 ```ocaml
@@ -65,7 +62,6 @@ val to_bytes : t -> bytes
 val to_string : t -> string
 ```
 `to_string buf` returns a newly allocated string with the same contents as `buf`.
-
 
 ### Copying
 
@@ -124,7 +120,6 @@ val copy : t -> t
 ```
 `copy buffer` creates a copy of the given byte array.
 
-
 ### Filling
 
 ```ocaml
@@ -136,7 +131,6 @@ val fill : t -> int -> int -> char -> unit
 val unsafe_fill : t -> int -> int -> char -> unit
 ```
 Same as [`fill`](./#val-fill) but without bounds checking.
-
 
 ### IOs
 

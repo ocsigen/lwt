@@ -1,9 +1,6 @@
-
 # Module `Lwt.Syntax`
 
-
 #### Let syntax
-
 
 ## Monadic syntax
 
@@ -16,7 +13,6 @@ Syntax for [`bind`](./Lwt.md#val-bind).
 val (and*) : 'a t -> 'b t -> ('a * 'b) t
 ```
 Syntax for [`both`](./Lwt.md#val-both).
-
 
 ## Applicative syntax
 

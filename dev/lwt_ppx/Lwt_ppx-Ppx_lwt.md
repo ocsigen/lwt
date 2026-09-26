@@ -1,8 +1,6 @@
-
 # Module `Lwt_ppx.Ppx_lwt`
 
 Ppx syntax extension for Lwt
-
 
 ### Ppx extensions
 
@@ -11,7 +9,6 @@ This Ppx extension adds various syntactic shortcut for lwt programming. It needs
 To use it, simply use the ocamlfind package `lwt_ppx`.
 
 This extension adds the following syntax:
-
 
 #### Lwt binding
 
@@ -42,7 +39,6 @@ let (foo : int) = do_something in
 code
 ```
 Not using parentheses will confuse the OCaml parser.
-
 
 #### Sequencing promises
 
@@ -94,14 +90,12 @@ catch (fun () -> f x)
 ```
 Note that the `exn -> Lwt.reraise exn` branch is automatically added when needed.
 
-
 #### Finalizer
 
 ```ocaml
   (<expr>) [%finally <expr>]
 ```
 You can use `[%lwt.finally ...]` instead of `[%finally ...]`.
-
 
 #### Assertion
 

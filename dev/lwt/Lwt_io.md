@@ -1,4 +1,3 @@
-
 # Module `Lwt_io`
 
 Buffered byte channels
@@ -21,7 +20,6 @@ Note about errors: input functions of this module raise `End_of_file` when the e
 exception Channel_closed of string
 ```
 Exception raised when a channel is closed. The parameter is a description of the channel.
-
 
 ### Types
 
@@ -72,7 +70,6 @@ val mode : 'a channel -> 'a mode
 ```
 `mode ch` returns the mode of a channel
 
-
 ### Well-known instances
 
 ```ocaml
@@ -99,7 +96,6 @@ Inputs which returns always `'\x00'`
 val null : output_channel
 ```
 Output which drops everything
-
 
 ### Channels creation/manipulation
 
@@ -243,7 +239,6 @@ val length : 'a channel -> int64 Lwt.t
 ```
 Returns the length of the channel in bytes
 
-
 ### Reading
 
 Note: except for functions dealing with streams ([`read_chars`](./#val-read_chars) and [`read_lines`](./#val-read_lines)) all functions are **atomic**.
@@ -323,7 +318,6 @@ val read_value : input_channel -> 'a Lwt.t
 `read_value channel` reads a marshaled value from `channel`; it corresponds to the standard library's `Stdlib.Marshal.from_channel`. The corresponding writing function is [`write_value`](./#val-write_value).
 
 Note that reading marshaled values is *not*, in general, type-safe. See the warning in the description of module `Stdlib.Marshal` for details. The short version is: if you read a value of one type, such as `string`, when a value of another type, such as `int` has actually been marshaled to `channel`, you may get arbitrary behavior, including segmentation faults, access violations, security bugs, etc.
-
 
 ### Writing
 
@@ -408,7 +402,6 @@ val write_value :
 
 The corresponding reading function is [`read_value`](./#val-read_value). See warnings about type safety in the description of [`read_value`](./#val-read_value).
 
-
 ### Printing
 
 These functions are basically helpers. Also you may prefer using the name [`printl`](./#val-printl) rather than [`write_line`](./#val-write_line) because it is shorter.
@@ -478,7 +471,6 @@ val eprintlf : ('a, unit, string, unit Lwt.t) Stdlib.format4 -> 'a
 ```
 `%!` does nothing here. To flush the channel, use `Lwt_io.(flush stderr)`.
 
-
 ### Utilities
 
 ```ocaml
@@ -490,7 +482,6 @@ val hexdump_stream : output_channel -> char Lwt_stream.t -> unit Lwt.t
 val hexdump : output_channel -> string -> unit Lwt.t
 ```
 `hexdump oc str = hexdump_stream oc (Lwt_stream.of_string str)`
-
 
 ### File utilities
 
@@ -734,7 +725,6 @@ val chars_to_file : file_name -> char Lwt_stream.t -> unit Lwt.t
 ```
 `chars_to_file name chars` writes all characters of `chars` to `name`
 
-
 ### Input/output of integers
 
 ```ocaml
@@ -753,7 +743,6 @@ module BE : NumberIO
 Reading/writing of numbers in big-endian
 
 Reading/writing of numbers in the system endianness.
-
 
 #### Reading
 
@@ -780,7 +769,6 @@ Reads an IEEE single precision floating point value
 val read_float64 : input_channel -> float Lwt.t
 ```
 Reads an IEEE double precision floating point value
-
 
 #### Writing
 
@@ -818,7 +806,6 @@ val system_byte_order : byte_order
 ```
 Same as [`Lwt_sys.byte_order`](./Lwt_sys.md#val-byte_order).
 
-
 ### Low-level access to the internal buffer
 
 ```ocaml
@@ -840,7 +827,6 @@ Information for directly accessing the internal buffer of a channel
 val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
 ```
 `direct_access ch f` passes to `f` a [`direct_access`](./#type-direct_access) structure. `f` must use it and update `da_ptr` to reflect how many bytes have been read/written.
-
 
 ### Misc
 

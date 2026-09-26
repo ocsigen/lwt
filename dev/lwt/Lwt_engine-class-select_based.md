@@ -1,4 +1,3 @@
-
 # Class `Lwt_engine.select_based`
 
 Abstract class for engines based on a select-like function.

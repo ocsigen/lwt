@@ -1,6 +1,4 @@
-
 # Module `Lwt_throttle.Make`
-
 
 ## Parameters
 

@@ -1,4 +1,3 @@
-
 # Module `Lwt_unix.IO_vectors`
 
 Sequences of buffer slices for [`writev`](./Lwt_unix.md#val-writev).

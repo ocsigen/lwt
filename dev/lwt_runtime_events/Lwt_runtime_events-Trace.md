@@ -1,4 +1,3 @@
-
 # Module `Lwt_runtime_events.Trace`
 
 ```ocaml

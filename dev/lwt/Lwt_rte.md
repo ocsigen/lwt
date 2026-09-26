@@ -1,4 +1,3 @@
-
 # Module `Lwt_rte`
 
 All the functions below are wrappers around the ones found in `Lwt_runtime_events`. The wrappers conditionally call the correspoding wrapped function or do nothing, depending if the `Lwt_runtime_events` library is available.

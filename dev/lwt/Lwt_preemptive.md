@@ -1,4 +1,3 @@
-
 # Module `Lwt_preemptive`
 
 This module allows to mix preemptive threads with `Lwt` cooperative threads. It maintains an extensible pool of preemptive threads to which you can detach computations.

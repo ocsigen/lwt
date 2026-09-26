@@ -1,6 +1,4 @@
-
 # Lwt
-
 
 ## Introduction
 
@@ -67,7 +65,6 @@ In the program above, functions such as `Lwt_io.write` create promises. The `let
 
 `Lwt_main.run` forces the whole promise-computation network to be executed. All the visible OCaml code is run in a single thread, but Lwt internally uses a combination of worker threads and non-blocking file descriptors to resolve in parallel the promises that do I/O.
 
-
 ## Tour
 
 Lwt compiles to native code on Linux, macOS, Windows, and other systems. It's also routinely compiled to JavaScript for the front end and Node by js\_of\_ocaml.
@@ -98,7 +95,7 @@ This is the system-independent, pure-OCaml core of Lwt. To link with it, use `(l
 
 [`Lwt`](./Lwt.md) Asynchronous programming with promises.
 [`Lwt_list`](./Lwt_list.md) List helpers
-[`Lwt_seq`](./Lwt_seq.md) 
+[`Lwt_seq`](./Lwt_seq.md)
 [`Lwt_stream`](./Lwt_stream.md) Data streams
 [`Lwt_result`](./Lwt_result.md) Explicit error handling
 [`Lwt_mutex`](./Lwt_mutex.md) Cooperative locks for mutual exclusion

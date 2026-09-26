@@ -7,7 +7,6 @@
 
 # Lwt
 
-
 ## Introduction
 
 Lwt is a concurrent programming library for OCaml. It provides a single data type: the *promise*, which is a value that will become resolved in the future. Creating a promise spawns a computation. When that computation is I/O, Lwt runs it in parallel with your OCaml code.
@@ -73,7 +72,6 @@ In the program above, functions such as `Lwt_io.write` create promises. The `let
 
 `Lwt_main.run` forces the whole promise-computation network to be executed. All the visible OCaml code is run in a single thread, but Lwt internally uses a combination of worker threads and non-blocking file descriptors to resolve in parallel the promises that do I/O.
 
-
 ## Tour
 
 Lwt compiles to native code on Linux, macOS, Windows, and other systems. It's also routinely compiled to JavaScript for the front end and Node by js\_of\_ocaml.
@@ -104,7 +102,7 @@ This is the system-independent, pure-OCaml core of Lwt. To link with it, use `(l
 
 [`Lwt`](./Lwt.md) Asynchronous programming with promises.
 [`Lwt_list`](./Lwt_list.md) List helpers
-[`Lwt_seq`](./Lwt_seq.md) 
+[`Lwt_seq`](./Lwt_seq.md)
 [`Lwt_stream`](./Lwt_stream.md) Data streams
 [`Lwt_result`](./Lwt_result.md) Explicit error handling
 [`Lwt_mutex`](./Lwt_mutex.md) Cooperative locks for mutual exclusion
@@ -135,7 +133,6 @@ This is the system call and I/O library. Despite its name, it is implemented on 
 
 # Lwt manual
 
-
 ## Introduction
 
 When writing a program, a common developer's task is to handle I/O operations. Indeed, most software interacts with several different resources, such as:
@@ -157,7 +154,6 @@ If you already wrote code using preemptive threads, you should know that doing i
 
 In the first part, we will explain the concepts of `Lwt`, then we will describe the main modules `Lwt` consists of.
 
-
 ### Finding examples
 
 Additional sources of examples:
@@ -169,7 +165,6 @@ Additional sources of examples:
 ## The Lwt core library
 
 In this section we describe the basics of `Lwt`. It is advised to start `utop` and try the given code examples.
-
 
 ### Lwt concepts
 
@@ -218,7 +213,6 @@ The above promise `p` is pending because there is nothing yet to read from the p
 - : char Lwt.state = Lwt.Return 'a'
 ```
 So, after we write something, the reading promise has been fulfilled with the value `'a'`.
-
 
 ### Primitives for promise creation
 
@@ -273,7 +267,6 @@ val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
 ```
 `catch f g` will call `f ()`, then wait for it to become resolved, and if it was rejected with an exception `exn`, call `g exn` to handle it. Note that both exceptions raised with `Pervasives.raise` and `Lwt.fail` are caught by `catch`.
 
-
 #### Cancelable promises
 
 In some case, we may want to cancel a promise. For example, because it has not resolved after a timeout. This can be done with cancelable promises. To create a cancelable promise, you must use the `Lwt.task` function:
@@ -321,7 +314,6 @@ val protected : 'a Lwt.t -> 'a Lwt.t
 ```
 Canceling `(protected p)` will have no effect on `p`.
 
-
 #### Primitives for concurrent composition
 
 We now show how to compose several promises concurrently. The main functions for this are in the `Lwt` module: `join`, `choose` and `pick`.
@@ -358,7 +350,6 @@ val p3 : '_a Lwt.t = <abstr>
 ```
 The last one, `pick`, is the same as `choose`, except that it tries to cancel all other promises when one resolves. Promises created via `Lwt.wait()` are not cancellable and are thus not cancelled.
 
-
 #### Rules
 
 A callback, like the `f` that you might pass to `Lwt.bind`, is an ordinary OCaml function. `Lwt` just handles ordering calls to these functions.
@@ -388,7 +379,6 @@ Or, in `utop`:
 
 For a brief overview of the syntax, see the Correspondence table below.
 
-
 #### Correspondence table
 
 | Without Lwt | With Lwt |
@@ -407,7 +397,6 @@ For a brief overview of the syntax, see the Correspondence table below.
 If an exception is raised inside a callback called by Lwt, the backtrace provided by OCaml will not be very useful. It will end inside the Lwt scheduler instead of continuing into the code that started the operations that led to the callback call. To avoid this, and get good backtraces from Lwt, use the syntax extension. The `let%lwt` construct will properly propagate backtraces.
 
 As always, to get backtraces from an OCaml program, you need to either declare the environment variable `OCAMLRUNPARAM=b` or call `Printexc.record_backtrace true` at the start of your program, and be sure to compile it with `-g`. Most modern build systems add `-g` by default.
-
 
 ### `let*` syntax
 
@@ -437,7 +426,6 @@ val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 
 `Lwt_mutex` provides mutexes for `Lwt`. Its use is almost the same as the `Mutex` module of the thread library shipped with OCaml. In general, programs using `Lwt` do not need a lot of mutexes, because callbacks run without preempting each other. They are only useful for synchronising or sequencing complex operations spread over multiple callback calls.
 
-
 #### Lists
 
 The `Lwt_list` module defines iteration and scanning functions over lists, similar to the ones of the `List` module, but using functions that return a promise. For example:
@@ -447,7 +435,6 @@ val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 ```
 In `iter_s f l`, `iter_s` will call f on each elements of `l`, waiting for resolution between each element. On the contrary, in `iter_p f l`, `iter_p` will call f on all elements of `l`, only then wait for all the promises to resolve.
-
 
 #### Data streams
 
@@ -511,7 +498,6 @@ Mailbox variables are commonly used to pass messages between chains of callbacks
 
 Note that a mailbox variable can be seen as a pushable stream with a limited memory.
 
-
 ## Running an Lwt program
 
 An `Lwt` computation you have created will give you something of type `Lwt.t`, a promise. However, even though you have the promise, the computation may not have run yet, and the promise might still be pending.
@@ -535,11 +521,9 @@ let () = Lwt_main.run (Lwt_io.printl "Hello, world!")
 ```
 Note that you must not make nested calls to `Lwt_main.run`. It cannot be used anywhere else to get the result of a promise.
 
-
 ## The `lwt.unix` library
 
 The package `lwt.unix` contains all `Unix`\-dependent modules of `Lwt`. Among all its features, it implements Lwt-friendly, non-blocking versions of functions of the OCaml standard and Unix libraries.
-
 
 ### Unix primitives
 
@@ -551,7 +535,6 @@ val read : file_descr -> string -> int -> int -> int Lwt.t
 `Lwt_io` provides features similar to buffered channels of the standard library (of type `in_channel` or `out_channel`), but with non-blocking semantics.
 
 `Lwt_gc` allows you to register a finalizer that returns a promise. At the end of the program, `Lwt` will wait for all these finalizers to resolve.
-
 
 ### The Lwt scheduler
 
@@ -581,7 +564,6 @@ To make sure `Lwt` is compiled with `libev` support, tell opam that the library 
 ### Logging
 
 For logging, we recommend the `logs` package from opam, which includes an Lwt-aware module `Logs_lwt`.
-
 
 ## The Lwt.react library
 
@@ -643,7 +625,6 @@ let () =
 
 ## Other libraries
 
-
 ### Parallelise computations to other cores
 
 If you have some compute-intensive steps within your program, you can execute them on a separate core. You can get performance benefits from the parallelisation. In addition, whilst your compute-intensive function is running on a different core, your normal I/O-bound tasks continue running on the original core.
@@ -661,7 +642,6 @@ Then you simple detach the function calls to the created pool:
 val detach : pool -> ('a -> 'b) -> 'a -> 'b Lwt.t
 ```
 The returned promise resolves as soon as the function returns.
-
 
 ### Detaching computation to preemptive threads
 
@@ -681,14 +661,11 @@ val run_in_main : (unit -> 'a Lwt.t) -> 'a
 ```
 This is roughly the equivalent of `Lwt.main_run`, but for detached threads, rather than for the whole process. Note that you must not call `Lwt_main.run` in a detached thread.
 
-
 ### SSL support
 
 The library `Lwt_ssl` allows use of SSL asynchronously.
 
-
 ## Writing stubs using `Lwt`
-
 
 ### Thread-safe notifications
 
@@ -696,14 +673,13 @@ If you want to notify the main thread from another thread, you can use the `Lwt`
 
 Notifications are received and processed asynchronously by the main thread.
 
-
 ### Jobs
 
 For operations that cannot be executed asynchronously, `Lwt` uses a system of jobs that can be executed in a different threads. A job is composed of three functions:
 
 - A stub function to create the job. It must allocate a new job structure and fill its `worker` and `result` fields. This function is executed in the main thread. The return type for the OCaml external must be of the form `'a job`.
 - A function which executes the job. This one may be executed asynchronously in another thread. This function must not:
-  
+
   - access or allocate OCaml block values (tuples, strings, …),
   - call OCaml code.
 - A function which reads the result of the job, frees resources and returns the result as an OCaml value. This function is executed in the main thread.
@@ -809,7 +785,6 @@ let mkdir name perms = Lwt_unix.run_job (mkdir_job name perms)
 
 # lwt\_direct index
 
-
 ## Library lwt\_direct
 
 The entry point of this library is the module: [`Lwt_direct`](./Lwt_direct.md).
@@ -818,7 +793,6 @@ The entry point of this library is the module: [`Lwt_direct`](./Lwt_direct.md).
 ---
 
 # lwt\_ppx index
-
 
 ## Library lwt\_ppx
 
@@ -834,7 +808,6 @@ The entry point of this library is the module: [`Lwt_ppx`](./Lwt_ppx.md).
 
 # lwt\_react index
 
-
 ## Library lwt\_react
 
 The entry point of this library is the module: [`Lwt_react`](./Lwt_react.md).
@@ -844,7 +817,6 @@ The entry point of this library is the module: [`Lwt_react`](./Lwt_react.md).
 
 # lwt\_retry index
 
-
 ## Library lwt\_retry
 
 The entry point of this library is the module: [`Lwt_retry`](./Lwt_retry.md).
@@ -853,7 +825,6 @@ The entry point of this library is the module: [`Lwt_retry`](./Lwt_retry.md).
 ---
 
 # lwt\_runtime\_events index
-
 
 ## Library lwt\_runtime\_events
 
@@ -903,7 +874,6 @@ This is all explained in the next sections:
 After that is the [reference proper](./#2_Fundamentals), which goes into *painful* levels of detail on every single type and value in this module, `Lwt`. Please be safe, and read only what you need from it :)
 
 Happy asynchronous programming\!
-
 
 #### Quick start
 
@@ -1027,7 +997,6 @@ let () =
 ```
 And that's it\! Concurrency in Lwt is simply a matter of whether you start an operation in the callback of another one or not. As a convenience, Lwt provides a few [helpers](./#2_Concurrency) for common concurrency patterns.
 
-
 #### Execution model
 
 It's important to understand that promises are a pure-OCaml data type. They don't do any fancy scheduling or I/O. They are just lists of callbacks (if pending), or containers for one value (if resolved).
@@ -1069,7 +1038,6 @@ In case your callback is just using the CPU for a really long time, you can inse
 
 **(2)** The good implication is that all your callbacks run in a single thread. This means that in most situations, you don't have to worry about locks, synchronization, etc. Anything that is in the same callback is guaranteed to run without interruption. Lwt programs are often *much* easier to write and refactor, than equivalent programs written with threads – but both are concurrent\!
 
-
 #### Guide to the rest of Lwt
 
 This module `Lwt` is the pure-OCaml definition of promises and callback-calling. It has a few extras on top of what's described above:
@@ -1095,9 +1063,7 @@ The functions are grouped into modules:
 - Miscellaneous modules [`Lwt_gc`](./Lwt_gc.md), [`Lwt_engine`](./Lwt_engine.md), [`Lwt_throttle`](./Lwt_throttle.md), [`Lwt_timeout`](./Lwt_timeout.md), [`Lwt_sys`](./Lwt_sys.md).
 Warning\! Introductory material ends and detailed reference begins\!
 
-
 ### Fundamentals
-
 
 #### Promises
 
@@ -1132,7 +1098,6 @@ Creates a new pending [promise](./#type-t), paired with its [resolver](./#type-u
 It is rare to use this function directly. Many helpers in Lwt, and Lwt-aware libraries, call it internally, and return only the promise. You then chain the promises together using [`Lwt.bind`](./#val-bind).
 
 However, it is important to understand `Lwt.wait` as the fundamental promise “constructor.” All other functions that evaluate to a promise can be, or are, eventually implemented in terms of it.
-
 
 #### Resolving
 
@@ -1178,7 +1143,6 @@ Whenever possible, it is recommended to use `raise exn` instead, as `raise` capt
 For example, `bind`'s second argument is a callback which returns a promise. And so it is recommended to use `raise` in the body of that callback. This applies to the aliases of `bind` as well: `( >>= )` and `( let* )`.
 
 Use `Lwt.fail` only when you specifically want to create a rejected promise, to pass to another function, or store in a data structure.
-
 
 #### Callbacks
 
@@ -1262,7 +1226,6 @@ let () =
 The `>>=` operator comes from the module [`Lwt.Infix`](./Lwt-Infix.md), which is why we opened it at the beginning of the program.
 
 See also [`Lwt.map`](./#val-map).
-
 
 ### Rejection
 
@@ -1508,9 +1471,7 @@ If you are writing an application, you are welcome to reassign the reference, an
 
 If you are writing a library, you should leave this reference alone. Its behavior should be determined by the application.
 
-
 ### Concurrency
-
 
 #### Multiple wait
 
@@ -1628,7 +1589,6 @@ val nchoose_split : 'a t list -> ('a list * 'a t list) t
 ```
 `Lwt.nchoose_split ps` is the same as [`Lwt.nchoose`](./#val-nchoose)` ps`, except that when multiple promises in `ps` are fulfilled simultaneously (and none are rejected), the result promise is fulfilled with *both* the list of values of the fulfilled promises, and the list of promises that are still pending.
 
-
 ### Cancellation
 
 Note: cancelation has proved difficult to understand, explain, and maintain, so use of these functions is discouraged in new code. See [ocsigen/lwt\#283](https://github.com/ocsigen/lwt/issues/283#issuecomment-518014539).
@@ -1734,7 +1694,6 @@ val wrap_in_cancelable : 'a t -> 'a t
 
 The state of `p'` can change in one of two ways: a. if `p` changes state (i.e., is resolved), then `p'` eventually changes state to match `p`'s, and b. during cancellation, if the backwards search described in [`Lwt.cancel`](./#val-cancel) reaches `p'` then it changes state to rejected `Canceled` and the search continues to `p`.
 
-
 #### Cancellation tweaks
 
 The primitives `protected`, `no_cancel`, and `wrap_in_cancelable` give you some level of control over the cancellation mechanism of Lwt. Note that promises passed as arguments to either of these three functions are unchanged. The functions return new promises with a specific cancellation behaviour.
@@ -1766,7 +1725,6 @@ The three behaviour of all three functions are summarised in the following table
 ```
 
 ### Convenience
-
 
 #### Callback helpers
 
@@ -1857,7 +1815,6 @@ It is similar to [`Lwt.try_bind`](./#val-try_bind), except no new promises are c
 
 If `f` or `g` raise an exception, the exception is passed to `!`[`Lwt.async_exception_hook`](./#val-async_exception_hook). By default, this will terminate the process.
 
-
 #### Infix operators
 
 ```ocaml
@@ -1905,7 +1862,6 @@ val return_false : bool t
 ```
 `Lwt.return_false` is like [`Lwt.return_unit`](./#val-return_unit), but for [`Lwt.return`](./#val-return)` false`.
 
-
 #### Trivial promises
 
 ```ocaml
@@ -1945,7 +1901,6 @@ Lwt.fail (Stdlib.Invalid_argument s)
 ```
 In most cases, it is better to use `invalid_arg s` from the standard library. See [`Lwt.fail`](./#val-fail) for an explanation.
 
-
 #### Result type
 
 A resolved promise of type `'a `[`Lwt.t`](./#type-t) is either fulfilled with a value of type `'a`, or rejected with an exception.
@@ -1970,7 +1925,6 @@ val wakeup_later_result : 'a u -> ('a, exn) Stdlib.result -> unit
 - If `result` is `Error exn`, `p` is rejected with `exn`.
 If `p` is not pending, `Lwt.wakeup_later_result` raises `Stdlib.Invalid_argument _`, except if `p` is [canceled](./#val-cancel). If `p` is canceled, `Lwt.wakeup_later_result` has no effect.
 
-
 #### State query
 
 ```ocaml
@@ -1989,9 +1943,7 @@ val state : 'a t -> 'a state
 - If `p` is [pending](./#type-t), the result is `Lwt.Sleep`.
 The constructor names are historical holdovers.
 
-
 ### Deprecated
-
 
 #### Implicit callback arguments
 
@@ -2070,7 +2022,6 @@ The Lwt functions that take snapshots of the implicit callback argument map are 
 
 `Lwt.with_value` should only be called in the main thread, i.e. do not call it inside [`Lwt_preemptive.detach`](./Lwt_preemptive.md#val-detach).
 
-
 #### Immediate resolving
 
 ```ocaml
@@ -2093,7 +2044,6 @@ val wakeup_exn : _ u -> exn -> unit
 val wakeup_result : 'a u -> ('a, exn) Stdlib.result -> unit
 ```
 `Lwt.wakeup_result r result` is like [`Lwt.wakeup_later_result`](./#val-wakeup_later_result)` r result`, but has the same problems as [`Lwt.wakeup`](./#val-wakeup).
-
 
 #### Linked lists of promises
 
@@ -2156,7 +2106,6 @@ let () =
 If you replace the call to `Lwt.pause` by `Lwt.return` in the program above, `"Handling I/O"` is printed only once. With `Lwt.pause`, it is printed several times, depending on the speed of your machine.
 
 An alternative way to handle long-running computations is to detach them to preemptive threads using [`Lwt_preemptive`](./Lwt_preemptive.md).
-
 
 #### Function lifters
 
@@ -2226,7 +2175,6 @@ Note that there is an important difference to [`Lwt.wrap`](./#val-wrap). These f
 
 To get a suspended function instead of the eager execution of [`Lwt.wrap`](./#val-wrap), use `Lwt.wrap1`.
 
-
 #### Unscoped infix operators
 
 Use the operators in module [`Lwt.Infix`](./Lwt-Infix.md) instead. Using these instances of the operators directly requires opening module `Lwt`, which brings an excessive number of other names into scope.
@@ -2294,7 +2242,6 @@ val with_tracing_context : string -> (unit -> 'a t) -> 'a t
 List helpers
 
 Note: this module use the same naming convention as [`Lwt_stream`](./Lwt_stream.md).
-
 
 ### List iterators
 
@@ -2509,7 +2456,6 @@ For example:
 ```
 It raises `Invalid_argument` if `st` is a bounded push-stream.
 
-
 ### Destruction
 
 ```ocaml
@@ -2521,7 +2467,6 @@ Returns the list of elements of the given stream
 val to_string : char t -> string Lwt.t
 ```
 Returns the word composed of all characters of the given stream
-
 
 ### Data retrieval
 
@@ -2765,7 +2710,6 @@ val parse : 'a t -> ('a t -> 'b Lwt.t) -> 'b Lwt.t
 `parse st f` parses `st` with `f`. If `f` raise an exception, `st` is restored to its previous state.
 
 It raises `Invalid_argument` if `st` is a bounded push-stream.
-
 
 ### Misc
 
@@ -3393,7 +3337,6 @@ val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
 ```
 Same as `Unix.handle_unix_error` but catches lwt-level exceptions
 
-
 ### Sleeping
 
 ```ocaml
@@ -3518,7 +3461,6 @@ If the **file descriptor** is closed, this does nothing, if it is aborted, this 
 
 Note that this only works for reading and writing operations on file descriptors supporting non-blocking mode.
 
-
 ### Process handling
 
 ```ocaml
@@ -3587,7 +3529,6 @@ val system : string -> process_status Lwt.t
 Executes the given command, waits until it terminates, and return its termination status. The string is interpreted by the shell `/bin/sh` on Unix and `cmd.exe` on Windows. The result `WEXITED 127` indicates that the shell couldn't be executed.
 
 The function uses [`fork`](./#val-fork) internally. As a result, this function is brittle. See all the warnings relating to `fork` for more details.
-
 
 ### Basic file input/output
 
@@ -3760,7 +3701,6 @@ Note that you don't need to use this function if you are using Lwt I/O functions
 
 The intended use case for this function is interfacing with existing libraries that are known to be blocking.
 
-
 ### Seeking and truncating
 
 ```ocaml
@@ -3784,7 +3724,6 @@ val ftruncate : file_descr -> int -> unit Lwt.t
 ```
 Wrapper for `Unix.ftruncate`
 
-
 ### Syncing
 
 ```ocaml
@@ -3798,7 +3737,6 @@ val fdatasync : file_descr -> unit Lwt.t
 Synchronise all data (but not metadata) of the file descriptor with the disk.
 
 Note that `fdatasync` is not available on Windows and OS X.
-
 
 ### File status
 
@@ -3865,7 +3803,6 @@ val isatty : file_descr -> bool Lwt.t
 ```
 Wrapper for `Unix.isatty`
 
-
 ### File operations on large files
 
 ```ocaml
@@ -3888,7 +3825,6 @@ Wrapper for `Unix.rename`
 val link : string -> string -> unit Lwt.t
 ```
 Wrapper for `Unix.link`
-
 
 ### File permissions and ownership
 
@@ -3924,7 +3860,6 @@ val access : string -> access_permission list -> unit Lwt.t
 ```
 Wrapper for `Unix.access`
 
-
 ### Operations on file descriptors
 
 ```ocaml
@@ -3946,7 +3881,6 @@ Wrapper for `Unix.set_close_on_exec`
 val clear_close_on_exec : file_descr -> unit
 ```
 Wrapper for `Unix.clear_close_on_exec`
-
 
 ### Directories
 
@@ -4009,7 +3943,6 @@ val files_of_directory : string -> string Lwt_stream.t
 ```
 `files_of_directory dir` returns the stream of all files of `dir`.
 
-
 ### Pipes and redirections
 
 ```ocaml
@@ -4032,7 +3965,6 @@ val mkfifo : string -> file_perm -> unit Lwt.t
 ```
 Wrapper for `Unix.mkfifo`
 
-
 ### Symbolic links
 
 ```ocaml
@@ -4044,7 +3976,6 @@ Wrapper for `Unix.symlink`
 val readlink : string -> string Lwt.t
 ```
 Wrapper for `Unix.readlink`
-
 
 ### Locking
 
@@ -4061,7 +3992,6 @@ type lock_command = Unix.lock_command =
 val lockf : file_descr -> lock_command -> int -> unit Lwt.t
 ```
 Wrapper for `Unix.lockf`
-
 
 ### User id, group id
 
@@ -4109,7 +4039,6 @@ val getgrgid : int -> group_entry Lwt.t
 ```
 Wrapper for `Unix.getgrgid`
 
-
 ### Signals
 
 ```ocaml
@@ -4151,7 +4080,6 @@ val handle_signal : int -> unit
 `handle_signal signum` acts as if Lwt had received the `signum` signal. This allows another IO library to install the handler, perform its own handling, but still notify Lwt. It is particularly useful for SIGCHLD, where several IO libraries may be spawning sub-processes.
 
 This function is thread-safe.
-
 
 ### Sockets
 
@@ -4347,7 +4275,6 @@ val get_credentials : file_descr -> credentials
 
 This call is not available on windows.
 
-
 #### Socket options
 
 ```ocaml
@@ -4430,7 +4357,6 @@ val getsockopt_error : file_descr -> Unix.error option
 ```
 Wrapper for `Unix.getsockopt_error`
 
-
 #### Multicast functions
 
 ```ocaml
@@ -4460,7 +4386,6 @@ val mcast_drop_membership :
   unit
 ```
 `mcast_drop_membership fd ~ifname addr` leaves the multicast group `addr` on the network interface `ifname`.
-
 
 ### Host and protocol databases
 
@@ -4568,7 +4493,6 @@ val getnameinfo : sockaddr -> getnameinfo_option list -> name_info Lwt.t
 ```
 Wrapper for `Unix.getnameinfo`
 
-
 ### Terminal interface
 
 ```ocaml
@@ -4661,7 +4585,6 @@ type flow_action = Unix.flow_action =
 val tcflow : file_descr -> flow_action -> unit Lwt.t
 ```
 Wrapper for `Unix.tcflow`
-
 
 ### Configuration
 
@@ -4792,7 +4715,6 @@ val wait_for_jobs : unit -> unit Lwt.t
 ```
 Wait for all pending jobs to terminate.
 
-
 ### Notifications
 
 Lwt internally use a pipe to send notification to the main thread. The following functions allow to use this pipe.
@@ -4829,7 +4751,6 @@ val set_notification : notification -> (unit -> unit) -> unit
 ```
 `set_notification id f` replace the function associated to the notification by `f`. It raises `Not_found` if the given notification is not found.
 
-
 ### System threads pool
 
 If the program is using the async method `Async_detach` or `Async_switch`, Lwt will launch system threads to execute blocking system calls asynchronously.
@@ -4854,7 +4775,6 @@ val thread_waiting_count : unit -> int
 ```
 The number threads waiting for a job.
 
-
 ### CPUs
 
 ```ocaml
@@ -4871,7 +4791,6 @@ val get_affinity : ?pid:int -> unit -> int list
 val set_affinity : ?pid:int -> int list -> unit
 ```
 `set_affinity ?pid cpus` sets the list of CPUs the given process is allowed to run on.
-
 
 ### Versioned interfaces
 
@@ -4980,7 +4899,6 @@ exception Channel_closed of string
 ```
 Exception raised when a channel is closed. The parameter is a description of the channel.
 
-
 ### Types
 
 ```ocaml
@@ -5030,7 +4948,6 @@ val mode : 'a channel -> 'a mode
 ```
 `mode ch` returns the mode of a channel
 
-
 ### Well-known instances
 
 ```ocaml
@@ -5057,7 +4974,6 @@ Inputs which returns always `'\x00'`
 val null : output_channel
 ```
 Output which drops everything
-
 
 ### Channels creation/manipulation
 
@@ -5201,7 +5117,6 @@ val length : 'a channel -> int64 Lwt.t
 ```
 Returns the length of the channel in bytes
 
-
 ### Reading
 
 Note: except for functions dealing with streams ([`read_chars`](./#val-read_chars) and [`read_lines`](./#val-read_lines)) all functions are **atomic**.
@@ -5281,7 +5196,6 @@ val read_value : input_channel -> 'a Lwt.t
 `read_value channel` reads a marshaled value from `channel`; it corresponds to the standard library's `Stdlib.Marshal.from_channel`. The corresponding writing function is [`write_value`](./#val-write_value).
 
 Note that reading marshaled values is *not*, in general, type-safe. See the warning in the description of module `Stdlib.Marshal` for details. The short version is: if you read a value of one type, such as `string`, when a value of another type, such as `int` has actually been marshaled to `channel`, you may get arbitrary behavior, including segmentation faults, access violations, security bugs, etc.
-
 
 ### Writing
 
@@ -5366,7 +5280,6 @@ val write_value :
 
 The corresponding reading function is [`read_value`](./#val-read_value). See warnings about type safety in the description of [`read_value`](./#val-read_value).
 
-
 ### Printing
 
 These functions are basically helpers. Also you may prefer using the name [`printl`](./#val-printl) rather than [`write_line`](./#val-write_line) because it is shorter.
@@ -5436,7 +5349,6 @@ val eprintlf : ('a, unit, string, unit Lwt.t) Stdlib.format4 -> 'a
 ```
 `%!` does nothing here. To flush the channel, use `Lwt_io.(flush stderr)`.
 
-
 ### Utilities
 
 ```ocaml
@@ -5448,7 +5360,6 @@ val hexdump_stream : output_channel -> char Lwt_stream.t -> unit Lwt.t
 val hexdump : output_channel -> string -> unit Lwt.t
 ```
 `hexdump oc str = hexdump_stream oc (Lwt_stream.of_string str)`
-
 
 ### File utilities
 
@@ -5692,7 +5603,6 @@ val chars_to_file : file_name -> char Lwt_stream.t -> unit Lwt.t
 ```
 `chars_to_file name chars` writes all characters of `chars` to `name`
 
-
 ### Input/output of integers
 
 ```ocaml
@@ -5711,7 +5621,6 @@ module BE : NumberIO
 Reading/writing of numbers in big-endian
 
 Reading/writing of numbers in the system endianness.
-
 
 #### Reading
 
@@ -5738,7 +5647,6 @@ Reads an IEEE single precision floating point value
 val read_float64 : input_channel -> float Lwt.t
 ```
 Reads an IEEE double precision floating point value
-
 
 #### Writing
 
@@ -5776,7 +5684,6 @@ val system_byte_order : byte_order
 ```
 Same as [`Lwt_sys.byte_order`](./Lwt_sys.md#val-byte_order).
 
-
 ### Low-level access to the internal buffer
 
 ```ocaml
@@ -5798,7 +5705,6 @@ Information for directly accessing the internal buffer of a channel
 val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
 ```
 `direct_access ch f` passes to `f` a [`direct_access`](./#type-direct_access) structure. `f` must use it and update `da_ptr` to reflect how many bytes have been read/written.
-
 
 ### Misc
 
@@ -5873,9 +5779,7 @@ A command executed with the shell. (with `"/bin/sh -c <cmd>"` on Unix and `"cmd.
 
 All the following functions take an optional argument `timeout`, in seconds. If specified, after expiration, the process will be sent a `Unix.sigkill` signal and channels will be closed. When the channels are closed, any pending I/O operations on them (such as [`Lwt_io.read_chars`](./Lwt_io.md#val-read_chars)) fail with exception [`Lwt_io.Channel_closed`](./Lwt_io.md#exception-Channel_closed).
 
-
 ### High-level functions
-
 
 #### Redirections
 
@@ -5889,7 +5793,6 @@ type redirection = [
  ]
 ```
 File descriptor redirections. These are used with the `~stdin`, `~stdout`, and `~stderr` arguments below to specify how the standard file descriptors should be redirected in the child process. All optional redirection arguments default to ``Keep`.
-
 
 #### Executing
 
@@ -5905,7 +5808,6 @@ val exec :
   Unix.process_status Lwt.t
 ```
 Executes the given command and returns its exit status.
-
 
 #### Receiving
 
@@ -6194,7 +6096,6 @@ val length : t -> int
 ```
 Returns the length of the given byte array.
 
-
 ### Access
 
 ```ocaml
@@ -6217,7 +6118,6 @@ val unsafe_set : t -> int -> char -> unit
 ```
 Same as [`set`](./#val-set) but without bounds checking.
 
-
 ### Conversions
 
 ```ocaml
@@ -6239,7 +6139,6 @@ val to_bytes : t -> bytes
 val to_string : t -> string
 ```
 `to_string buf` returns a newly allocated string with the same contents as `buf`.
-
 
 ### Copying
 
@@ -6298,7 +6197,6 @@ val copy : t -> t
 ```
 `copy buffer` creates a copy of the given byte array.
 
-
 ### Filling
 
 ```ocaml
@@ -6310,7 +6208,6 @@ val fill : t -> int -> int -> char -> unit
 val unsafe_fill : t -> int -> int -> char -> unit
 ```
 Same as [`fill`](./#val-fill) but without bounds checking.
-
 
 ### IOs
 
@@ -6551,7 +6448,6 @@ val eprintf :
 ```
 Returns a promise that prints on the standard error. Similar to `Stdlib.Format.eprintf`.
 
-
 ## Formatters
 
 ```ocaml
@@ -6597,7 +6493,6 @@ val make_formatter :
 val get_formatter : formatter -> Stdlib.Format.formatter
 ```
 `get_formatter fmt` returns the underlying `Stdlib.Format.formatter`. To access the underlying formatter during printing, it is recommended to use `%t` and `%a`.
-
 
 ### Printing
 
@@ -6712,7 +6607,6 @@ The default behavior of `f exn`, set by `Lwt_timeout` on program startup, is to 
 
 Lwt unix main loop engine
 
-
 ### Events
 
 ```ocaml
@@ -6729,7 +6623,6 @@ val stop_event : event -> unit
 val fake_event : event
 ```
 Event which does nothing when stopped.
-
 
 ### Event loop functions
 
@@ -6785,7 +6678,6 @@ val forwards_signal : int -> bool
 
 Normally, this just returns `false`, but when Lwt is used in combination with other IO libraries, this allows sharing e.g. the SIGCHLD handler.
 
-
 ### Engines
 
 An engine represents a set of functions used to register different kinds of callbacks for different kinds of events.
@@ -6805,7 +6697,6 @@ Abstract class for engines.
 class type  t = object ... end
 ```
 Type of engines.
-
 
 ### Predefined engines
 
@@ -6848,7 +6739,6 @@ Abstract class for engines based on a select-like function.
 class virtual poll_based : object ... end
 ```
 Abstract class for engines based on a poll-like function.
-
 
 ### The current engine
 
@@ -7317,9 +7207,7 @@ module Let_syntax : sig ... end
 
 # Module `Lwt.Syntax`
 
-
 #### Let syntax
-
 
 ## Monadic syntax
 
@@ -7332,7 +7220,6 @@ Syntax for [`bind`](./Lwt.md#val-bind).
 val (and*) : 'a t -> 'b t -> ('a * 'b) t
 ```
 Syntax for [`both`](./Lwt.md#val-both).
-
 
 ## Applicative syntax
 
@@ -7534,7 +7421,6 @@ Destroy the engine, remove all its events and free its associated resources.
 method transfer : abstract -> unit
 ```
 `transfer engine` moves all events from the current engine to `engine`. Note that timers are reset in the destination engine, i.e. if a timer with a delay of 2 seconds was registered 1 second ago it will occur in 2 seconds in the destination engine.
-
 
 ### Event loop methods
 
@@ -7813,7 +7699,6 @@ val _HAVE_ACCEPT4 : bool
 
 Reading/writing of numbers in big-endian
 
-
 #### Reading
 
 ```ocaml
@@ -7839,7 +7724,6 @@ Reads an IEEE single precision floating point value
 val read_float64 : input_channel -> float Lwt.t
 ```
 Reads an IEEE double precision floating point value
-
 
 #### Writing
 
@@ -7874,7 +7758,6 @@ Writes an IEEE double precision floating point value
 
 Reading/writing of numbers in little-endian
 
-
 #### Reading
 
 ```ocaml
@@ -7900,7 +7783,6 @@ Reads an IEEE single precision floating point value
 val read_float64 : input_channel -> float Lwt.t
 ```
 Reads an IEEE double precision floating point value
-
 
 #### Writing
 
@@ -7984,7 +7866,6 @@ since 2\.7.0
 
 Common interface for reading/writing integers in binary
 
-
 #### Reading
 
 ```ocaml
@@ -8010,7 +7891,6 @@ Reads an IEEE single precision floating point value
 val read_float64 : input_channel -> float Lwt.t
 ```
 Reads an IEEE double precision floating point value
-
 
 #### Writing
 
@@ -8207,7 +8087,6 @@ val compare : t -> t -> int
 # Module `Lwt_pqueue.Make`
 
 Generates priority queue types from ordered types.
-
 
 ## Parameters
 
@@ -8524,9 +8403,7 @@ module Let_syntax : sig ... end
 
 # Module `Lwt_result.Syntax`
 
-
 #### Let syntax
-
 
 ## Monadic syntax
 
@@ -8539,7 +8416,6 @@ Syntax for [`bind`](./Lwt_result.md#val-bind).
 val (and*) : ('a, 'e) t -> ('b, 'e) t -> ('a * 'b, 'e) t
 ```
 Syntax for [`both`](./Lwt_result.md#val-both).
-
 
 ## Applicative syntax
 
@@ -8610,7 +8486,6 @@ type 'a node
 ```
 Type of a node holding one value of type `'a` in a sequence
 
-
 ### Operation on nodes
 
 ```ocaml
@@ -8627,7 +8502,6 @@ Change the contents of a node
 val remove : 'a node -> unit
 ```
 Removes a node from the sequence it is part of. It does nothing if the node has already been removed.
-
 
 ### Operations on sequence
 
@@ -8697,7 +8571,6 @@ val transfer_l : 'a t -> 'a t -> unit
 val transfer_r : 'a t -> 'a t -> unit
 ```
 `transfer_r s1 s2` removes all elements of `s1` and add them at the right of `s2`. This operation runs in constant time and space.
-
 
 ### Sequence iterators
 
@@ -8816,7 +8689,6 @@ Set the reference to an external source.
 ---
 
 # Module `Lwt_throttle.Make`
-
 
 ## Parameters
 
@@ -9153,7 +9025,6 @@ Local storage.
 
 Ppx syntax extension for Lwt
 
-
 ### Ppx extensions
 
 This Ppx extension adds various syntactic shortcut for lwt programming. It needs [ppx\_tools](https://github.com/ocaml-ppx/ppx_tools).
@@ -9161,7 +9032,6 @@ This Ppx extension adds various syntactic shortcut for lwt programming. It needs
 To use it, simply use the ocamlfind package `lwt_ppx`.
 
 This extension adds the following syntax:
-
 
 #### Lwt binding
 
@@ -9192,7 +9062,6 @@ let (foo : int) = do_something in
 code
 ```
 Not using parentheses will confuse the OCaml parser.
-
 
 #### Sequencing promises
 
@@ -9244,14 +9113,12 @@ catch (fun () -> f x)
 ```
 Note that the `exn -> Lwt.reraise exn` branch is automatically added when needed.
 
-
 #### Finalizer
 
 ```ocaml
   (<expr>) [%finally <expr>]
 ```
 You can use `[%lwt.finally ...]` instead of `[%finally ...]`.
-
 
 #### Assertion
 
@@ -9515,7 +9382,6 @@ val delay : 'a event Lwt.t -> 'a event
 val keep : 'a event -> unit
 ```
 `keep e` keeps a reference to `e` so it will never be garbage collected.
-
 
 ### Threaded versions of React transformation functions
 
@@ -9845,7 +9711,6 @@ val equal : 'a t -> 'a t -> bool
 ---
 
 # Module `S.Make`
-
 
 ## Parameters
 
@@ -10703,7 +10568,6 @@ val bind_s :
 ```
 Same as [`bind`](./#val-bind) except that `f` returns a promise. Calls to `f` are serialized.
 
-
 ### Lwt-specific utilities
 
 ```ocaml
@@ -10726,7 +10590,6 @@ For example, to limit it to 1 per second, you can use: `limit (fun () -> Lwt_uni
 val keep : 'a signal -> unit
 ```
 `keep s` keeps a reference to `s` so it will never be garbage collected.
-
 
 ### Threaded versions of React transformation functions
 

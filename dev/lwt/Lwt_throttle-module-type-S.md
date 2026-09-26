@@ -1,4 +1,3 @@
-
 # Module type `Lwt_throttle.S`
 
 ```ocaml

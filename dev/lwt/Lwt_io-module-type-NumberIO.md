@@ -1,8 +1,6 @@
-
 # Module type `Lwt_io.NumberIO`
 
 Common interface for reading/writing integers in binary
-
 
 #### Reading
 
@@ -29,7 +27,6 @@ Reads an IEEE single precision floating point value
 val read_float64 : input_channel -> float Lwt.t
 ```
 Reads an IEEE double precision floating point value
-
 
 #### Writing
 

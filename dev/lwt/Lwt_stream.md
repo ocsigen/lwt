@@ -1,4 +1,3 @@
-
 # Module `Lwt_stream`
 
 Data streams
@@ -131,7 +130,6 @@ For example:
 ```
 It raises `Invalid_argument` if `st` is a bounded push-stream.
 
-
 ### Destruction
 
 ```ocaml
@@ -143,7 +141,6 @@ Returns the list of elements of the given stream
 val to_string : char t -> string Lwt.t
 ```
 Returns the word composed of all characters of the given stream
-
 
 ### Data retrieval
 
@@ -387,7 +384,6 @@ val parse : 'a t -> ('a t -> 'b Lwt.t) -> 'b Lwt.t
 `parse st f` parses `st` with `f`. If `f` raise an exception, `st` is restored to its previous state.
 
 It raises `Invalid_argument` if `st` is a bounded push-stream.
-
 
 ### Misc
 

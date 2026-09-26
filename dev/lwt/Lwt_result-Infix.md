@@ -1,4 +1,3 @@
-
 # Module `Lwt_result.Infix`
 
 ```ocaml

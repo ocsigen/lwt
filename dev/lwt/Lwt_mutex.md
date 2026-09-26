@@ -1,4 +1,3 @@
-
 # Module `Lwt_mutex`
 
 Cooperative locks for mutual exclusion

@@ -1,4 +1,3 @@
-
 # Class `Lwt_engine.poll_based`
 
 Abstract class for engines based on a poll-like function.

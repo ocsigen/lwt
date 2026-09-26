@@ -1,8 +1,6 @@
-
 # Module `Lwt_engine`
 
 Lwt unix main loop engine
-
 
 ### Events
 
@@ -20,7 +18,6 @@ val stop_event : event -> unit
 val fake_event : event
 ```
 Event which does nothing when stopped.
-
 
 ### Event loop functions
 
@@ -76,7 +73,6 @@ val forwards_signal : int -> bool
 
 Normally, this just returns `false`, but when Lwt is used in combination with other IO libraries, this allows sharing e.g. the SIGCHLD handler.
 
-
 ### Engines
 
 An engine represents a set of functions used to register different kinds of callbacks for different kinds of events.
@@ -96,7 +92,6 @@ Abstract class for engines.
 class type  t = object ... end
 ```
 Type of engines.
-
 
 ### Predefined engines
 
@@ -139,7 +134,6 @@ Abstract class for engines based on a select-like function.
 class virtual poll_based : object ... end
 ```
 Abstract class for engines based on a poll-like function.
-
 
 ### The current engine
 

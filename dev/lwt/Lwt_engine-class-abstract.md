@@ -1,4 +1,3 @@
-
 # Class `Lwt_engine.abstract`
 
 Abstract class for engines.
@@ -17,7 +16,6 @@ Destroy the engine, remove all its events and free its associated resources.
 method transfer : abstract -> unit
 ```
 `transfer engine` moves all events from the current engine to `engine`. Note that timers are reset in the destination engine, i.e. if a timer with a delay of 2 seconds was registered 1 second ago it will occur in 2 seconds in the destination engine.
-
 
 ### Event loop methods
 

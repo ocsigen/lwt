@@ -1,4 +1,3 @@
-
 # Module `Lwt_react.S`
 
 ```ocaml
@@ -254,7 +253,6 @@ val bind_s :
 ```
 Same as [`bind`](./#val-bind) except that `f` returns a promise. Calls to `f` are serialized.
 
-
 ### Lwt-specific utilities
 
 ```ocaml
@@ -277,7 +275,6 @@ For example, to limit it to 1 per second, you can use: `limit (fun () -> Lwt_uni
 val keep : 'a signal -> unit
 ```
 `keep s` keeps a reference to `s` so it will never be garbage collected.
-
 
 ### Threaded versions of React transformation functions
 

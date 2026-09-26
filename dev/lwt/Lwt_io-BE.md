@@ -1,8 +1,6 @@
-
 # Module `Lwt_io.BE`
 
 Reading/writing of numbers in big-endian
-
 
 #### Reading
 
@@ -29,7 +27,6 @@ Reads an IEEE single precision floating point value
 val read_float64 : input_channel -> float Lwt.t
 ```
 Reads an IEEE double precision floating point value
-
 
 #### Writing
 

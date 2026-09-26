@@ -1,4 +1,3 @@
-
 # Module `Let_syntax.Let_syntax`
 
 ```ocaml

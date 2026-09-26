@@ -1,4 +1,3 @@
-
 # Module `Special.Sb`
 
 ```ocaml

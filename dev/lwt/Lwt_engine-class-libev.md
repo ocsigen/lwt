@@ -1,4 +1,3 @@
-
 # Class `Lwt_engine.libev`
 
 Engine based on libev. If not compiled with libev support, the creation of the class will raise [`Lwt_sys.Not_available`](./Lwt_sys.md#exception-Not_available).

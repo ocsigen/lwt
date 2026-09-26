@@ -1,4 +1,3 @@
-
 # Module `Lwt_result`
 
 Explicit error handling

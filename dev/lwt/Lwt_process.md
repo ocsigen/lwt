@@ -1,4 +1,3 @@
-
 # Module `Lwt_process`
 
 Process management
@@ -34,9 +33,7 @@ A command executed with the shell. (with `"/bin/sh -c <cmd>"` on Unix and `"cmd.
 
 All the following functions take an optional argument `timeout`, in seconds. If specified, after expiration, the process will be sent a `Unix.sigkill` signal and channels will be closed. When the channels are closed, any pending I/O operations on them (such as [`Lwt_io.read_chars`](./Lwt_io.md#val-read_chars)) fail with exception [`Lwt_io.Channel_closed`](./Lwt_io.md#exception-Channel_closed).
 
-
 ### High-level functions
-
 
 #### Redirections
 
@@ -50,7 +47,6 @@ type redirection = [
  ]
 ```
 File descriptor redirections. These are used with the `~stdin`, `~stdout`, and `~stderr` arguments below to specify how the standard file descriptors should be redirected in the child process. All optional redirection arguments default to ``Keep`.
-
 
 #### Executing
 
@@ -66,7 +62,6 @@ val exec :
   Unix.process_status Lwt.t
 ```
 Executes the given command and returns its exit status.
-
 
 #### Receiving
 

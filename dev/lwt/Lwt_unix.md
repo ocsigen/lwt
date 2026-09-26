@@ -1,4 +1,3 @@
-
 # Module `Lwt_unix`
 
 Cooperative system calls
@@ -25,7 +24,6 @@ In this case, it is guaranteed that exactly one of the three operations will com
 val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
 ```
 Same as `Unix.handle_unix_error` but catches lwt-level exceptions
-
 
 ### Sleeping
 
@@ -151,7 +149,6 @@ If the **file descriptor** is closed, this does nothing, if it is aborted, this 
 
 Note that this only works for reading and writing operations on file descriptors supporting non-blocking mode.
 
-
 ### Process handling
 
 ```ocaml
@@ -220,7 +217,6 @@ val system : string -> process_status Lwt.t
 Executes the given command, waits until it terminates, and return its termination status. The string is interpreted by the shell `/bin/sh` on Unix and `cmd.exe` on Windows. The result `WEXITED 127` indicates that the shell couldn't be executed.
 
 The function uses [`fork`](./#val-fork) internally. As a result, this function is brittle. See all the warnings relating to `fork` for more details.
-
 
 ### Basic file input/output
 
@@ -393,7 +389,6 @@ Note that you don't need to use this function if you are using Lwt I/O functions
 
 The intended use case for this function is interfacing with existing libraries that are known to be blocking.
 
-
 ### Seeking and truncating
 
 ```ocaml
@@ -417,7 +412,6 @@ val ftruncate : file_descr -> int -> unit Lwt.t
 ```
 Wrapper for `Unix.ftruncate`
 
-
 ### Syncing
 
 ```ocaml
@@ -431,7 +425,6 @@ val fdatasync : file_descr -> unit Lwt.t
 Synchronise all data (but not metadata) of the file descriptor with the disk.
 
 Note that `fdatasync` is not available on Windows and OS X.
-
 
 ### File status
 
@@ -498,7 +491,6 @@ val isatty : file_descr -> bool Lwt.t
 ```
 Wrapper for `Unix.isatty`
 
-
 ### File operations on large files
 
 ```ocaml
@@ -521,7 +513,6 @@ Wrapper for `Unix.rename`
 val link : string -> string -> unit Lwt.t
 ```
 Wrapper for `Unix.link`
-
 
 ### File permissions and ownership
 
@@ -557,7 +548,6 @@ val access : string -> access_permission list -> unit Lwt.t
 ```
 Wrapper for `Unix.access`
 
-
 ### Operations on file descriptors
 
 ```ocaml
@@ -579,7 +569,6 @@ Wrapper for `Unix.set_close_on_exec`
 val clear_close_on_exec : file_descr -> unit
 ```
 Wrapper for `Unix.clear_close_on_exec`
-
 
 ### Directories
 
@@ -642,7 +631,6 @@ val files_of_directory : string -> string Lwt_stream.t
 ```
 `files_of_directory dir` returns the stream of all files of `dir`.
 
-
 ### Pipes and redirections
 
 ```ocaml
@@ -665,7 +653,6 @@ val mkfifo : string -> file_perm -> unit Lwt.t
 ```
 Wrapper for `Unix.mkfifo`
 
-
 ### Symbolic links
 
 ```ocaml
@@ -677,7 +664,6 @@ Wrapper for `Unix.symlink`
 val readlink : string -> string Lwt.t
 ```
 Wrapper for `Unix.readlink`
-
 
 ### Locking
 
@@ -694,7 +680,6 @@ type lock_command = Unix.lock_command =
 val lockf : file_descr -> lock_command -> int -> unit Lwt.t
 ```
 Wrapper for `Unix.lockf`
-
 
 ### User id, group id
 
@@ -742,7 +727,6 @@ val getgrgid : int -> group_entry Lwt.t
 ```
 Wrapper for `Unix.getgrgid`
 
-
 ### Signals
 
 ```ocaml
@@ -784,7 +768,6 @@ val handle_signal : int -> unit
 `handle_signal signum` acts as if Lwt had received the `signum` signal. This allows another IO library to install the handler, perform its own handling, but still notify Lwt. It is particularly useful for SIGCHLD, where several IO libraries may be spawning sub-processes.
 
 This function is thread-safe.
-
 
 ### Sockets
 
@@ -980,7 +963,6 @@ val get_credentials : file_descr -> credentials
 
 This call is not available on windows.
 
-
 #### Socket options
 
 ```ocaml
@@ -1063,7 +1045,6 @@ val getsockopt_error : file_descr -> Unix.error option
 ```
 Wrapper for `Unix.getsockopt_error`
 
-
 #### Multicast functions
 
 ```ocaml
@@ -1093,7 +1074,6 @@ val mcast_drop_membership :
   unit
 ```
 `mcast_drop_membership fd ~ifname addr` leaves the multicast group `addr` on the network interface `ifname`.
-
 
 ### Host and protocol databases
 
@@ -1201,7 +1181,6 @@ val getnameinfo : sockaddr -> getnameinfo_option list -> name_info Lwt.t
 ```
 Wrapper for `Unix.getnameinfo`
 
-
 ### Terminal interface
 
 ```ocaml
@@ -1294,7 +1273,6 @@ type flow_action = Unix.flow_action =
 val tcflow : file_descr -> flow_action -> unit Lwt.t
 ```
 Wrapper for `Unix.tcflow`
-
 
 ### Configuration
 
@@ -1425,7 +1403,6 @@ val wait_for_jobs : unit -> unit Lwt.t
 ```
 Wait for all pending jobs to terminate.
 
-
 ### Notifications
 
 Lwt internally use a pipe to send notification to the main thread. The following functions allow to use this pipe.
@@ -1462,7 +1439,6 @@ val set_notification : notification -> (unit -> unit) -> unit
 ```
 `set_notification id f` replace the function associated to the notification by `f`. It raises `Not_found` if the given notification is not found.
 
-
 ### System threads pool
 
 If the program is using the async method `Async_detach` or `Async_switch`, Lwt will launch system threads to execute blocking system calls asynchronously.
@@ -1487,7 +1463,6 @@ val thread_waiting_count : unit -> int
 ```
 The number threads waiting for a job.
 
-
 ### CPUs
 
 ```ocaml
@@ -1504,7 +1479,6 @@ val get_affinity : ?pid:int -> unit -> int list
 val set_affinity : ?pid:int -> int list -> unit
 ```
 `set_affinity ?pid cpus` sets the list of CPUs the given process is allowed to run on.
-
 
 ### Versioned interfaces
 

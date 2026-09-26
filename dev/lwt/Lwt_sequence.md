@@ -1,4 +1,3 @@
-
 # Module `Lwt_sequence`
 
 Mutable sequence of elements (deprecated)
@@ -20,7 +19,6 @@ type 'a node
 ```
 Type of a node holding one value of type `'a` in a sequence
 
-
 ### Operation on nodes
 
 ```ocaml
@@ -37,7 +35,6 @@ Change the contents of a node
 val remove : 'a node -> unit
 ```
 Removes a node from the sequence it is part of. It does nothing if the node has already been removed.
-
 
 ### Operations on sequence
 
@@ -107,7 +104,6 @@ val transfer_l : 'a t -> 'a t -> unit
 val transfer_r : 'a t -> 'a t -> unit
 ```
 `transfer_r s1 s2` removes all elements of `s1` and add them at the right of `s2`. This operation runs in constant time and space.
-
 
 ### Sequence iterators
 

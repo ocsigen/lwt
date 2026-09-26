@@ -1,10 +1,8 @@
-
 # Module `Lwt_list`
 
 List helpers
 
 Note: this module use the same naming convention as [`Lwt_stream`](./Lwt_stream.md).
-
 
 ### List iterators
 

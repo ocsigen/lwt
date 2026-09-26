@@ -1,4 +1,3 @@
-
 # Module type `Lwt_pqueue.S`
 
 Signature of priority queues.

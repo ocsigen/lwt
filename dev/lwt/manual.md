@@ -1,6 +1,4 @@
-
 # Lwt manual
-
 
 ## Introduction
 
@@ -23,7 +21,6 @@ If you already wrote code using preemptive threads, you should know that doing i
 
 In the first part, we will explain the concepts of `Lwt`, then we will describe the main modules `Lwt` consists of.
 
-
 ### Finding examples
 
 Additional sources of examples:
@@ -35,7 +32,6 @@ Additional sources of examples:
 ## The Lwt core library
 
 In this section we describe the basics of `Lwt`. It is advised to start `utop` and try the given code examples.
-
 
 ### Lwt concepts
 
@@ -84,7 +80,6 @@ The above promise `p` is pending because there is nothing yet to read from the p
 - : char Lwt.state = Lwt.Return 'a'
 ```
 So, after we write something, the reading promise has been fulfilled with the value `'a'`.
-
 
 ### Primitives for promise creation
 
@@ -139,7 +134,6 @@ val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
 ```
 `catch f g` will call `f ()`, then wait for it to become resolved, and if it was rejected with an exception `exn`, call `g exn` to handle it. Note that both exceptions raised with `Pervasives.raise` and `Lwt.fail` are caught by `catch`.
 
-
 #### Cancelable promises
 
 In some case, we may want to cancel a promise. For example, because it has not resolved after a timeout. This can be done with cancelable promises. To create a cancelable promise, you must use the `Lwt.task` function:
@@ -187,7 +181,6 @@ val protected : 'a Lwt.t -> 'a Lwt.t
 ```
 Canceling `(protected p)` will have no effect on `p`.
 
-
 #### Primitives for concurrent composition
 
 We now show how to compose several promises concurrently. The main functions for this are in the `Lwt` module: `join`, `choose` and `pick`.
@@ -224,7 +217,6 @@ val p3 : '_a Lwt.t = <abstr>
 ```
 The last one, `pick`, is the same as `choose`, except that it tries to cancel all other promises when one resolves. Promises created via `Lwt.wait()` are not cancellable and are thus not cancelled.
 
-
 #### Rules
 
 A callback, like the `f` that you might pass to `Lwt.bind`, is an ordinary OCaml function. `Lwt` just handles ordering calls to these functions.
@@ -254,7 +246,6 @@ Or, in `utop`:
 
 For a brief overview of the syntax, see the Correspondence table below.
 
-
 #### Correspondence table
 
 | Without Lwt | With Lwt |
@@ -273,7 +264,6 @@ For a brief overview of the syntax, see the Correspondence table below.
 If an exception is raised inside a callback called by Lwt, the backtrace provided by OCaml will not be very useful. It will end inside the Lwt scheduler instead of continuing into the code that started the operations that led to the callback call. To avoid this, and get good backtraces from Lwt, use the syntax extension. The `let%lwt` construct will properly propagate backtraces.
 
 As always, to get backtraces from an OCaml program, you need to either declare the environment variable `OCAMLRUNPARAM=b` or call `Printexc.record_backtrace true` at the start of your program, and be sure to compile it with `-g`. Most modern build systems add `-g` by default.
-
 
 ### `let*` syntax
 
@@ -303,7 +293,6 @@ val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 
 `Lwt_mutex` provides mutexes for `Lwt`. Its use is almost the same as the `Mutex` module of the thread library shipped with OCaml. In general, programs using `Lwt` do not need a lot of mutexes, because callbacks run without preempting each other. They are only useful for synchronising or sequencing complex operations spread over multiple callback calls.
 
-
 #### Lists
 
 The `Lwt_list` module defines iteration and scanning functions over lists, similar to the ones of the `List` module, but using functions that return a promise. For example:
@@ -313,7 +302,6 @@ val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 ```
 In `iter_s f l`, `iter_s` will call f on each elements of `l`, waiting for resolution between each element. On the contrary, in `iter_p f l`, `iter_p` will call f on all elements of `l`, only then wait for all the promises to resolve.
-
 
 #### Data streams
 
@@ -377,7 +365,6 @@ Mailbox variables are commonly used to pass messages between chains of callbacks
 
 Note that a mailbox variable can be seen as a pushable stream with a limited memory.
 
-
 ## Running an Lwt program
 
 An `Lwt` computation you have created will give you something of type `Lwt.t`, a promise. However, even though you have the promise, the computation may not have run yet, and the promise might still be pending.
@@ -401,11 +388,9 @@ let () = Lwt_main.run (Lwt_io.printl "Hello, world!")
 ```
 Note that you must not make nested calls to `Lwt_main.run`. It cannot be used anywhere else to get the result of a promise.
 
-
 ## The `lwt.unix` library
 
 The package `lwt.unix` contains all `Unix`\-dependent modules of `Lwt`. Among all its features, it implements Lwt-friendly, non-blocking versions of functions of the OCaml standard and Unix libraries.
-
 
 ### Unix primitives
 
@@ -417,7 +402,6 @@ val read : file_descr -> string -> int -> int -> int Lwt.t
 `Lwt_io` provides features similar to buffered channels of the standard library (of type `in_channel` or `out_channel`), but with non-blocking semantics.
 
 `Lwt_gc` allows you to register a finalizer that returns a promise. At the end of the program, `Lwt` will wait for all these finalizers to resolve.
-
 
 ### The Lwt scheduler
 
@@ -447,7 +431,6 @@ To make sure `Lwt` is compiled with `libev` support, tell opam that the library 
 ### Logging
 
 For logging, we recommend the `logs` package from opam, which includes an Lwt-aware module `Logs_lwt`.
-
 
 ## The Lwt.react library
 
@@ -509,7 +492,6 @@ let () =
 
 ## Other libraries
 
-
 ### Parallelise computations to other cores
 
 If you have some compute-intensive steps within your program, you can execute them on a separate core. You can get performance benefits from the parallelisation. In addition, whilst your compute-intensive function is running on a different core, your normal I/O-bound tasks continue running on the original core.
@@ -527,7 +509,6 @@ Then you simple detach the function calls to the created pool:
 val detach : pool -> ('a -> 'b) -> 'a -> 'b Lwt.t
 ```
 The returned promise resolves as soon as the function returns.
-
 
 ### Detaching computation to preemptive threads
 
@@ -547,14 +528,11 @@ val run_in_main : (unit -> 'a Lwt.t) -> 'a
 ```
 This is roughly the equivalent of `Lwt.main_run`, but for detached threads, rather than for the whole process. Note that you must not call `Lwt_main.run` in a detached thread.
 
-
 ### SSL support
 
 The library `Lwt_ssl` allows use of SSL asynchronously.
 
-
 ## Writing stubs using `Lwt`
-
 
 ### Thread-safe notifications
 
@@ -562,14 +540,13 @@ If you want to notify the main thread from another thread, you can use the `Lwt`
 
 Notifications are received and processed asynchronously by the main thread.
 
-
 ### Jobs
 
 For operations that cannot be executed asynchronously, `Lwt` uses a system of jobs that can be executed in a different threads. A job is composed of three functions:
 
 - A stub function to create the job. It must allocate a new job structure and fill its `worker` and `result` fields. This function is executed in the main thread. The return type for the OCaml external must be of the form `'a job`.
 - A function which executes the job. This one may be executed asynchronously in another thread. This function must not:
-  
+
   - access or allocate OCaml block values (tuples, strings, …),
   - call OCaml code.
 - A function which reads the result of the job, frees resources and returns the result as an OCaml value. This function is executed in the main thread.

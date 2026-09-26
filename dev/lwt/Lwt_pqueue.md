@@ -1,4 +1,3 @@
-
 # Module `Lwt_pqueue`
 
 Functional priority queues (deprecated).

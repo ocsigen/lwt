@@ -1,4 +1,3 @@
-
 # Module `Lwt_main.Exit_hooks`
 
 Promise-returning hooks, of type `unit -> unit Lwt.t`, that are called at process exit. Exceptions raised by these hooks are ignored.

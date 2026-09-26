@@ -1,4 +1,3 @@
-
 # Module `Lwt_throttle`
 
 Rate limiters.

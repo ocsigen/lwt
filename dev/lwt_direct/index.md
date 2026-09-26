@@ -1,6 +1,4 @@
-
 # lwt\_direct index
-
 
 ## Library lwt\_direct
 

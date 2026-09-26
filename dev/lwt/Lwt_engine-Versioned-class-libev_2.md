@@ -1,4 +1,3 @@
-
 # Class `Versioned.libev_2`
 
 Since Lwt 3\.0.0, this is just an alias for [`Lwt_engine.libev`](./Lwt_engine-class-libev.md).

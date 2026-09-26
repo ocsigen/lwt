@@ -1,4 +1,3 @@
-
 # Class `Lwt_engine.select`
 
 ```ocaml

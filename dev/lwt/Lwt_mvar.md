@@ -1,4 +1,3 @@
-
 # Module `Lwt_mvar`
 
 Mailbox variables

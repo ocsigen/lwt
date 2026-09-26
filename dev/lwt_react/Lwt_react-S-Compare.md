@@ -1,4 +1,3 @@
-
 # Module `S.Compare`
 
 ```ocaml

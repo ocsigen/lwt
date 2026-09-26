@@ -1,4 +1,3 @@
-
 # Class type `Lwt_stream.bounded_push`
 
 Type of sources for bounded push-streams.

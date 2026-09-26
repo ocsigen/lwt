@@ -1,4 +1,3 @@
-
 # Module `E.Option`
 
 ```ocaml

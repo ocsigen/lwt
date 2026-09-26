@@ -1,4 +1,3 @@
-
 # Module `Lwt_engine.Ev_backend`
 
 ```ocaml

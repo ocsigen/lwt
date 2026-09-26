@@ -1,4 +1,3 @@
-
 # Module `Lwt_react.E`
 
 ```ocaml
@@ -182,7 +181,6 @@ val delay : 'a event Lwt.t -> 'a event
 val keep : 'a event -> unit
 ```
 `keep e` keeps a reference to `e` so it will never be garbage collected.
-
 
 ### Threaded versions of React transformation functions
 

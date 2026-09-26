@@ -1,4 +1,3 @@
-
 # Module `Lwt_runtime_events`
 
 This is the runtime-events library for lwt. It contains lwt-specific definition of events (so that programs can be written to consume the events lwt produces) and the function to emit them (so that lwt can emit them). This library is not intended for emitting events by hand.

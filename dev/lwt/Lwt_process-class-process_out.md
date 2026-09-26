@@ -1,4 +1,3 @@
-
 # Class `Lwt_process.process_out`
 
 ```ocaml

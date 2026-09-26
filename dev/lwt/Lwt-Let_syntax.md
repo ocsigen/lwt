@@ -1,4 +1,3 @@
-
 # Module `Lwt.Let_syntax`
 
 ```ocaml

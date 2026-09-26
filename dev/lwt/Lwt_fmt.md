@@ -1,4 +1,3 @@
-
 # Module `Lwt_fmt`
 
 Format API for Lwt-powered IOs
@@ -21,7 +20,6 @@ val eprintf :
   'a
 ```
 Returns a promise that prints on the standard error. Similar to `Stdlib.Format.eprintf`.
-
 
 ## Formatters
 
@@ -68,7 +66,6 @@ val make_formatter :
 val get_formatter : formatter -> Stdlib.Format.formatter
 ```
 `get_formatter fmt` returns the underlying `Stdlib.Format.formatter`. To access the underlying formatter during printing, it is recommended to use `%t` and `%a`.
-
 
 ### Printing
 

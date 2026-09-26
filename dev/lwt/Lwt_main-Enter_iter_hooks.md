@@ -1,4 +1,3 @@
-
 # Module `Lwt_main.Enter_iter_hooks`
 
 Hooks, of type `unit -> unit`, that are called before each iteration of the Lwt main loop.
