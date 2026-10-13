@@ -2816,27 +2816,49 @@ end = struct
     with exn when Exception_filter.run exn -> fail exn
 
   let pause_hook = ref ignore
-  let paused = Lwt_sequence.create ()
+
+  (* The paused promises, the most recent first. A paused promise that is
+     canceled stays here until the next [wakeup_paused], which leaves it
+     alone. *)
+  let paused : unit t list ref = ref []
   let paused_count = ref 0
 
   let pause () =
-    let p = add_task_r paused in
-    incr paused_count; !pause_hook !paused_count; p
+    let p =
+      to_public_promise (new_pending ~how_to_cancel:Cancel_this_promise)
+    in
+    paused := p :: !paused;
+    incr paused_count;
+    !pause_hook !paused_count;
+    p
 
+  (* Resolves a paused promise, unless it was canceled. It may have become a
+     proxy, if it was returned by a [bind] callback. *)
+  let wakeup_paused_promise p =
+    let (Internal p) = to_internal_promise p in
+    let p = underlying p in
+    match p.state with
+    | Pending _ ->
+        let (State_may_have_changed p) =
+          resolve ~allow_deferring:false p (Fulfilled ())
+        in
+        ignore p
+    | Rejected Canceled -> ()
+    | Fulfilled _ | Rejected _ -> assert false
+
+  (* The promises paused while these are woken up wait for the next call. *)
   let wakeup_paused () =
-    if Lwt_sequence.is_empty paused
-    then paused_count := 0
-    else begin
-      let tmp = Lwt_sequence.create () in
-      Lwt_sequence.transfer_r paused tmp;
-      paused_count := 0;
-      Lwt_sequence.iter_l (fun r -> wakeup r ()) tmp
-    end
+    match !paused with
+    | [] -> ()
+    | ps ->
+        paused := [];
+        paused_count := 0;
+        List.iter wakeup_paused_promise (List.rev ps)
 
   let register_pause_notifier f = pause_hook := f
 
   let abandon_paused () =
-    Lwt_sequence.clear paused;
+    paused := [];
     paused_count := 0
 
   let paused_count () = !paused_count

@@ -3748,6 +3748,18 @@ let pause_tests =
     [ test "initial state" begin fun () ->
           Lwt.return (Lwt.paused_count () = 0)
         end
+    ; (* A paused promise can be canceled: waking up the paused promises then
+     leaves it canceled, and wakes up the others. *)
+      test "canceled" begin fun () ->
+          let p1 = Lwt.pause () in
+          let p2 = Lwt.pause () in
+          Lwt.cancel p1;
+          Lwt.wakeup_paused ();
+          Lwt.return
+            (Lwt.state p1 = Lwt.Fail Lwt.Canceled
+            && Lwt.state p2 = Lwt.Return ()
+            && Lwt.paused_count () = 0)
+        end
     ; test "one promise" begin fun () ->
           let p = Lwt.pause () in
           assert (Lwt.paused_count () = 1);
