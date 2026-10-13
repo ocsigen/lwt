@@ -1324,11 +1324,15 @@ end = struct
   type packed_callbacks = Packed : _ callbacks -> packed_callbacks
   [@@ocaml.unboxed]
 
+  (* The state of a canceled promise. Defined once, rather than in [cancel], so
+     that the functions local to [cancel] capture nothing, and are not
+     allocated at each call. *)
+  let canceled_result = Rejected Canceled
+
   (* Note that this function deviates from the "ideal" callback deferral
      behavior: it runs callbacks directly on the current stack. It should
      therefore be possible to cause a stack overflow using this function. *)
   let cancel p =
-    let canceled_result = Rejected Canceled in
     (* Walks the promise dependency graph backwards, looking for cancelable
        initial promises, and cancels (only) them.
 
