@@ -104,4 +104,39 @@ let suite = suite "lwt_process" [
     (fun () ->
       let pin, perr = Lwt_unix.pipe_in ~cloexec:true () in
       pread ~stderr:(`FD_move perr) pin);
+
+  (* posix_spawnp does not run scripts without a shebang through /bin/sh, unlike
+     execvp; Lwt_process falls back to fork for them. *)
+  test "script without shebang is run by /bin/sh" ~only_if:(fun () -> not Sys.win32)
+    (fun () ->
+      let script = Filename.temp_file "lwt_process" ".sh" in
+      let oc = open_out script in
+      output_string oc "exit 3\n";
+      close_out oc;
+      Unix.chmod script 0o755;
+      Lwt.finalize
+        (fun () ->
+          Lwt_process.exec (script, [|script|])
+          >>= check_status ~status:((=) 3))
+        (fun () -> Sys.remove script; Lwt.return_unit));
+
+  test "missing executable exits with 127" ~only_if:(fun () -> not Sys.win32)
+    (fun () ->
+      Lwt_process.exec ("./does-not-exist.exe", [|"does-not-exist.exe"|])
+      >>= check_status ~status:((=) 127));
+
+  test "failed spawn closes moved fds" ~only_if:(fun () -> not Sys.win32)
+    (fun () ->
+      let r, w = Unix.pipe ~cloexec:true () in
+      Unix.set_nonblock r;
+      Lwt_process.exec ~stdout:(`FD_move w)
+        ("./does-not-exist.exe", [|"does-not-exist.exe"|])
+      >>= fun status ->
+      (* End of file only once every write end is closed; EAGAIN otherwise. *)
+      let closed =
+        try Unix.read r (Bytes.create 1) 0 1 = 0
+        with Unix.Unix_error (Unix.EAGAIN, _, _) -> false
+      in
+      Unix.close r;
+      Lwt.return (status = Unix.WEXITED 127 && closed));
 ]

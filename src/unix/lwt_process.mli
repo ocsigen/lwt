@@ -7,9 +7,8 @@
 
 (** This module allows you to spawn processes and communicate with them.
 
-    This module makes heavy use of {!Lwt_unix.fork}. Important caveats are
-    documented there. Read them. TL;DR: no domains, no threads, no preemptive,
-    yes [Async_none]. *)
+    On Unix, processes are spawned with [posix_spawnp] when available;
+    otherwise they use {!Lwt_unix.fork}. Windows uses [CreateProcess]. *)
 
 type command = string * string array
     (** A command. The first field is the name of the executable and
