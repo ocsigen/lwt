@@ -1,57 +1,55 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Lwt unix main loop engine *)
 
 (** {2 Events} *)
 
 type event
-  (** Type of events. An event represent a callback registered to be
+(** Type of events. An event represent a callback registered to be
       called when some event occurs. *)
 
 val stop_event : event -> unit
-  (** [stop_event event] stops the given event. *)
+(** [stop_event event] stops the given event. *)
 
 val fake_event : event
-  (** Event which does nothing when stopped. *)
+(** Event which does nothing when stopped. *)
 
 (** {2 Event loop functions} *)
 
 val iter : bool -> unit
-  (** [iter block] performs one iteration of the main loop. If [block]
+(** [iter block] performs one iteration of the main loop. If [block]
       is [true] the function must block until one event becomes
       available, otherwise it should just check for available events
       and return immediately. *)
 
 val on_readable : Unix.file_descr -> (event -> unit) -> event
-  (** [on_readable fd f] calls [f] each time [fd] becomes readable. *)
+(** [on_readable fd f] calls [f] each time [fd] becomes readable. *)
 
 val on_writable : Unix.file_descr -> (event -> unit) -> event
-  (** [on_readable fd f] calls [f] each time [fd] becomes writable. *)
+(** [on_readable fd f] calls [f] each time [fd] becomes writable. *)
 
 val on_timer : float -> bool -> (event -> unit) -> event
-  (** [on_timer delay repeat f] calls [f] one time after [delay]
+(** [on_timer delay repeat f] calls [f] one time after [delay]
       seconds. If [repeat] is [true] then [f] is called each [delay]
       seconds, otherwise it is called only one time. *)
 
 val readable_count : unit -> int
-  (** Returns the number of events waiting for a file descriptor to
+(** Returns the number of events waiting for a file descriptor to
       become readable. *)
 
 val writable_count : unit -> int
-  (** Returns the number of events waiting for a file descriptor to
+(** Returns the number of events waiting for a file descriptor to
       become writable. *)
 
 val timer_count : unit -> int
-  (** Returns the number of registered timers. *)
+(** Returns the number of registered timers. *)
 
 val fake_io : Unix.file_descr -> unit
-  (** Simulates activity on the given file descriptor. *)
+(** Simulates activity on the given file descriptor. *)
 
 val fork : unit -> unit
-  (** Called internally by Lwt_unix.fork to make sure we don't get strange behaviour *)
+(** Called internally by Lwt_unix.fork to make sure we don't get strange behaviour *)
 
 val forwards_signal : int -> bool
 (** [forwards_signal signum] is [true] if the engine will call {!Lwt_unix.handle_signal}
@@ -72,14 +70,14 @@ val id : unit -> engine_id
 (** Abstract class for engines. *)
 class virtual abstract : object
   method virtual id : engine_id
-    (** identifies the engine *)
+  (** identifies the engine *)
 
   method destroy : unit
-    (** Destroy the engine, remove all its events and free its
+  (** Destroy the engine, remove all its events and free its
         associated resources. *)
 
   method transfer : abstract -> unit
-    (** [transfer engine] moves all events from the current engine to
+  (** [transfer engine] moves all events from the current engine to
         [engine]. Note that timers are reset in the destination
         engine, i.e. if a timer with a delay of 2 seconds was
         registered 1 second ago it will occur in 2 seconds in the
@@ -109,22 +107,31 @@ class virtual abstract : object
   *)
 
   method virtual private cleanup : unit
-    (** Cleanup resources associated with the engine. *)
+  (** Cleanup resources associated with the engine. *)
 
-  method virtual private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
-  method virtual private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
-  method virtual private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
+  method virtual private register_readable :
+    Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+
+  method virtual private register_writable :
+    Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+
+  method virtual private register_timer :
+    float -> bool -> (unit -> unit) -> unit Lazy.t
 end
 
 (** Type of engines. *)
 class type t = object
   inherit abstract
-
   method id : engine_id
   method iter : bool -> unit
   method private cleanup : unit
-  method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
-  method private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+
+  method private register_readable :
+    Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+
+  method private register_writable :
+    Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+
   method private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
 end
 
@@ -132,9 +139,9 @@ end
 
 type ev_loop
 
-module Ev_backend :
-sig
+module Ev_backend : sig
   type t
+
   val default : t
   val select : t
   val poll : t
@@ -142,13 +149,11 @@ sig
   val kqueue : t
   val devpoll : t
   val port : t
-
   val equal : t -> t -> bool
-
   val pp : Format.formatter -> t -> unit
 end
 
-  (** Type of libev loops. *)
+(** Type of libev loops. *)
 
 type engine_id += Engine_id__libev of Ev_backend.t
 
@@ -158,26 +163,32 @@ class libev : ?backend:Ev_backend.t -> unit -> object
   inherit t
 
   method backend : Ev_backend.t
-    (** The backend picked by libev. *)
+  (** The backend picked by libev. *)
 
   val loop : ev_loop
-    (** The libev loop used for this engine. *)
+  (** The libev loop used for this engine. *)
 
   method loop : ev_loop
-    (** Returns [loop]. *)
+  (** Returns [loop]. *)
 end
 
 (** Engine based on {!Unix.select}. *)
 type engine_id += Engine_id__select
+
 type engine_id += Engine_id__poll
+
 class select : t
 
 (** Abstract class for engines based on a select-like function. *)
 class virtual select_based : object
   inherit t
 
-  method private virtual select : Unix.file_descr list -> Unix.file_descr list -> float -> Unix.file_descr list * Unix.file_descr list
-    (** [select fds_r fds_w timeout] waits for either:
+  method private virtual select :
+    Unix.file_descr list
+    -> Unix.file_descr list
+    -> float
+    -> Unix.file_descr list * Unix.file_descr list
+  (** [select fds_r fds_w timeout] waits for either:
 
         - one of the file descriptor of [fds_r] to become readable
         - one of the file descriptor of [fds_w] to become writable
@@ -191,8 +202,11 @@ end
 class virtual poll_based : object
   inherit t
 
-  method private virtual poll : (Unix.file_descr * bool * bool) list -> float -> (Unix.file_descr * bool * bool) list
-    (** [poll fds tiomeout], where [fds] is a list of tuples of the
+  method private virtual poll :
+    (Unix.file_descr * bool * bool) list
+    -> float
+    -> (Unix.file_descr * bool * bool) list
+  (** [poll fds tiomeout], where [fds] is a list of tuples of the
         form [(fd, check_readable, check_writable)], waits for either:
 
         - one of the file descriptor with [check_readable] set to
@@ -208,10 +222,10 @@ end
 (** {2 The current engine} *)
 
 val get : unit -> t
-  (** [get ()] returns the engine currently in use. *)
+(** [get ()] returns the engine currently in use. *)
 
-val set : ?transfer : bool -> ?destroy : bool -> #t -> unit
-  (** [set ?transfer ?destroy engine] replaces the current engine by
+val set : ?transfer:bool -> ?destroy:bool -> #t -> unit
+(** [set ?transfer ?destroy engine] replaces the current engine by
       the given one.
 
       If [transfer] is [true] (the default) all events from the
@@ -220,33 +234,32 @@ val set : ?transfer : bool -> ?destroy : bool -> #t -> unit
       If [destroy] is [true] (the default) then the current engine is
       destroyed before being replaced. *)
 
-module Versioned :
-sig
+module Versioned : sig
+  (** Old version of {!Lwt_engine.libev}. The current {!Lwt_engine.libev} allows
+      selecting the libev back end.
+
+      @deprecated Use {!Lwt_engine.libev}.
+      @since 2.7.0 *)
   class libev_1 : object
     inherit t
     val loop : ev_loop
     method backend : Ev_backend.t
     method loop : ev_loop
   end
-  [@@ocaml.deprecated
-" Deprecated in favor of Lwt_engine.libev. See
+    [@@ocaml.deprecated
+      " Deprecated in favor of Lwt_engine.libev. See
   https://github.com/ocsigen/lwt/pull/269"]
-  (** Old version of {!Lwt_engine.libev}. The current {!Lwt_engine.libev} allows
-      selecting the libev back end.
+
+  (** Since Lwt 3.0.0, this is just an alias for {!Lwt_engine.libev}.
 
       @deprecated Use {!Lwt_engine.libev}.
       @since 2.7.0 *)
-
   class libev_2 : ?backend:Ev_backend.t -> unit -> object
     inherit t
     val loop : ev_loop
     method backend : Ev_backend.t
     method loop : ev_loop
   end
-  [@@ocaml.deprecated
-" In Lwt >= 3.0.0, this is an alias for Lwt_engine.libev."]
-  (** Since Lwt 3.0.0, this is just an alias for {!Lwt_engine.libev}.
-
-      @deprecated Use {!Lwt_engine.libev}.
-      @since 2.7.0 *)
+    [@@ocaml.deprecated
+      " In Lwt >= 3.0.0, this is an alias for Lwt_engine.libev."]
 end

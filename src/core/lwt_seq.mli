@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** @since 5.5.0 *)
 
 type 'a t = unit -> 'a node Lwt.t
@@ -11,8 +9,10 @@ type 'a t = unit -> 'a node Lwt.t
   not a [lazy] block, which means it might be recomputed every time
   we access it. *)
 
-and +'a node = Nil | Cons of 'a * 'a t
-(** A fully-evaluated list node, either empty or containing an element
+and +'a node =
+  | Nil
+  | Cons of 'a * 'a t
+  (** A fully-evaluated list node, either empty or containing an element
   and a delayed tail. *)
 
 val empty : 'a t

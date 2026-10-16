@@ -31,14 +31,14 @@
 (** Condition variables to synchronize between threads. *)
 
 type 'a t
-    (** Condition variable type. The type parameter denotes the type of
+(** Condition variable type. The type parameter denotes the type of
         value propagated from notifier to waiter. *)
 
 val create : unit -> 'a t
-    (** [create ()] creates a new condition variable. *)
+(** [create ()] creates a new condition variable. *)
 
 val wait : ?mutex:Lwt_mutex.t -> 'a t -> 'a Lwt.t
-    (** [wait mutex condvar] will cause the current thread to block,
+(** [wait mutex condvar] will cause the current thread to block,
         awaiting notification for a condition variable, [condvar]. If
         provided, the [mutex] must have been previously locked (within
         the scope of [Lwt_mutex.with_lock], for example) and is
@@ -49,7 +49,7 @@ val wait : ?mutex:Lwt_mutex.t -> 'a t -> 'a Lwt.t
         returned. *)
 
 val signal : 'a t -> 'a -> unit
-    (** [signal condvar value] notifies that a condition is ready. A
+(** [signal condvar value] notifies that a condition is ready. A
         single waiting thread will be awoken and will receive the
         notification value which will be returned from [wait]. Note
         that condition notification is not "sticky", i.e. if there is
@@ -57,12 +57,12 @@ val signal : 'a t -> 'a -> unit
         missed and the value discarded. *)
 
 val broadcast : 'a t -> 'a -> unit
-    (** [broadcast condvar value] notifies all waiting threads. Each
+(** [broadcast condvar value] notifies all waiting threads. Each
         will be awoken in turn and will receive the same notification
         value. *)
 
 val broadcast_exn : 'a t -> exn -> unit
-    (** [broadcast_exn condvar exn] fails all waiting threads with exception
+(** [broadcast_exn condvar exn] fails all waiting threads with exception
         [exn].
 
         @since 2.6.0 *)

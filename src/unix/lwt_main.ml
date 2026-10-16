@@ -1,51 +1,39 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (* [Lwt_sequence] is deprecated – we don't want users outside Lwt using it.
    However, it is still used internally by Lwt. So, briefly disable warning 3
    ("deprecated"), and create a local, non-deprecated alias for
    [Lwt_sequence] that can be referred to by the rest of the code in this
    module without triggering any more warnings. *)
 module Lwt_sequence = Lwt_sequence
-
 open Lwt.Infix
 
 let enter_iter_hooks = Lwt_sequence.create ()
 let leave_iter_hooks = Lwt_sequence.create ()
-
 let yield = Lwt.pause
-
-let abandon_yielded_and_paused () =
-  Lwt.abandon_paused ()
+let abandon_yielded_and_paused () = Lwt.abandon_paused ()
 
 let run p =
   let rec run_loop () =
     Lwt_rte.emit_sch_lap ();
     Lwt_unix.write_job_count_runtimte_event ();
-    Lwt_rte.emit_paused_count (Lwt.paused_count ()) ;
+    Lwt_rte.emit_paused_count (Lwt.paused_count ());
     match Lwt.poll p with
-    | Some x ->
-      x
+    | Some x -> x
     | None ->
-      (* Call enter hooks. *)
-      Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
-
-      (* Do the main loop call. *)
-      let should_block_waiting_for_io = Lwt.paused_count () = 0 in
-      Lwt_engine.iter should_block_waiting_for_io;
-
-      (* Fulfill paused promises. *)
-      Lwt.wakeup_paused ();
-
-      (* Call leave hooks. *)
-      Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
-
-      (* Repeat. *)
-      run_loop ()
+        (* Call enter hooks. *)
+        Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
+        (* Do the main loop call. *)
+        let should_block_waiting_for_io = Lwt.paused_count () = 0 in
+        Lwt_engine.iter should_block_waiting_for_io;
+        (* Fulfill paused promises. *)
+        Lwt.wakeup_paused ();
+        (* Call leave hooks. *)
+        Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
+        (* Repeat. *)
+        run_loop ()
   in
-
   Lwt_rte.emit_sch_call_begin ();
   Fun.protect
     ~finally:(fun () -> Lwt_rte.emit_sch_call_end ())
@@ -63,7 +51,6 @@ let run p =
   (* Fail in case a call to Lwt_main.run is nested under another invocation of
      Lwt_main.run. *)
   Mutex.lock run_already_called_mutex;
-
   let error_message_if_call_is_nested =
     match !run_already_called with
     (* `From is effectively disabled for the time being, because there is a bug,
@@ -78,15 +65,14 @@ let run p =
        This can be addressed with detection. Starting with 4.04, there is a
        type [Sys.backend_type] that could be used. *)
     | `From backtrace_string ->
-      Some (Printf.sprintf "%s\n%s\n%s"
-        "Nested calls to Lwt_main.run are not allowed"
-        "Lwt_main.run already called from:"
-        backtrace_string)
-    | `From_somewhere ->
-      Some ("Nested calls to Lwt_main.run are not allowed")
+        Some
+          (Printf.sprintf "%s\n%s\n%s"
+             "Nested calls to Lwt_main.run are not allowed"
+             "Lwt_main.run already called from:" backtrace_string)
+    | `From_somewhere -> Some "Nested calls to Lwt_main.run are not allowed"
     | `No ->
-      let called_from =
-        (* See comment above.
+        let called_from =
+          (* See comment above.
         if Printexc.backtrace_status () then
           let backtrace =
             try raise Exit
@@ -95,43 +81,33 @@ let run p =
           `From backtrace
         else *)
           `From_somewhere
-      in
-      run_already_called := called_from;
-      None
+        in
+        run_already_called := called_from;
+        None
   in
-
   Mutex.unlock run_already_called_mutex;
-
   begin match error_message_if_call_is_nested with
   | Some message -> failwith message
   | None -> ()
   end;
-
   Lazy.force Lwt_unix.sigchld_handler_installer;
-
   match run p with
-  | result ->
-    finished ();
-    result
-  | exception exn when Lwt.Exception_filter.run exn ->
-    finished ();
-    raise exn
+  | result -> finished (); result
+  | exception exn when Lwt.Exception_filter.run exn -> finished (); raise exn
 
 let exit_hooks = Lwt_sequence.create ()
 
 let rec call_hooks () =
   match Lwt_sequence.take_opt_l exit_hooks with
-  | None ->
-    Lwt.return_unit
+  | None -> Lwt.return_unit
   | Some f ->
-    Lwt.catch
-      (fun () -> f ())
-      (fun _  -> Lwt.return_unit) >>= fun () ->
-    call_hooks ()
+      Lwt.catch (fun () -> f ()) (fun _ -> Lwt.return_unit) >>= fun () ->
+      call_hooks ()
 
 let () =
   at_exit (fun () ->
-    if not (Lwt_sequence.is_empty exit_hooks) then begin
+    if not (Lwt_sequence.is_empty exit_hooks)
+    then begin
       Lwt.abandon_wakeups ();
       finished ();
       run (call_hooks ())
@@ -139,8 +115,7 @@ let () =
 
 let at_exit f = ignore (Lwt_sequence.add_l f exit_hooks)
 
-module type Hooks =
-sig
+module type Hooks = sig
   type 'return_value kind
   type hook
 
@@ -150,14 +125,13 @@ sig
   val remove_all : unit -> unit
 end
 
-module type Hook_sequence =
-sig
+module type Hook_sequence = sig
   type 'return_value kind
+
   val sequence : (unit -> unit kind) Lwt_sequence.t
 end
 
-module Wrap_hooks (Sequence : Hook_sequence) =
-struct
+module Wrap_hooks (Sequence : Hook_sequence) = struct
   type 'a kind = 'a Sequence.kind
   type hook = (unit -> unit Sequence.kind) Lwt_sequence.node
 
@@ -169,27 +143,26 @@ struct
     let hook_node = Lwt_sequence.add_r hook_fn Sequence.sequence in
     hook_node
 
-  let remove hook_node =
-    Lwt_sequence.remove hook_node
+  let remove hook_node = Lwt_sequence.remove hook_node
 
   let remove_all () =
     Lwt_sequence.iter_node_l Lwt_sequence.remove Sequence.sequence
 end
 
-module Enter_iter_hooks =
-  Wrap_hooks (struct
+module Enter_iter_hooks = Wrap_hooks (struct
     type 'return_value kind = 'return_value
+
     let sequence = enter_iter_hooks
   end)
 
-module Leave_iter_hooks =
-  Wrap_hooks (struct
+module Leave_iter_hooks = Wrap_hooks (struct
     type 'return_value kind = 'return_value
+
     let sequence = leave_iter_hooks
   end)
 
-module Exit_hooks =
-  Wrap_hooks (struct
+module Exit_hooks = Wrap_hooks (struct
     type 'return_value kind = 'return_value Lwt.t
+
     let sequence = exit_hooks
   end)

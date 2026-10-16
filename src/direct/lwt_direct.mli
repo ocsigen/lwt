@@ -52,9 +52,7 @@ val spawn : (unit -> 'a) -> 'a Lwt.t
     [spawn f] is resolved with [f ()]'s result, or the exception
     raised by [f ()]. *)
 
-val spawn_in_the_background :
-  (unit -> unit) ->
-  unit
+val spawn_in_the_background : (unit -> unit) -> unit
 (** [spawn_in_the_background f] is similar to [ignore (spawn f)].
     The computation [f ()] runs in the background in the event loop
     and returns no result.
@@ -95,6 +93,7 @@ val await : 'a Lwt.t -> 'a
     [Lwt.key] functions from {!Lwt}. The latter is deprecated. *)
 module Storage : sig
   type 'a key = 'a Lwt.key
+
   val new_key : unit -> 'a key
   (** Alias to {!Lwt.new_key} *)
 

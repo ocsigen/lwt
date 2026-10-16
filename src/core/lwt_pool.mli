@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** External resource pools.
 
     This module provides an abstraction for managing collections of resources.
@@ -42,15 +40,16 @@ let create_user name =
     If you want to have such pool, consider using {!Lwt_preemptive}. *)
 
 type 'a t
-  (** A pool containing elements of type ['a]. *)
+(** A pool containing elements of type ['a]. *)
 
 val create :
-  int ->
-  ?validate : ('a -> bool Lwt.t) ->
-  ?check : ('a -> (bool -> unit) -> unit) ->
-  ?dispose : ('a -> unit Lwt.t) ->
-  (unit -> 'a Lwt.t) -> 'a t
-  (** [create n ?check ?validate ?dispose f] creates a new pool with at most
+   int
+  -> ?validate:('a -> bool Lwt.t)
+  -> ?check:('a -> (bool -> unit) -> unit)
+  -> ?dispose:('a -> unit Lwt.t)
+  -> (unit -> 'a Lwt.t)
+  -> 'a t
+(** [create n ?check ?validate ?dispose f] creates a new pool with at most
       [n] elements. [f] is used to create a new pool element.  Elements are
       created on demand and re-used until disposed of.
 
@@ -75,7 +74,7 @@ val create :
       of. *)
 
 val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
-  (** [use p f] requests one free element of the pool [p] and gives it to
+(** [use p f] requests one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
       promise created by [f] completes.
 
