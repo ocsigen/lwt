@@ -55,7 +55,6 @@
  (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 4.08))
-  (cppo (and :build (>= 1.1)))
   (lwt (>= 3.0))
   (react (>= 1.0))))
 
@@ -94,7 +93,6 @@ synchronization primitives. Code can be run in parallel on an opt-in basis.
  (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 4.14))
-  (cppo (and :build (>= 1.1)))
   (ocamlfind (and :dev (>= 1.7.3-1)))
   (odoc (and :with-doc (>= 2.3)))
   dune-configurator

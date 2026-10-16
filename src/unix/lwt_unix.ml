@@ -1644,21 +1644,9 @@ external stub_socketpair : ?cloexec:bool -> socket_domain -> socket_type -> int 
 
 let socketpair ?cloexec dom typ proto =
   let (s1, s2) =
-#if OCAML_VERSION >= (4, 14, 0)
     if Sys.win32 && (dom <> Unix.PF_UNIX) then
       stub_socketpair ?cloexec dom typ proto
     else Unix.socketpair ?cloexec dom typ proto in
-#else
-    if Sys.win32 then stub_socketpair ?cloexec dom typ proto
-    else begin
-      let (s1, s2) = Unix.socketpair dom typ proto in
-      if cloexec = Some true then begin
-        Unix.set_close_on_exec s1;
-        Unix.set_close_on_exec s2
-      end;
-      (s1, s2)
-    end in
-#endif
   (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
 external accept4 :
@@ -1799,9 +1787,7 @@ type socket_bool_option =
   | SO_ACCEPTCONN
   | TCP_NODELAY
   | IPV6_ONLY
-#if OCAML_VERSION >= (4, 12, 0)
   | SO_REUSEPORT
-#endif
 
 type socket_int_option =
   Unix.socket_int_option =
@@ -2403,12 +2389,6 @@ let wait () = waitpid [] (-1)
 
 external system_job : string -> int job = "lwt_unix_system_job"
 
-#if OCAML_VERSION >= (5, 0, 0)
-external unix_exit : int -> 'a = "caml_unix_exit"
-#else
-external unix_exit : int -> 'a = "unix_exit"
-#endif
-
 let system cmd =
   if Sys.win32 then
     run_job (system_job ("cmd.exe /c " ^ cmd)) >>= fun code ->
@@ -2420,7 +2400,7 @@ let system cmd =
           Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
         with _ ->
           (* Do not run at_exit hooks *)
-          unix_exit 127
+          Unix._exit 127
       end
     | id ->
       waitpid [] id >|= snd

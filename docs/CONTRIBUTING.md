@@ -267,7 +267,7 @@ This list surveys them, roughly in order of importance.
 [Lwt_stream]: https://github.com/ocsigen/lwt/blob/master/src/core/lwt_stream.mli
 [ppx-dir]: https://github.com/ocsigen/lwt/tree/master/src/ppx
 [unix-dir]: https://github.com/ocsigen/lwt/tree/master/src/unix
-[Lwt_unix]: https://github.com/ocsigen/lwt/blob/master/src/unix/lwt_unix.cppo.mli
+[Lwt_unix]: https://github.com/ocsigen/lwt/blob/master/src/unix/lwt_unix.mli
 [Lwt_io]: https://github.com/ocsigen/lwt/blob/master/src/unix/lwt_io.mli
 [Lwt_main]: https://github.com/ocsigen/lwt/blob/master/src/unix/lwt_main.mli
 [c]: https://github.com/ocsigen/lwt/tree/master/src/unix/unix_c

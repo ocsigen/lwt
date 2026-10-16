@@ -133,12 +133,6 @@ let unix_redirect fd redirection = match redirection with
     Unix.dup2 ~cloexec:false fd' fd;
     Unix.close fd'
 
-#if OCAML_VERSION >= (5, 0, 0)
-external unix_exit : int -> 'a = "caml_unix_exit"
-#else
-external unix_exit : int -> 'a = "unix_exit"
-#endif
-
 let unix_spawn
     ?cwd
     ?(stdin:redirection=`Keep)
@@ -166,7 +160,7 @@ let unix_spawn
           Unix.execvpe prog args env
       with _ ->
         (* Do not run at_exit hooks *)
-        unix_exit 127
+        Unix._exit 127
     end
   | id ->
     let close = function
