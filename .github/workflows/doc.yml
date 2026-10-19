@@ -47,7 +47,7 @@ jobs:
 
       - name: Cache the opam switch (deps + wodoc)
         id: switch-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _opam
           key: opam-switch-${{ runner.os }}-ocaml5.4.0-${{ hashFiles('*.opam') }}-wodoc-${{ steps.wodoc.outputs.sha }}
