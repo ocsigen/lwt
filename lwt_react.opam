@@ -13,7 +13,6 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
   "dune" {>= "3.18"}
   "ocaml" {>= "4.08"}
-  "cppo" {build & >= "1.1"}
   "lwt" {>= "3.0"}
   "react" {>= "1.0"}
   "odoc" {with-doc}
