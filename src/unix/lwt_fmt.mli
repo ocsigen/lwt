@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Format API for Lwt-powered IOs
 
     @since 4.1.0 *)
@@ -29,14 +27,14 @@ type formatter
 (** Lwt enabled formatters *)
 
 type order =
-  | String of string * int * int (** [String (s, off, len)] indicate the output of [s] at offset [off] and length [len]. *)
-  | Flush (** Flush operation *)
+  | String of string * int * int
+  (** [String (s, off, len)] indicate the output of [s] at offset [off] and length [len]. *)
+  | Flush  (** Flush operation *)
 
 val make_stream : unit -> order Lwt_stream.t * formatter
 (** [make_stream ()] returns a formatter and a stream of all the writing
     order given on that stream.
 *)
-
 
 val of_channel : Lwt_io.output_channel -> formatter
 (** [of_channel oc] creates a formatter that writes to the channel [oc]. *)
@@ -48,7 +46,10 @@ val stderr : formatter
 (** Formatter printing on {!Lwt_io.stdout}. *)
 
 val make_formatter :
-  commit:(unit -> unit Lwt.t) -> fmt:Format.formatter -> unit -> formatter
+   commit:(unit -> unit Lwt.t)
+  -> fmt:Format.formatter
+  -> unit
+  -> formatter
 (** [make_formatter ~commit ~fmt] creates a new lwt formatter based on the
     {!Stdlib.Format.formatter} [fmt]. The [commit] function will be called by the
     printing functions to update the underlying channel.
@@ -62,23 +63,32 @@ val get_formatter : formatter -> Format.formatter
 
 (** {2 Printing} *)
 
-val fprintf : formatter -> ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
+val fprintf :
+   formatter
+  -> ('a, Format.formatter, unit, unit Lwt.t) format4
+  -> 'a
 
 val kfprintf :
-  (formatter -> unit Lwt.t -> 'a) ->
-  formatter -> ('b, Format.formatter, unit, 'a) format4 -> 'b
+   (formatter -> unit Lwt.t -> 'a)
+  -> formatter
+  -> ('b, Format.formatter, unit, 'a) format4
+  -> 'b
 
-val ifprintf : formatter -> ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
+val ifprintf :
+   formatter
+  -> ('a, Format.formatter, unit, unit Lwt.t) format4
+  -> 'a
 
 val ikfprintf :
-  (formatter -> unit Lwt.t -> 'a) ->
-  formatter -> ('b, Format.formatter, unit, 'a) format4 -> 'b
+   (formatter -> unit Lwt.t -> 'a)
+  -> formatter
+  -> ('b, Format.formatter, unit, 'a) format4
+  -> 'b
 
 val flush : formatter -> unit Lwt.t
 (** [flush fmt] flushes the formatter (as with {!Stdlib.Format.pp_print_flush})
     and executes all the printing action on the underlying channel.
 *)
-
 
 (** Low level functions *)
 

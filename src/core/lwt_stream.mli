@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Data streams *)
 
 type 'a t
@@ -208,6 +206,7 @@ val nget : int -> 'a t -> 'a list Lwt.t
     [st]. *)
 
 val get_while : ('a -> bool) -> 'a t -> 'a list Lwt.t
+
 val get_while_s : ('a -> bool Lwt.t) -> 'a t -> 'a list Lwt.t
 (** [get_while f st] returns the longest prefix of [st] where all
     elements satisfy [f]. *)
@@ -230,6 +229,7 @@ val njunk : int -> 'a t -> unit Lwt.t
     stream. *)
 
 val junk_while : ('a -> bool) -> 'a t -> unit Lwt.t
+
 val junk_while_s : ('a -> bool Lwt.t) -> 'a t -> unit Lwt.t
 (** [junk_while f st] removes all elements at the beginning of the
     streams which satisfy [f]. *)
@@ -265,7 +265,8 @@ val closed : 'a t -> unit Lwt.t
 
 (** {3 Deprecated} *)
 
-val junk_old : 'a t -> unit Lwt.t [@@deprecated "Use junk_available instead"]
+val junk_old : 'a t -> unit Lwt.t
+[@@deprecated "Use junk_available instead"]
 (** @deprecated [junk_old st] is [Lwt.return (junk_available st)]. *)
 
 (** {2 Stream transversal} *)
@@ -292,28 +293,34 @@ val choose : 'a t list -> 'a t
     [l] in an unspecified order. *)
 
 val map : ('a -> 'b) -> 'a t -> 'b t
+
 val map_s : ('a -> 'b Lwt.t) -> 'a t -> 'b t
 (** [map f st] maps the value returned by [st] with [f] *)
 
 val filter : ('a -> bool) -> 'a t -> 'a t
+
 val filter_s : ('a -> bool Lwt.t) -> 'a t -> 'a t
 (** [filter f st] keeps only values, [x], such that [f x] is [true] *)
 
 val filter_map : ('a -> 'b option) -> 'a t -> 'b t
+
 val filter_map_s : ('a -> 'b option Lwt.t) -> 'a t -> 'b t
 (** [filter_map f st] filter and map [st] at the same time *)
 
 val map_list : ('a -> 'b list) -> 'a t -> 'b t
+
 val map_list_s : ('a -> 'b list Lwt.t) -> 'a t -> 'b t
 (** [map_list f st] applies [f] on each element of [st] and flattens
     the lists returned *)
 
 val fold : ('a -> 'b -> 'b) -> 'a t -> 'b -> 'b Lwt.t
+
 val fold_s : ('a -> 'b -> 'b Lwt.t) -> 'a t -> 'b -> 'b Lwt.t
 (** [fold f s x] fold_like function for streams. *)
 
 val iter : ('a -> unit) -> 'a t -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
+
 val iter_s : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
 (** [iter f s] iterates over all elements of the stream. *)
 
@@ -330,10 +337,12 @@ val iter_n : ?max_concurrency:int -> ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
     @since 3.3.0 *)
 
 val find : ('a -> bool) -> 'a t -> 'a option Lwt.t
+
 val find_s : ('a -> bool Lwt.t) -> 'a t -> 'a option Lwt.t
 (** [find f s] find an element in a stream. *)
 
 val find_map : ('a -> 'b option) -> 'a t -> 'b option Lwt.t
+
 val find_map_s : ('a -> 'b option Lwt.t) -> 'a t -> 'b option Lwt.t
 (** [find_map f s] find and map at the same time. *)
 

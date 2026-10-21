@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Helpers for tests. *)
 
 type test
@@ -25,11 +23,11 @@ val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> test
     test. *)
 
 val test :
-  string ->
-  ?only_if:(unit -> bool) ->
-  ?sequential:bool ->
-  (unit -> bool Lwt.t) ->
-    test
+   string
+  -> ?only_if:(unit -> bool)
+  -> ?sequential:bool
+  -> (unit -> bool Lwt.t)
+  -> test
 (** Like [test_direct], but defines a test which runs a thread. *)
 
 val suite : string -> ?only_if:(unit -> bool) -> test list -> suite

@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Asynchronous programming with promises.
 
     A {b promise} is a placeholder for a single value which might take a long
@@ -356,8 +354,6 @@ let () =
 
     Warning! Introductory material ends and detailed reference begins! *)
 
-
-
 (** {2:2_Fundamentals Fundamentals} *)
 
 (** {3 Promises} *)
@@ -393,7 +389,7 @@ type -'a u
     be passed to {!Lwt.wakeup_later}, {!Lwt.wakeup_later_exn}, or
     {!Lwt.wakeup_later_result} to resolve that promise. *)
 
-val wait : unit -> ('a t * 'a u)
+val wait : unit -> 'a t * 'a u
 (** Creates a new pending {{!t} promise}, paired with its {{!u} resolver}.
 
     It is rare to use this function directly. Many helpers in Lwt, and Lwt-aware
@@ -403,8 +399,6 @@ val wait : unit -> ('a t * 'a u)
     However, it is important to understand [Lwt.wait] as the fundamental promise
     “constructor.” All other functions that evaluate to a promise can be, or
     are, eventually implemented in terms of it. *)
-
-
 
 (** {3 Resolving} *)
 
@@ -467,7 +461,6 @@ val fail : exn -> _ t
 
     Use [Lwt.fail] only when you specifically want to create a rejected promise,
     to pass to another function, or store in a data structure. *)
-
 
 (** {3 Callbacks} *)
 
@@ -574,8 +567,6 @@ let () =
     opened it at the beginning of the program.
 
     See also {!Lwt.map}. *)
-
-
 
 (** {2:2_Rejection Rejection} *)
 
@@ -916,8 +907,6 @@ v}
     If you are writing a library, you should leave this reference alone. Its
     behavior should be determined by the application. *)
 
-
-
 (** {2:2_Concurrency Concurrency} *)
 
 (** {3 Multiple wait} *)
@@ -953,7 +942,7 @@ let () =
 
     @since 4.2.0 *)
 
-val join : (unit t) list -> unit t
+val join : unit t list -> unit t
 (** [Lwt.join ps] returns a promise that is pending until {e all} promises in
     the list [ps] become {{!t} {e resolved}}.
 
@@ -981,7 +970,7 @@ let () =
     chosen arbitrarily. Note that this occurs only after all the promises are
     resolved, not immediately when the first promise is rejected. *)
 
-val all : ('a t) list -> ('a list) t
+val all : 'a t list -> 'a list t
 (** [Lwt.all ps] is like {!Lwt.join}[ ps]: it waits for all promises in the list
     [ps] to become {{!t} {e resolved}}.
 
@@ -996,11 +985,9 @@ val all : ('a t) list -> ('a list) t
 
     @since 5.1.0 *)
 
-
-
 (** {3 Racing} *)
 
-val pick : ('a t) list -> 'a t
+val pick : 'a t list -> 'a t
 (** [Lwt.pick ps] returns a promise that is pending until {e one} promise in the
     list [ps] becomes {{!t} {e resolved}}.
 
@@ -1040,11 +1027,11 @@ let () =
 
     The remaining functions in this section are variations on [Lwt.pick]. *)
 
-val choose : ('a t) list -> 'a t
+val choose : 'a t list -> 'a t
 (** [Lwt.choose ps] is the same as {!Lwt.pick}[ ps], except that it does not try
     to cancel pending promises in [ps]. *)
 
-val npick : ('a t) list -> ('a list) t
+val npick : 'a t list -> 'a list t
 (** [Lwt.npick ps] is similar to {!Lwt.pick}[ ps], the difference being that
     when multiple promises in [ps] are fulfilled simultaneously (and none are
     rejected), the result promise is fulfilled with the {e list} of values the
@@ -1053,18 +1040,16 @@ val npick : ('a t) list -> ('a list) t
     When at least one promise is rejected, [Lwt.npick] still rejects the result
     promise with the same exception. *)
 
-val nchoose : ('a t) list -> ('a list) t
+val nchoose : 'a t list -> 'a list t
 (** [Lwt.nchoose ps] is the same as {!Lwt.npick}[ ps], except that it does not
     try to cancel pending promises in [ps]. *)
 
-val nchoose_split : ('a t) list -> ('a list * ('a t) list) t
+val nchoose_split : 'a t list -> ('a list * 'a t list) t
 (** [Lwt.nchoose_split ps] is the same as {!Lwt.nchoose}[ ps], except that when
     multiple promises in [ps] are fulfilled simultaneously (and none are
     rejected), the result promise is fulfilled with {e both} the list of values
     of the fulfilled promises, and the list of promises that are still
     pending. *)
-
-
 
 (** {2:2_Cancellation Cancellation}
 
@@ -1077,7 +1062,7 @@ exception Canceled
 (** Canceled promises are those rejected with this exception, [Lwt.Canceled].
     See {!Lwt.cancel}. *)
 
-val task : unit -> ('a t * 'a u)
+val task : unit -> 'a t * 'a u
 (** [Lwt.task] is the same as {!Lwt.wait}, except the resulting promise [p] is
     {{!Lwt.cancel} cancelable}.
 
@@ -1269,7 +1254,6 @@ val wrap_in_cancelable : 'a t -> 'a t
 
 *)
 
-
 (** {2:2_Convenience Convenience} *)
 
 (** {3 Callback helpers} *)
@@ -1377,8 +1361,6 @@ val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
     [!]{!Lwt.async_exception_hook}. By default, this will terminate the
     process. *)
 
-
-
 (** {3 Infix operators} *)
 
 (** This module provides several infix operators for making programming with
@@ -1388,9 +1370,8 @@ val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
 
     Of the operators declared in this module, only [>|=] is recommended for new
     code. The only other commonly-used operator is [>>=]. *)
-module Infix :
-sig
-  val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+module Infix : sig
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   (** [p >>= f] is the same as {!Lwt.bind}[ p f]. It requires [Lwt.Infix] to be
       opened in scope:
 
@@ -1408,7 +1389,7 @@ let () =
       is the next-best choice. It is frequently found while reading existing
       Lwt code. *)
 
-  val (>|=) : 'a t -> ('a -> 'b) -> 'b t
+  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
   (** [p >|= f] is the same as {!Lwt.map}[ f p]. It requires [Lwt.Infix] to be
       opened in scope.
 
@@ -1422,14 +1403,14 @@ let () =
 (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]} *)
 
-  val (<&>) : unit t -> unit t -> unit t
+  val ( <&> ) : unit t -> unit t -> unit t
   (** [p1 <&> p2] is the same as {!Lwt.join}[ [p1; p2]]. It requires [Lwt.Infix]
       to be opened in scope.
 
       Unlike with {!Lwt.bind} and {!Lwt.map}, there are no problems with
       explicit {!Lwt.join} syntax, so using this operator is not recommended. *)
 
-  val (<?>) : 'a t -> 'a t -> 'a t
+  val ( <?> ) : 'a t -> 'a t -> 'a t
   (** [p1 <?> p2] is the same as {!Lwt.choose}[ [p1; p2]]. It requires
       [Lwt.Infix] to be opened in scope.
 
@@ -1440,14 +1421,14 @@ let () =
       Furthermore, most users actually need {!Lwt.pick} instead of
       {!Lwt.choose}. *)
 
-  val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
+  val ( =<< ) : ('a -> 'b t) -> 'a t -> 'b t
   (** [f =<< p] is the same as {!Lwt.bind}[ p f]. It requires [Lwt.Infix] to be
       opened in scope.
 
       This operator is obscure and its use is discouraged. It is the same as
       [p >>= f]. *)
 
-  val (=|<) : ('a -> 'b) -> 'a t -> 'b t
+  val ( =|< ) : ('a -> 'b) -> 'a t -> 'b t
   (** [f =|< p] is the same as {!Lwt.map}[ f p]. It requires [Lwt.Infix] to be
       opened in scope.
 
@@ -1458,8 +1439,7 @@ let () =
       ppx_let}.
 
       @since 4.2.0 *)
-  module Let_syntax :
-  sig
+  module Let_syntax : sig
     val return : 'a -> 'a t
     (** See {!Lwt.return}. *)
 
@@ -1472,16 +1452,12 @@ let () =
     val both : 'a t -> 'b t -> ('a * 'b) t
     (** See {!Lwt.both}. *)
 
-    module Open_on_rhs :
-    sig
-    end
+    module Open_on_rhs : sig end
   end
 end
 
-module Let_syntax :
-sig
-  module Let_syntax :
-  sig
+module Let_syntax : sig
+  module Let_syntax : sig
     val return : 'a -> 'a t
     (** See {!Lwt.return}. *)
 
@@ -1494,34 +1470,28 @@ sig
     val both : 'a t -> 'b t -> ('a * 'b) t
     (** See {!Lwt.both}. *)
 
-    module Open_on_rhs :
-    sig
-    end
+    module Open_on_rhs : sig end
   end
 end
 
 (** {3 Let syntax} *)
-module Syntax :
-sig
-
+module Syntax : sig
   (** {1 Monadic syntax} *)
 
-  val (let*) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
   (** Syntax for {!bind}. *)
 
-  val (and*) : 'a t -> 'b t -> ('a * 'b) t
+  val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
   (** Syntax for {!both}. *)
 
   (** {1 Applicative syntax} *)
 
-  val (let+) : 'a t -> ('a -> 'b) -> 'b t
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   (** Syntax for {!map}. *)
 
-  val (and+) : 'a t -> 'b t -> ('a * 'b) t
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
   (** Syntax for {!both}. *)
 end
-
-
 
 (** {3 Pre-allocated promises} *)
 
@@ -1542,11 +1512,11 @@ val return_unit : unit t
     pre-allocated promise, automatically, wherever {!Lwt.return}[ ()] is
     written. *)
 
-val return_none : (_ option) t
+val return_none : _ option t
 (** [Lwt.return_none] is like {!Lwt.return_unit}, but for
     {!Lwt.return}[ None]. *)
 
-val return_nil : (_ list) t
+val return_nil : _ list t
 (** [Lwt.return_nil] is like {!Lwt.return_unit}, but for {!Lwt.return}[ []]. *)
 
 val return_true : bool t
@@ -1557,22 +1527,20 @@ val return_false : bool t
 (** [Lwt.return_false] is like {!Lwt.return_unit}, but for
     {!Lwt.return}[ false]. *)
 
-
-
 (** {3 Trivial promises} *)
 
-val return_some : 'a -> ('a option) t
+val return_some : 'a -> 'a option t
 (** Counterpart to {!Lwt.return_none}. However, unlike {!Lwt.return_none}, this
     function performs no {{!return_unit} optimization}. This is because it
     takes an argument, so it cannot be evaluated at initialization time, at
     which time the argument is not yet available. *)
 
-val return_ok : 'a -> (('a, _) result) t
+val return_ok : 'a -> ('a, _) result t
 (** Like {!Lwt.return_some}, this function performs no optimization.
 
     @since Lwt 2.6.0 *)
 
-val return_error : 'e -> ((_, 'e) result) t
+val return_error : 'e -> (_, 'e) result t
 (** Like {!Lwt.return_some}, this function performs no optimization.
 
     @since Lwt 2.6.0 *)
@@ -1596,8 +1564,6 @@ Lwt.fail (Stdlib.Invalid_argument s)
 
     In most cases, it is better to use [invalid_arg s] from the standard
     library. See {!Lwt.fail} for an explanation. *)
-
-
 
 (** {3 Result type} *)
 
@@ -1631,14 +1597,9 @@ val wakeup_later_result : 'a u -> ('a, exn) result -> unit
     [Stdlib.Invalid_argument _], except if [p] is {{!Lwt.cancel} canceled}. If
     [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
 
-
-
 (** {3 State query} *)
 
-type 'a state =
-  | Return of 'a
-  | Fail of exn
-  | Sleep
+type 'a state = Return of 'a | Fail of exn | Sleep
 
 val state : 'a t -> 'a state
 (** [Lwt.state p] evaluates to the current state of promise [p]:
@@ -1649,8 +1610,6 @@ val state : 'a t -> 'a state
     - If [p] is {{!t} pending}, the result is [Lwt.Sleep].
 
     The constructor names are historical holdovers. *)
-
-
 
 (** {2:2_Deprecated Deprecated} *)
 
@@ -1758,8 +1717,6 @@ let () =
     [Lwt.with_value] should only be called in the main thread, i.e. do not call
     it inside {!Lwt_preemptive.detach}. *)
 
-
-
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
@@ -1788,16 +1745,13 @@ val wakeup_result : 'a u -> ('a, exn) result -> unit
 (** [Lwt.wakeup_result r result] is like {!Lwt.wakeup_later_result}[ r result],
     but has the same problems as {!Lwt.wakeup}. *)
 
-
-
-
 (** {3 Linked lists of promises} *)
 
 [@@@ocaml.warning "-3"]
 
-val add_task_r : ('a u) Lwt_sequence.t -> 'a t
-  [@@ocaml.deprecated
-" Deprecated because Lwt_sequence is an implementation detail of Lwt. See
+val add_task_r : 'a u Lwt_sequence.t -> 'a t
+[@@ocaml.deprecated
+  " Deprecated because Lwt_sequence is an implementation detail of Lwt. See
   https://github.com/ocsigen/lwt/issues/361"]
 (** [Lwt.add_task_r sequence] is equivalent to
 
@@ -1814,9 +1768,9 @@ p
     - This function only exists because it performs a minor internal
       optimization, which may be removed. *)
 
-val add_task_l : ('a u) Lwt_sequence.t -> 'a t
-  [@@ocaml.deprecated
-" Deprecated because Lwt_sequence is an implementation detail of Lwt. See
+val add_task_l : 'a u Lwt_sequence.t -> 'a t
+[@@ocaml.deprecated
+  " Deprecated because Lwt_sequence is an implementation detail of Lwt. See
   https://github.com/ocsigen/lwt/issues/361"]
 (** Like {!Lwt.add_task_r}, but the equivalent code calls {!Lwt_sequence.add_l}
     instead.
@@ -1824,8 +1778,6 @@ val add_task_l : ('a u) Lwt_sequence.t -> 'a t
     @deprecated See [add_task_r]. *)
 
 [@@@ocaml.warning "+3"]
-
-
 
 (** {3 Yielding} *)
 
@@ -1905,8 +1857,6 @@ val abandon_paused : unit -> unit
 
 (**/**)
 
-
-
 (** {3 Function lifters} *)
 
 val wrap : (unit -> 'a) -> 'a t
@@ -1914,27 +1864,40 @@ val wrap : (unit -> 'a) -> 'a t
     returns {!Lwt.return}[ v]. If [f ()] raises an exception exn, [Lwt.wrap]
     returns {!Lwt.fail}[ exn]. *)
 
-val wrap1 :
-  ('a -> 'b) ->
-    ('a -> 'b t)
-val wrap2 :
-  ('a -> 'b -> 'c) ->
-    ('a -> 'b -> 'c t)
-val wrap3 :
-  ('a -> 'b -> 'c -> 'd) ->
-    ('a -> 'b -> 'c -> 'd t)
-val wrap4 :
-  ('a -> 'b -> 'c -> 'd -> 'e) ->
-    ('a -> 'b -> 'c -> 'd -> 'e t)
+val wrap1 : ('a -> 'b) -> 'a -> 'b t
+val wrap2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c t
+val wrap3 : ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd t
+val wrap4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e t
+
 val wrap5 :
-  ('a -> 'b -> 'c -> 'd -> 'e -> 'f) ->
-    ('a -> 'b -> 'c -> 'd -> 'e -> 'f t)
+   ('a -> 'b -> 'c -> 'd -> 'e -> 'f)
+  -> 'a
+  -> 'b
+  -> 'c
+  -> 'd
+  -> 'e
+  -> 'f t
+
 val wrap6 :
-  ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) ->
-    ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g t)
+   ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g)
+  -> 'a
+  -> 'b
+  -> 'c
+  -> 'd
+  -> 'e
+  -> 'f
+  -> 'g t
+
 val wrap7 :
-  ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) ->
-    ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h t)
+   ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h)
+  -> 'a
+  -> 'b
+  -> 'c
+  -> 'd
+  -> 'e
+  -> 'f
+  -> 'g
+  -> 'h t
 (** As a “prototype,” [Lwt_wrap1 f] creates a promise-valued function [g]:
 
 {[
@@ -1956,22 +1919,18 @@ let g v =
     To get a suspended function instead of the eager execution of {!Lwt.wrap},
     use [Lwt.wrap1]. *)
 
-
-
 (** {3 Unscoped infix operators}
 
 Use the operators in module {!Lwt.Infix} instead. Using these
 instances of the operators directly requires opening module [Lwt],
 which brings an excessive number of other names into scope. *)
 
-val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
-val (>|=) : 'a t -> ('a -> 'b) -> 'b t
-val (<?>) : 'a t -> 'a t -> 'a t
-val (<&>) : unit t -> unit t -> unit t
-val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
-val (=|<) : ('a -> 'b) -> 'a t -> 'b t
-
-
+val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
+val ( <?> ) : 'a t -> 'a t -> 'a t
+val ( <&> ) : unit t -> unit t -> unit t
+val ( =<< ) : ('a -> 'b t) -> 'a t -> 'b t
+val ( =|< ) : ('a -> 'b) -> 'a t -> 'b t
 
 (** {3 Miscellaneous} *)
 
@@ -2010,18 +1969,18 @@ val ignore_result : _ t -> unit
     The helpers below allow you to change the way that Lwt handles the two OCaml
     runtime exceptions [Out_of_memory] and [Stack_overflow]. *)
 
-module Exception_filter: sig
-
+module Exception_filter : sig
+  type t
   (** An [Exception_filter.t] is a value which indicates to Lwt what exceptions to
       catch and what exceptions to let bubble up all the way out of the main loop
       immediately. *)
-  type t
 
+  val handle_all : t
   (** [handle_all] is the default filter. With it the all the exceptions
       (including [Out_of_memory] and [Stack_overflow]) can be handled: caught
       and transformed into rejected promises. *)
-  val handle_all : t
 
+  val handle_all_except_runtime : t
   (** [handle_all_except_runtime] is a filter which lets the OCaml runtime
       exceptions ([Out_of_memory] and [Stack_overflow]) go through all the Lwt
       abstractions and bubble all the way out of the call to [Lwt_main.run].
@@ -2030,21 +1989,20 @@ module Exception_filter: sig
       Lwt internal state inconsistent. For this reason, you will not be able to
       call [Lwt_main.run] again after such an exception has escaped
       [Lwt_main.run]. *)
-  val handle_all_except_runtime : t
 
+  val set : t -> unit
   (** [set] sets the given exception filter globally. You should call this
       function at most once during the start of your program, before the
       first call to [Lwt_main.run]. *)
-  val set : t -> unit
 
   (**/**)
-  val run : exn -> bool
 
+  val run : exn -> bool
 end
 
+val with_tracing_context : string -> (unit -> 'a t) -> 'a t
 (** [with_tracing_context name (fun () -> <e>)] causes the span events emitted
     inside of <e> to bear the name [name]. *)
-val with_tracing_context : string -> (unit -> 'a t) -> 'a t
 
 (**/**)
 
@@ -2052,20 +2010,39 @@ val poll : 'a t -> 'a option
 val apply : ('a -> 'b t) -> 'a -> 'b t
 
 val backtrace_bind :
-  string -> int ->
-  (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
+   string
+  -> int
+  -> (exn -> exn)
+  -> 'a t
+  -> ('a -> 'b t)
+  -> 'b t
+
 val backtrace_catch :
-  string -> int ->
-  (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+   string
+  -> int
+  -> (exn -> exn)
+  -> (unit -> 'a t)
+  -> (exn -> 'a t)
+  -> 'a t
+
 val backtrace_finalize :
-  string -> int ->
-  (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
+   string
+  -> int
+  -> (exn -> exn)
+  -> (unit -> 'a t)
+  -> (unit -> unit t)
+  -> 'a t
+
 val backtrace_try_bind :
-  string -> int ->
-  (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
+   string
+  -> int
+  -> (exn -> exn)
+  -> (unit -> 'a t)
+  -> ('a -> 'b t)
+  -> (exn -> 'b t)
+  -> 'b t
 
 val abandon_wakeups : unit -> unit
-
 val debug_state_is : 'a state -> 'a t -> bool t
 
 module Private : sig
@@ -2079,5 +2056,5 @@ module Private : sig
   end
 
   val tracing_context : string key
-end [@@alert trespassing "for internal use only, keep away"]
-
+end
+[@@alert trespassing "for internal use only, keep away"]

@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Utilities for retrying Lwt computations
 
     These utilities are useful for dealing with failure-prone computations that
@@ -26,10 +24,7 @@
     demand in an {!type:Lwt_stream.t}, and they can be consumed and traversed
     using the {!module:Lwt_stream} functions directly. *)
 
-type ('retry, 'fatal) error =
-  [ `Retry of 'retry
-  | `Fatal of 'fatal
-  ]
+type ('retry, 'fatal) error = [`Retry of 'retry | `Fatal of 'fatal]
 (** The type of errors that a retryable computation can produce.
 
     - [`Retry r] when [r] represents an error that can be retried.
@@ -49,9 +44,11 @@ type ('ok, 'retry, 'fatal) attempt = ('ok, ('retry, 'fatal) error * int) result
     [n-1] times. *)
 
 val pp_error :
-  ?retry:(Format.formatter -> 'retry -> unit) ->
-  ?fatal:(Format.formatter -> 'fatal -> unit) ->
-  Format.formatter -> ('retry, 'fatal) error -> unit
+   ?retry:(Format.formatter -> 'retry -> unit)
+  -> ?fatal:(Format.formatter -> 'fatal -> unit)
+  -> Format.formatter
+  -> ('retry, 'fatal) error
+  -> unit
 (** [pp_error ~retry ~fatal] is a pretty printer for {!type:error}s that formats
     fatal and retryable errors according to the provided printers.
 
@@ -59,15 +56,15 @@ val pp_error :
     ["<opaque>"]. *)
 
 val equal_error :
-  retry:('retry -> 'retry -> bool) ->
-  fatal:('fatal -> 'fatal -> bool) ->
-  ('retry, 'fatal) error ->
-  ('retry, 'fatal) error ->
-  bool
+   retry:('retry -> 'retry -> bool)
+  -> fatal:('fatal -> 'fatal -> bool)
+  -> ('retry, 'fatal) error
+  -> ('retry, 'fatal) error
+  -> bool
 
 val on_error :
-  (unit -> ('ok, ('retry, 'fatal) error) result Lwt.t) ->
-  ('ok, 'retry, 'fatal) attempt Lwt_stream.t
+   (unit -> ('ok, ('retry, 'fatal) error) result Lwt.t)
+  -> ('ok, 'retry, 'fatal) attempt Lwt_stream.t
 (** [Lwt_retry.on_error f] is a stream of attempts to compute [f], with attempts
     made on demand. Attempts will be added to the stream when results are
     requested until the computation either succeeds or produces a fatal error.
@@ -93,9 +90,9 @@ val on_error :
     ]}*)
 
 val with_sleep :
-  ?duration:(int -> float) ->
-  ('ok, 'retry, 'fatal) attempt Lwt_stream.t ->
-  ('ok, 'retry, 'fatal) attempt Lwt_stream.t
+   ?duration:(int -> float)
+  -> ('ok, 'retry, 'fatal) attempt Lwt_stream.t
+  -> ('ok, 'retry, 'fatal) attempt Lwt_stream.t
 (** [with_sleep ~duration attempts] is the stream of [attempts] with a sleep of
     [duration n] seconds added before computing each [n]th retryable attempt.
 
@@ -131,9 +128,9 @@ val default_sleep_duration : int -> float
     1792.; ...] ]. *)
 
 val n_times :
-  int ->
-  ('ok, 'retry, 'fatal) attempt Lwt_stream.t ->
-  ('ok, 'retry, 'fatal) attempt Lwt.t
+   int
+  -> ('ok, 'retry, 'fatal) attempt Lwt_stream.t
+  -> ('ok, 'retry, 'fatal) attempt Lwt.t
 (** [n_times n attempts] is [Ok v] if one of the [attempts] succeeds within [n]
     retries (or [n+1] attempts), [Error (`Fatal f, n+1)] if any of the attempts
     results in the fatal error, or [Error (`Retry r, n+1)] if all [n] retries are

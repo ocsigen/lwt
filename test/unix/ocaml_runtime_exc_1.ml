@@ -17,13 +17,13 @@ open Lwt.Syntax
 
 let test () =
   try
-    let () = Lwt_main.run (
-      let* () = Lwt.pause () in
-      if true then raise Out_of_memory else Lwt.return_unit
-    ) in
+    let () =
+      Lwt_main.run
+        (let* () = Lwt.pause () in
+         if true then raise Out_of_memory else Lwt.return_unit)
+    in
     Printf.eprintf "Test run+raise failure\n";
     Stdlib.exit 1
-  with
-    | Out_of_memory -> ()
+  with Out_of_memory -> ()
 
 let () = test ()

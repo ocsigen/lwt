@@ -17,19 +17,18 @@ open Lwt.Syntax
 
 let test () =
   try
-    let () = Lwt_main.run (
-      let* () = Lwt.pause () in
-      let _ =
-        Lwt.async
-          (fun () -> let* () = Lwt.pause () in raise Out_of_memory)
-      in
-      Lwt_unix.sleep 0.5
-    ) in
+    let () =
+      Lwt_main.run
+        (let* () = Lwt.pause () in
+         let _ =
+           Lwt.async (fun () ->
+             let* () = Lwt.pause () in
+             raise Out_of_memory)
+         in
+         Lwt_unix.sleep 0.5)
+    in
     Printf.eprintf "Test run+raise failure\n";
     Stdlib.exit 1
-  with
-    | Out_of_memory -> ()
+  with Out_of_memory -> ()
 
 let () = test ()
-
-
