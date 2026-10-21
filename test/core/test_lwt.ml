@@ -165,7 +165,7 @@ let initial_promise_tests = suite "initial promises" [
 let suites = suites @ [initial_promise_tests]
 
 let double_resolve_tests = suite "double resolve" [
-  test "wakeup: double use on wait" begin fun () ->
+  test "wakeup: double use on wait" (fun () ->
     let _, r = Lwt.wait () in
     Lwt.wakeup r "foo";
     try
@@ -173,9 +173,9 @@ let double_resolve_tests = suite "double resolve" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup: double use on task" begin fun () ->
+  test "wakeup: double use on task" (fun () ->
     let _, r = Lwt.task () in
     Lwt.wakeup r "foo";
     try
@@ -183,9 +183,9 @@ let double_resolve_tests = suite "double resolve" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_exn: double use on wait" begin fun () ->
+  test "wakeup_exn: double use on wait" (fun () ->
     let _, r = Lwt.wait () in
     Lwt.wakeup_exn r Exception;
     try
@@ -193,9 +193,9 @@ let double_resolve_tests = suite "double resolve" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_exn" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_exn: double use on task" begin fun () ->
+  test "wakeup_exn: double use on task" (fun () ->
     let _, r = Lwt.task () in
     Lwt.wakeup_exn r Exception;
     try
@@ -203,9 +203,9 @@ let double_resolve_tests = suite "double resolve" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_exn" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_result: double use on wait" begin fun () ->
+  test "wakeup_result: double use on wait" (fun () ->
     let _, r = Lwt.wait () in
     Lwt.wakeup_exn r Exception;
     try
@@ -213,9 +213,9 @@ let double_resolve_tests = suite "double resolve" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_result" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_result: double use on task" begin fun () ->
+  test "wakeup_result: double use on task" (fun () ->
     let _, r = Lwt.task () in
     Lwt.wakeup_exn r Exception;
     try
@@ -223,7 +223,7 @@ let double_resolve_tests = suite "double resolve" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_result" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 ]
 let suites = suites @ [double_resolve_tests]
 
@@ -2292,14 +2292,14 @@ test "pending, then second fulfilled, then fulfilled" begin fun () ->
 let suites = suites @ [both_tests]
 
 let choose_tests = suite "choose" [
-  test "empty" begin fun () ->
+  test "empty" (fun () ->
     try
       ignore (Lwt.choose []);
       Lwt.return_false
     with Invalid_argument "Lwt.choose [] would return a \
                            promise that is pending forever" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
   test "fulfilled" begin fun () ->
     let p = Lwt.choose [fst (Lwt.wait ()); Lwt.return "foo"] in
@@ -2358,14 +2358,14 @@ let choose_tests = suite "choose" [
 let suites = suites @ [choose_tests]
 
 let nchoose_tests = suite "nchoose" [
-  test "empty" begin fun () ->
+  test "empty" (fun () ->
     try
       ignore (Lwt.nchoose []);
       Lwt.return_false
     with Invalid_argument "Lwt.nchoose [] would return a \
                            promise that is pending forever" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
   test "all fulfilled" begin fun () ->
     let p = Lwt.nchoose [Lwt.return "foo"; Lwt.return "bar"] in
@@ -2420,14 +2420,14 @@ let nchoose_tests = suite "nchoose" [
 let suites = suites @ [nchoose_tests]
 
 let nchoose_split_tests = suite "nchoose_split" [
-  test "empty" begin fun () ->
+  test "empty" (fun () ->
     try
       ignore (Lwt.nchoose_split []);
       Lwt.return_false
     with Invalid_argument "Lwt.nchoose_split [] would return a \
                            promise that is pending forever" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
   test "some fulfilled" begin fun () ->
     let p =
@@ -2574,7 +2574,7 @@ let wakeup_later_tests = suite "wakeup_later" [
     state_is (Lwt.Return "foobar") p
   end;
 
-  test "wakeup_later: double use on wait" begin fun () ->
+  test "wakeup_later: double use on wait" (fun () ->
     let _, r = Lwt.wait () in
     Lwt.wakeup r ();
     try
@@ -2582,9 +2582,9 @@ let wakeup_later_tests = suite "wakeup_later" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_later" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_later: double use on task" begin fun () ->
+  test "wakeup_later: double use on task" (fun () ->
     let _, r = Lwt.task () in
     Lwt.wakeup r ();
     try
@@ -2592,9 +2592,9 @@ let wakeup_later_tests = suite "wakeup_later" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_later" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_later_result: double use on wait" begin fun () ->
+  test "wakeup_later_result: double use on wait" (fun () ->
     let _, r = Lwt.wait () in
     Lwt.wakeup r ();
     try
@@ -2602,9 +2602,9 @@ let wakeup_later_tests = suite "wakeup_later" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_later_result" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_later_result: double use on task" begin fun () ->
+  test "wakeup_later_result: double use on task" (fun () ->
     let _, r = Lwt.task () in
     Lwt.wakeup r ();
     try
@@ -2612,9 +2612,9 @@ let wakeup_later_tests = suite "wakeup_later" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_later_result" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_later_exn: double use on wait" begin fun () ->
+  test "wakeup_later_exn: double use on wait" (fun () ->
     let _, r = Lwt.wait () in
     Lwt.wakeup r ();
     try
@@ -2622,9 +2622,9 @@ let wakeup_later_tests = suite "wakeup_later" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_later_exn" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
-  test "wakeup_later_exn: double use on task" begin fun () ->
+  test "wakeup_later_exn: double use on task" (fun () ->
     let _, r = Lwt.task () in
     Lwt.wakeup r ();
     try
@@ -2632,7 +2632,7 @@ let wakeup_later_tests = suite "wakeup_later" [
       Lwt.return_false
     with Invalid_argument "Lwt.wakeup_later_exn" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
   test "wakeup_later_result: nested" begin fun () ->
     let f_ran = ref false in
@@ -2990,14 +2990,14 @@ let resolve_already_canceled_promise_tests = suite "resolve canceled" [
 let suites = suites @ [resolve_already_canceled_promise_tests]
 
 let pick_tests = suite "pick" [
-  test "empty" begin fun () ->
+  test "empty" (fun () ->
     try
       ignore (Lwt.pick []);
       Lwt.return_false
     with Invalid_argument "Lwt.pick [] would return a \
                            promise that is pending forever" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
   test "fulfilled" begin fun () ->
     let p1, _ = Lwt.task () in
@@ -3098,14 +3098,14 @@ let pick_tests = suite "pick" [
 let suites = suites @ [pick_tests]
 
 let npick_tests = suite "npick" [
-  test "empty" begin fun () ->
+  test "empty" (fun () ->
     try
       ignore (Lwt.npick []);
       Lwt.return_false
     with Invalid_argument "Lwt.npick [] would return a \
                            promise that is pending forever" ->
       Lwt.return_true
-  end [@ocaml.warning "-52"];
+  ) [@ocaml.warning "-52"];
 
   test "all fulfilled" begin fun () ->
     let p = Lwt.npick [Lwt.return "foo"; Lwt.return "bar"] in
