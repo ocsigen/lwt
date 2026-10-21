@@ -27,7 +27,7 @@ let suite =
         Lwt.wakeup resume_thread_1 ();
         thread_1 >>= fun () ->
         (* Thread 3: try to take the mutex. Thread 2 should not have it locked,
-         since thread 2 was canceled. *)
+           since thread 2 was canceled. *)
         Lwt_mutex.lock mutex >|= fun () ->
         (not !thread_2_locked_mutex) && thread_2_canceled)
     ; (* See https://github.com/ocsigen/lwt/pull/202#issuecomment-227092595. *)
@@ -50,13 +50,13 @@ let suite =
           (* Inside thread 3 wakeup. *)
 
           (* Thread 1: release the mutex. This queues thread 2 using
-           wakeup_later inside Lwt_mutex.unlock. *)
+             wakeup_later inside Lwt_mutex.unlock. *)
           Lwt.wakeup resume_thread_1 ();
           thread_1 >>= fun () ->
           (* Confirm the mutex is now considered locked by thread 2. *)
           let mutex_passed = Lwt_mutex.is_locked mutex in
           (* Confirm thread 2 hasn't executed its bind (well, map). It is
-           queued. *)
+             queued. *)
           let thread_2_was_queued = not !thread_2_waiter_executed in
           (* Try to cancel thread 2. *)
           Lwt.cancel thread_2;

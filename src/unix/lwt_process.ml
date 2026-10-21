@@ -22,9 +22,8 @@ type redirection =
    +-----------------------------------------------------------------+ *)
 
 type proc =
-  { id : int
-  ; (* The process id. *)
-    fd : Unix.file_descr (* A handle on windows, and a dummy value of Unix. *)
+  { id : int (* The process id. *)
+  ; fd : Unix.file_descr (* A handle on windows, and a dummy value of Unix. *)
   }
 
 let win32_get_fd fd redirection =
@@ -212,10 +211,10 @@ class virtual common timeout proc channels =
       match timeout with
       | None -> ()
       | Some dt ->
-          ignore
-            ((* Ignore errors since they can be obtained by
+          (* Ignore errors since they can be obtained by
              self#close. *)
-             Lwt.try_bind
+          ignore
+            (Lwt.try_bind
                (fun () ->
                   Lwt.choose
                     [ (Lwt_unix.sleep dt >>= fun () -> Lwt.return_false)
@@ -227,7 +226,7 @@ class virtual common timeout proc channels =
                      self#close >>= fun _ -> Lwt.return_unit)
                (fun _ ->
                   (* The exception is dropped because it can be
-                  obtained with self#close. *)
+                     obtained with self#close. *)
                   Lwt.return_unit))
   end
 
@@ -429,16 +428,16 @@ let monitor sender st =
           match Lwt.state sender with
           | Lwt.Sleep ->
               (* The sender is still sleeping, behave as the
-                getter. *)
+                 getter. *)
               getter
           | Lwt.Return _ ->
               (* The sender terminated successfully, we are
-                done monitoring it. *)
+                 done monitoring it. *)
               state := Done;
               getter
           | Lwt.Fail _ ->
               (* The sender failed, behave as the sender for
-                this element and save current getter. *)
+                 this element and save current getter. *)
               state := Save getter;
               sender
         in

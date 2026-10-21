@@ -46,7 +46,7 @@ let foe_exit f called weak () =
   match Weak.get weak 0 with
   | None ->
       (* The value has been garbage collected, normally this point
-       is never reached *)
+         is never reached *)
       Lwt.return_unit
   | Some x ->
       (* Just to avoid double finalisation *)

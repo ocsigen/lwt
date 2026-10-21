@@ -31,7 +31,7 @@ let suite =
         (* Force another attempt on the stream *)
         let+ _ = Lwt_stream.is_empty strm in
         (* We should have run 1 and only 1 attempt,
-            or else the execution logic is wrong. *)
+           or else the execution logic is wrong. *)
         !count = 1)
     ; test "just retries" (fun () ->
         let strm = Retry.on_error (fun () -> Lwt.return_error (`Retry ())) in

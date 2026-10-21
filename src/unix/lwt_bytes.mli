@@ -16,11 +16,11 @@ val length : t -> int
 
 val get : t -> int -> char
 (** [get buffer offset] returns the byte at offset [offset] in
-      [buffer]. *)
+    [buffer]. *)
 
 val set : t -> int -> char -> unit
 (** [get buffer offset value] changes the value of the byte at
-      offset [offset] in [buffer] to [value]. *)
+    offset [offset] in [buffer] to [value]. *)
 
 val unsafe_get : t -> int -> char
 (** Same as {!get} but without bounds checking. *)
@@ -32,37 +32,37 @@ val unsafe_set : t -> int -> char -> unit
 
 val of_bytes : bytes -> t
 (** [of_bytes buf] returns a newly allocated byte array with the
-      same contents as [buf]. *)
+    same contents as [buf]. *)
 
 val of_string : string -> t
 (** [of_string buf] returns a newly allocated byte array with the
-      same contents as [buf]. *)
+    same contents as [buf]. *)
 
 val to_bytes : t -> bytes
 (** [to_bytes buf] returns newly allocated bytes with the same
-      contents as [buf]. *)
+    contents as [buf]. *)
 
 val to_string : t -> string
 (** [to_string buf] returns a newly allocated string with the same
-      contents as [buf]. *)
+    contents as [buf]. *)
 
 (** {2 Copying} *)
 
 val blit : t -> int -> t -> int -> int -> unit
 (** [blit buf1 ofs1 buf2 ofs2 len] copies [len] bytes from [buf1]
-      starting at offset [ofs1] to [buf2] starting at offset [ofs2]. *)
+    starting at offset [ofs1] to [buf2] starting at offset [ofs2]. *)
 
 val blit_from_string : string -> int -> t -> int -> int -> unit
 (** Same as {!blit} but the first buffer is a [String.t] instead of a byte
-      array. *)
+    array. *)
 
 val blit_from_bytes : bytes -> int -> t -> int -> int -> unit
 (** Same as {!blit} but the first buffer is a [Bytes.t] instead of a byte
-      array. *)
+    array. *)
 
 val blit_to_bytes : t -> int -> bytes -> int -> int -> unit
 (** Same as {!blit} but the second buffer is a [Bytes.t] instead of a byte
-      array. *)
+    array. *)
 
 val unsafe_blit : t -> int -> t -> int -> int -> unit
 (** Same as {!blit} but without bound checking. *)
@@ -78,13 +78,13 @@ val unsafe_blit_to_bytes : t -> int -> bytes -> int -> int -> unit
 
 val proxy : t -> int -> int -> t
 (** [proxy buffer offset length] creates a ``proxy''. The returned
-      byte array share the data of [buffer] but with different
-      bounds. *)
+    byte array share the data of [buffer] but with different
+    bounds. *)
 
 val extract : t -> int -> int -> t
 (** [extract buffer offset length] creates a new byte array of
-      length [length] and copy the [length] bytes of [buffer] at
-      [offset] into it.  *)
+    length [length] and copy the [length] bytes of [buffer] at
+    [offset] into it.  *)
 
 val copy : t -> t
 (** [copy buffer] creates a copy of the given byte array. *)
@@ -93,7 +93,7 @@ val copy : t -> t
 
 val fill : t -> int -> int -> char -> unit
 (** [fill buffer offset length value] puts [value] in all [length]
-      bytes of [buffer] starting at offset [offset]. *)
+    bytes of [buffer] starting at offset [offset]. *)
 
 external unsafe_fill :
    t
@@ -184,12 +184,12 @@ val map_file :
   -> unit
   -> t
 (** [map_file ~fd ?pos ~shared ?size ()] maps the file descriptor
-      [fd] to an array of bytes. *)
+    [fd] to an array of bytes. *)
 
 external mapped : t -> bool = "lwt_unix_mapped" "noalloc"
 [@@ocaml.warning "-3"]
 (** [mapped buffer] returns [true] iff [buffer] is a memory mapped
-      file. *)
+    file. *)
 
 (** Type of advise that can be sent to the kernel by the program. See
     the manual madvise(2) for a description of each. *)
@@ -206,25 +206,25 @@ type advice =
 
 val madvise : t -> int -> int -> advice -> unit
 (** [madvise buffer pos len advice] advises the kernel how the
-      program will use the memory mapped file between [pos] and
-      [pos + len].
+    program will use the memory mapped file between [pos] and
+    [pos + len].
 
-      This call is not available on windows. *)
+    This call is not available on windows. *)
 
 val page_size : int
 (** Size of pages. *)
 
 val mincore : t -> int -> bool array -> unit
 (** [mincore buffer offset states] tests whether the given pages are
-      in the system memory (the RAM). The [offset] argument must be a
-      multiple of {!page_size}. [states] is used to store the result;
-      each cases is [true] if the corresponding page is in RAM and
-      [false] otherwise.
+    in the system memory (the RAM). The [offset] argument must be a
+    multiple of {!page_size}. [states] is used to store the result;
+    each cases is [true] if the corresponding page is in RAM and
+    [false] otherwise.
 
-      This call is not available on windows and cygwin. *)
+    This call is not available on windows and cygwin. *)
 
 val wait_mincore : t -> int -> unit Lwt.t
 (** [wait_mincore buffer offset] waits until the page containing the
-      byte at offset [offset] is in RAM.
+    byte at offset [offset] is in RAM.
 
-      This functions is not available on windows and cygwin. *)
+    This functions is not available on windows and cygwin. *)

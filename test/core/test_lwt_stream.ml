@@ -259,7 +259,7 @@ let suite =
         push (Some 1);
         t2 >>= fun t2_value -> return (state t1 = Fail Canceled && t2_value = 1))
     ; (* check if the push function keeps references to the elements in
-     the stream *)
+         the stream *)
       test "push and GC" (fun () ->
         let w = Weak.create 5 in
         (* Count the number of reachable elements in the stream. *)
@@ -291,7 +291,7 @@ let suite =
           assert (state (Lwt_stream.next stream) = Return {contents = 1});
           Gc.full_major ();
           (* Ocaml can consider that stream is unreachable before the
-            next line, hence freeing the whole data. *)
+             next line, hence freeing the whole data. *)
           assert (count () <= 3);
           push
         in

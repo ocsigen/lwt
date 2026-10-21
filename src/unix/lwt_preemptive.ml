@@ -66,11 +66,11 @@ end
 type thread =
   { task_cell : (Lwt_unix.notification * (unit -> unit)) CELL.t
     (* Channel used to communicate notification id and tasks to the
-     worker thread. *)
+       worker thread. *)
   ; mutable thread : Thread.t (* The worker thread. *)
   ; mutable reuse : bool
     (* Whether the thread must be re-added to the pool when the work is
-     done. *)
+       done. *)
   }
 
 (* Pool of worker threads: *)
@@ -197,7 +197,7 @@ let jobs_mutex = Mutex.create ()
 let job_notification =
   Lwt_unix.make_notification (fun () ->
     (* Take the first job. The queue is never empty at this
-          point. *)
+       point. *)
     Mutex.lock jobs_mutex;
     let thunk = Queue.take jobs in
     Mutex.unlock jobs_mutex;

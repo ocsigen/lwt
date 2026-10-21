@@ -41,21 +41,21 @@
 
 val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
 (** Same as {!Unix.handle_unix_error} but catches lwt-level
-      exceptions *)
+    exceptions *)
 
 (** {2 Sleeping} *)
 
 val sleep : float -> unit Lwt.t
 (** [sleep d] is a promise that remains in a pending state for [d] seconds
-      after which it is resolved with value [()]. *)
+    after which it is resolved with value [()]. *)
 
 val yield : unit -> unit Lwt.t
 [@@deprecated "Use Lwt.pause instead"]
 (** [yield ()] is a promise in a pending state. It resumes itself as soon as
-      possible and resolves with value [()].
+    possible and resolves with value [()].
 
-      @deprecated Since 5.5.0 [yield] is deprecated. Use the more general
-      {!Lwt.pause} instead. See {!Lwt_main.yield} for additional details. *)
+    @deprecated Since 5.5.0 [yield] is deprecated. Use the more general
+    {!Lwt.pause} instead. See {!Lwt_main.yield} for additional details. *)
 
 val auto_yield : float -> unit -> unit Lwt.t
 [@@deprecated "Use Lwt_unix.auto_pause instead"]
@@ -63,65 +63,65 @@ val auto_yield : float -> unit -> unit Lwt.t
 
 val auto_pause : float -> unit -> unit Lwt.t
 (** [auto_pause timeout] returns a function [f], and [f ()] has the following
-      behavior:
+    behavior:
 
-      - If it has been more than [timeout] seconds since the last time [f ()]
-        behaved like {!Lwt.pause}, [f ()] calls {!Lwt.pause}.
-      - Otherwise, if it has been less than [timeout] seconds, [f ()] behaves
-        like {!Lwt.return_unit}, i.e. it does not yield. *)
+    - If it has been more than [timeout] seconds since the last time [f ()]
+      behaved like {!Lwt.pause}, [f ()] calls {!Lwt.pause}.
+    - Otherwise, if it has been less than [timeout] seconds, [f ()] behaves
+      like {!Lwt.return_unit}, i.e. it does not yield. *)
 
 exception Timeout
 (** Exception raised by timeout operations *)
 
 val timeout : float -> 'a Lwt.t
 (** [timeout d] is a promise that remains pending for [d] seconds
-      and then is rejected with {!Timeout}.
+    and then is rejected with {!Timeout}.
 
-      @raise Timeout
-      The promise [timeout d] is rejected with {!Timeout} unless it is
-      cancelled. *)
+    @raise Timeout
+    The promise [timeout d] is rejected with {!Timeout} unless it is
+    cancelled. *)
 
 val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
 (** [with_timeout d f] is a short-hand for:
 
-      {[
-        Lwt.pick [Lwt_unix.timeout d; f ()]
-      ]}
+    {[
+      Lwt.pick [Lwt_unix.timeout d; f ()]
+    ]}
 
-      @raise Timeout
-      The promise [with_timeout d f] raises {!Timeout} if the promise returned
-      by [f ()] takes more than [d] seconds to resolve. *)
+    @raise Timeout
+    The promise [with_timeout d f] raises {!Timeout} if the promise returned
+    by [f ()] takes more than [d] seconds to resolve. *)
 
 (** {2 Operations on file-descriptors} *)
 
 type file_descr
 (** The abstract type for {b file descriptor}s. A Lwt {b file
-      descriptor} is a pair of a unix {b file descriptor} (of type
-      {!Unix.file_descr}) and a {b state}.
+    descriptor} is a pair of a unix {b file descriptor} (of type
+    {!Unix.file_descr}) and a {b state}.
 
-      A {b file descriptor} may be:
+    A {b file descriptor} may be:
 
-      - {b opened}, in which case it is fully usable
-      - {b closed} or {b aborted}, in which case it is no longer
-      usable *)
+    - {b opened}, in which case it is fully usable
+    - {b closed} or {b aborted}, in which case it is no longer
+    usable *)
 
 (** State of a {b file descriptor} *)
 type state =
   | Opened  (** The {b file descriptor} is opened *)
   | Closed
   (** The {b file descriptor} has been closed by {!close}. It must
-          not be used for any operation. *)
+      not be used for any operation. *)
   | Aborted of exn
   (** The {b file descriptor} has been aborted, the only operation
-          possible is {!close}, all others will fail. *)
+      possible is {!close}, all others will fail. *)
 
 val state : file_descr -> state
 (** [state fd] returns the {!type:state} of [fd]. *)
 
 val unix_file_descr : file_descr -> Unix.file_descr
 (** Returns the underlying unix {b file descriptor}. It always
-      succeeds, even if the {b file descriptor}'s state is not
-      [Opened]. *)
+    succeeds, even if the {b file descriptor}'s state is not
+    [Opened]. *)
 
 val of_unix_file_descr :
    ?blocking:bool
@@ -184,46 +184,46 @@ val set_blocking : ?set_flags:bool -> file_descr -> bool -> unit
 
 val abort : file_descr -> exn -> unit
 (** [abort fd exn] makes all current and further uses of the file
-      descriptor fail with the given exception. This put the {b file
-      descriptor} into the [Aborted] state.
+    descriptor fail with the given exception. This put the {b file
+    descriptor} into the [Aborted] state.
 
-      If the {b file descriptor} is closed, this does nothing, if it is
-      aborted, this replace the abort exception by [exn].
+    If the {b file descriptor} is closed, this does nothing, if it is
+    aborted, this replace the abort exception by [exn].
 
-      Note that this only works for reading and writing operations on
-      file descriptors supporting non-blocking mode. *)
+    Note that this only works for reading and writing operations on
+    file descriptors supporting non-blocking mode. *)
 
 (** {2 Process handling} *)
 
 val fork : unit -> int
 (** [fork ()] does the same as {!Unix.fork}. You must use this
-      function instead of {!Unix.fork} when you want to use Lwt in the
-      child process, even if you have not started using Lwt before the fork.
+    function instead of {!Unix.fork} when you want to use Lwt in the
+    child process, even if you have not started using Lwt before the fork.
 
-      Notes:
+    Notes:
 
-      - In the child process all pending [Lwt_unix] I/O jobs are abandoned.
-        This may cause the child's copy of their associated promises to remain
-        forever pending.
-      - If you are going to use Lwt in the parent and the child, it is
-        a good idea to call {!Lwt_io.flush_all} before callling
-        {!fork} to avoid double-flush.
-      - Otherwise, if you will not use Lwt in the child, call
-        {!Lwt_main.Exit_hooks.remove_all} to avoid Lwt calling {!Lwt_main.run}
-        during process exit.
-      - None of the above is necessary if you intend to call [exec]. Indeed, in
-        that case, it is not even necessary to use [Lwt_unix.fork]. You can use
-        {!Unix.fork}.
-      - To abandon some more promises, see {!Lwt.abandon_paused}.
+    - In the child process all pending [Lwt_unix] I/O jobs are abandoned.
+      This may cause the child's copy of their associated promises to remain
+      forever pending.
+    - If you are going to use Lwt in the parent and the child, it is
+      a good idea to call {!Lwt_io.flush_all} before callling
+      {!fork} to avoid double-flush.
+    - Otherwise, if you will not use Lwt in the child, call
+      {!Lwt_main.Exit_hooks.remove_all} to avoid Lwt calling {!Lwt_main.run}
+      during process exit.
+    - None of the above is necessary if you intend to call [exec]. Indeed, in
+      that case, it is not even necessary to use [Lwt_unix.fork]. You can use
+      {!Unix.fork}.
+    - To abandon some more promises, see {!Lwt.abandon_paused}.
 
-      Furthermore:
+    Furthermore:
 
-      - Calling [Lwt_unix.fork] raises an execption if [Domain.spawn] has been
-        called at any point in the program's past.
-      - Calling [Lwt_unix.fork] can result in the child process being in a
-        corrupted state if any thread has been started. Lwt starts threads when
-        [Lwt_preemptive.detach] is called. Lwt implicitly starts threads to
-        perform blocking I/O unless the {!async_method} is set to [Async_none]. *)
+    - Calling [Lwt_unix.fork] raises an execption if [Domain.spawn] has been
+      called at any point in the program's past.
+    - Calling [Lwt_unix.fork] can result in the child process being in a
+      corrupted state if any thread has been started. Lwt starts threads when
+      [Lwt_preemptive.detach] is called. Lwt implicitly starts threads to
+      perform blocking I/O unless the {!async_method} is set to [Async_none]. *)
 
 type process_status = Unix.process_status =
   | WEXITED of int
@@ -250,23 +250,23 @@ val wait4 :
   -> int
   -> (int * process_status * resource_usage) Lwt.t
 (** [wait4 flags pid] returns [(pid, status, rusage)] where [(pid, status)]
-      is the same result as [Unix.waitpid flags pid], and
-      [rusage] contains accounting information about the child.
+    is the same result as [Unix.waitpid flags pid], and
+    [rusage] contains accounting information about the child.
 
-      On windows it will always returns [{ utime = 0.0; stime = 0.0 }]. *)
+    On windows it will always returns [{ utime = 0.0; stime = 0.0 }]. *)
 
 val wait_count : unit -> int
 (** Returns the number of promises waiting for a child process to
-      terminate. *)
+    terminate. *)
 
 val system : string -> process_status Lwt.t
 (** Executes the given command, waits until it terminates, and
-      return its termination status. The string is interpreted by the
-      shell [/bin/sh] on Unix and [cmd.exe] on Windows. The result
-      [WEXITED 127] indicates that the shell couldn't be executed.
+    return its termination status. The string is interpreted by the
+    shell [/bin/sh] on Unix and [cmd.exe] on Windows. The result
+    [WEXITED 127] indicates that the shell couldn't be executed.
 
-      The function uses {!fork} internally. As a result, this function is
-      brittle. See all the warnings relating to [fork] for more details. *)
+    The function uses {!fork} internally. As a result, this function is
+    brittle. See all the warnings relating to [fork] for more details. *)
 
 (** {2 Basic file input/output} *)
 
@@ -303,7 +303,7 @@ val openfile : string -> open_flag list -> file_perm -> file_descr Lwt.t
 
 val close : file_descr -> unit Lwt.t
 (** Close a {b file descriptor}. This close the underlying unix {b
-      file descriptor} and set its state to [Closed]. *)
+    file descriptor} and set its state to [Closed]. *)
 
 val read : file_descr -> bytes -> int -> int -> int Lwt.t
 (** [read fd buf ofs len] reads up to [len] bytes from [fd], and writes them to
@@ -483,33 +483,33 @@ val writev : file_descr -> IO_vectors.t -> int Lwt.t
 
 val readable : file_descr -> bool
 (** Returns whether the given file descriptor is currently
-      readable. *)
+    readable. *)
 
 val writable : file_descr -> bool
 (** Returns whether the given file descriptor is currently
-      writable. *)
+    writable. *)
 
 val wait_read : file_descr -> unit Lwt.t
 (** Waits (without blocking other promises) until there is something
-      to read from the file descriptor.
+    to read from the file descriptor.
 
-      Note that you don't need to use this function if you are
-      using Lwt I/O functions for reading, since they provide
-      non-blocking waiting automatically.
+    Note that you don't need to use this function if you are
+    using Lwt I/O functions for reading, since they provide
+    non-blocking waiting automatically.
 
-      The intended use case for this function is interfacing with
-      existing libraries that are known to be blocking. *)
+    The intended use case for this function is interfacing with
+    existing libraries that are known to be blocking. *)
 
 val wait_write : file_descr -> unit Lwt.t
 (** Waits (without blocking other promises) until it is possible to
-      write on the file descriptor.
+    write on the file descriptor.
 
-      Note that you don't need to use this function if you are
-      using Lwt I/O functions for writing, since they provide
-      non-blocking waiting automatically.
+    Note that you don't need to use this function if you are
+    using Lwt I/O functions for writing, since they provide
+    non-blocking waiting automatically.
 
-      The intended use case for this function is interfacing with
-      existing libraries that are known to be blocking. *)
+    The intended use case for this function is interfacing with
+    existing libraries that are known to be blocking. *)
 
 (** {2 Seeking and truncating} *)
 
@@ -528,13 +528,13 @@ val ftruncate : file_descr -> int -> unit Lwt.t
 
 val fsync : file_descr -> unit Lwt.t
 (** Synchronise all data and metadata of the file descriptor with
-      the disk. On Windows it uses [FlushFileBuffers]. *)
+    the disk. On Windows it uses [FlushFileBuffers]. *)
 
 val fdatasync : file_descr -> unit Lwt.t
 (** Synchronise all data (but not metadata) of the file descriptor
-      with the disk.
+    with the disk.
 
-      Note that [fdatasync] is not available on Windows and OS X. *)
+    Note that [fdatasync] is not available on Windows and OS X. *)
 
 (** {2 File status} *)
 
@@ -573,15 +573,15 @@ val fstat : file_descr -> stats Lwt.t
 val file_exists : string -> bool Lwt.t
 (** [file_exists name] tests if a file named [name] exists.
 
-      Note that [file_exists] behaves similarly to
-      {!Sys.file_exists}:
+    Note that [file_exists] behaves similarly to
+    {!Sys.file_exists}:
 
-      - “file” is interpreted as “directory entry” in this context
+    - “file” is interpreted as “directory entry” in this context
 
-      - [file_exists name] will return [false] in
-        circumstances that would make {!stat} raise a
-        {!Unix.Unix_error} exception.
-     *)
+    - [file_exists name] will return [false] in
+      circumstances that would make {!stat} raise a
+      {!Unix.Unix_error} exception.
+   *)
 
 val utimes : string -> float -> float -> unit Lwt.t
 (** [utimes path atime mtime] updates the access and modification times of the
@@ -634,15 +634,15 @@ module LargeFile : sig
   val file_exists : string -> bool Lwt.t
   (** [file_exists name] tests if a file named [name] exists.
 
-        Note that [file_exists] behaves similarly to
-        {!Sys.file_exists}:
+      Note that [file_exists] behaves similarly to
+      {!Sys.file_exists}:
 
-        - “file” is interpreted as “directory entry” in this context
+      - “file” is interpreted as “directory entry” in this context
 
-        - [file_exists name] will return [false] in
-          circumstances that would make {!stat} raise a
-          {!Unix.Unix_error} exception.
-     *)
+      - [file_exists name] will return [false] in
+        circumstances that would make {!stat} raise a
+        {!Unix.Unix_error} exception.
+   *)
 end
 
 (** {2 Operations on file names} *)
@@ -722,10 +722,10 @@ val readdir : dir_handle -> string Lwt.t
 
 val readdir_n : dir_handle -> int -> string array Lwt.t
 (** [readdir_n handle count] reads at most [count] entries from the
-      given directory. It is more efficient than calling [readdir]
-      [count] times. If the length of the returned array is smaller
-      than [count], this means that the end of the directory has been
-      reached. *)
+    given directory. It is more efficient than calling [readdir]
+    [count] times. If the length of the returned array is smaller
+    than [count], this means that the end of the directory has been
+    reached. *)
 
 val rewinddir : dir_handle -> unit Lwt.t
 (** Resets the given directory handle, so that directory listing can be
@@ -736,23 +736,23 @@ val closedir : dir_handle -> unit Lwt.t
 
 val files_of_directory : string -> string Lwt_stream.t
 (** [files_of_directory dir] returns the stream of all files of
-      [dir]. *)
+    [dir]. *)
 
 (** {2 Pipes and redirections} *)
 
 val pipe : ?cloexec:bool -> unit -> file_descr * file_descr
 (** [pipe ()] creates pipe using {!Unix.pipe} and returns two lwt {b
-      file descriptor}s created from unix {b file_descriptor} *)
+    file descriptor}s created from unix {b file_descriptor} *)
 
 val pipe_in : ?cloexec:bool -> unit -> file_descr * Unix.file_descr
 (** [pipe_in ()] is the same as {!pipe} but maps only the unix {b
-      file descriptor} for reading into a lwt one. The second is not
-      put into non-blocking mode. You usually want to use this before
-      forking to receive data from the child process. *)
+    file descriptor} for reading into a lwt one. The second is not
+    put into non-blocking mode. You usually want to use this before
+    forking to receive data from the child process. *)
 
 val pipe_out : ?cloexec:bool -> unit -> Unix.file_descr * file_descr
 (** [pipe_out ()] is the inverse of {!pipe_in}. You usually want to
-      use this before forking to send data to the child process *)
+    use this before forking to send data to the child process *)
 
 val mkfifo : string -> file_perm -> unit Lwt.t
 (** Wrapper for {!Unix.mkfifo} *)
@@ -814,16 +814,16 @@ type signal_handler_id
 
 val on_signal : int -> (int -> unit) -> signal_handler_id
 (** [on_signal signum f] calls [f] each time the signal with numnber
-      [signum] is received by the process. It returns a signal handler
-      identifier that can be used to stop monitoring [signum]. *)
+    [signum] is received by the process. It returns a signal handler
+    identifier that can be used to stop monitoring [signum]. *)
 
 val on_signal_full :
    int
   -> (signal_handler_id -> int -> unit)
   -> signal_handler_id
 (** [on_signal_full f] is the same as [on_signal f] except that [f]
-      also receive the signal handler identifier as argument so it can
-      disable it. *)
+    also receive the signal handler identifier as argument so it can
+    disable it. *)
 
 val disable_signal_handler : signal_handler_id -> unit
 (** Stops receiving this signal *)
@@ -833,17 +833,17 @@ val signal_count : unit -> int
 
 val reinstall_signal_handler : int -> unit
 (** [reinstall_signal_handler signum] if any signal handler is
-      registered for this signal with {!on_signal}, it reinstall the
-      signal handler (with [Sys.set_signal]). This is useful in case
-      another part of the program install another signal handler. *)
+    registered for this signal with {!on_signal}, it reinstall the
+    signal handler (with [Sys.set_signal]). This is useful in case
+    another part of the program install another signal handler. *)
 
 val handle_signal : int -> unit
 (** [handle_signal signum] acts as if Lwt had received the [signum] signal.
-      This allows another IO library to install the handler, perform its own
-      handling, but still notify Lwt. It is particularly useful for SIGCHLD,
-      where several IO libraries may be spawning sub-processes.
+    This allows another IO library to install the handler, perform its own
+    handling, but still notify Lwt. It is particularly useful for SIGCHLD,
+    where several IO libraries may be spawning sub-processes.
 
-      This function is thread-safe. *)
+    This function is thread-safe. *)
 
 (** {2 Sockets} *)
 
@@ -862,7 +862,7 @@ type sockaddr = Unix.sockaddr =
 
 val socket : ?cloexec:bool -> socket_domain -> socket_type -> int -> file_descr
 (** [socket domain type proto] is the same as {!Unix.socket} but maps
-      the result into a lwt {b file descriptor} *)
+    the result into a lwt {b file descriptor} *)
 
 val socketpair :
    ?cloexec:bool
@@ -892,21 +892,21 @@ val accept_n :
   -> ((file_descr * sockaddr) list * exn option) Lwt.t
 (** [accept_n fd count] accepts up to [count] connections at one time.
 
-      - if no connection is available right now, it returns a pending promise
+    - if no connection is available right now, it returns a pending promise
 
-      - if more than 1 and less than [count] are available, it returns
-      all of them
+    - if more than 1 and less than [count] are available, it returns
+    all of them
 
-      - if more than [count] are available, it returns the next
-      [count] of them
+    - if more than [count] are available, it returns the next
+    [count] of them
 
-      - if an error happens, it returns the connections that have been
-      successfully accepted so far and the error
+    - if an error happens, it returns the connections that have been
+    successfully accepted so far and the error
 
-      [accept_n] has the advantage of improving performance. If you
-      want a more detailed description, you can have a look at:
+    [accept_n] has the advantage of improving performance. If you
+    want a more detailed description, you can have a look at:
 
-      {{:https://dl.acm.org/doi/10.5555/1247415.1247435}Acceptable strategies for improving web server performance} *)
+    {{:https://dl.acm.org/doi/10.5555/1247415.1247435}Acceptable strategies for improving web server performance} *)
 
 val connect : file_descr -> sockaddr -> unit Lwt.t
 (** Wrapper for {!Unix.connect} *)
@@ -1012,12 +1012,12 @@ type credentials = {cred_pid : int; cred_uid : int; cred_gid : int}
 
 val get_credentials : file_descr -> credentials
 (** [get_credentials fd] returns credentials information from the
-      given socket. On some platforms, obtaining the peer pid is not
-      possible and it will be set to [-1]. If obtaining credentials
-      is not possible on the current system, it raises
-      [Lwt_sys.Not_available "get_credentials"].
+    given socket. On some platforms, obtaining the peer pid is not
+    possible and it will be set to [-1]. If obtaining credentials
+    is not possible on the current system, it raises
+    [Lwt_sys.Not_available "get_credentials"].
 
-      This call is not available on windows. *)
+    This call is not available on windows. *)
 
 (** {3 Socket options} *)
 
@@ -1047,9 +1047,9 @@ type socket_float_option = Unix.socket_float_option =
   | SO_RCVTIMEO
   | SO_SNDTIMEO
   (** Note: these options are provided for the sake of completeness only. Lwt
-    places all sockets in non-blocking mode, for which these options are
-    meaningless. Use {!Lwt.pick} with {!Lwt_unix.sleep} or {!Lwt_unix.timeout}
-    for timeouts. *)
+      places all sockets in non-blocking mode, for which these options are
+      meaningless. Use {!Lwt.pick} with {!Lwt_unix.sleep} or {!Lwt_unix.timeout}
+      for timeouts. *)
 
 val getsockopt : file_descr -> socket_bool_option -> bool
 (** Wrapper for {!Unix.getsockopt} *)
@@ -1092,7 +1092,7 @@ val mcast_add_membership :
   -> Unix.inet_addr
   -> unit
 (** [mcast_add_membership fd ~ifname addr] joins the multicast group [addr]
-      on the network interface [ifname]. *)
+    on the network interface [ifname]. *)
 
 val mcast_drop_membership :
    file_descr
@@ -1100,7 +1100,7 @@ val mcast_drop_membership :
   -> Unix.inet_addr
   -> unit
 (** [mcast_drop_membership fd ~ifname addr] leaves the multicast group [addr]
-      on the network interface [ifname]. *)
+    on the network interface [ifname]. *)
 
 (** {2 Host and protocol databases} *)
 
@@ -1244,18 +1244,18 @@ val tcflow : file_descr -> flow_action -> unit Lwt.t
 type async_method =
   | Async_none
   (** System calls are made synchronously, and may block the
-          entire program.
+      entire program.
 
-          The main use cases for this are:
-          - debugging (execution is simpler)
-          - working with fork and exec (which are not thread-safe)
-          - when calling specific blocking I/O which is known to be fast *)
+      The main use cases for this are:
+      - debugging (execution is simpler)
+      - working with fork and exec (which are not thread-safe)
+      - when calling specific blocking I/O which is known to be fast *)
   | Async_detach
   (** System calls are made in another system thread, thus without
-          blocking other Lwt promises. The drawback is that it may
-          degrade performance in some cases.
+      blocking other Lwt promises. The drawback is that it may
+      degrade performance in some cases.
 
-          This is the default. *)
+      This is the default. *)
 
 val default_async_method : unit -> async_method
 (** Returns the default async method.
@@ -1295,80 +1295,80 @@ val with_async_detach : (unit -> 'a) -> 'a
 
 exception Retry
 (** If an action raises {!Retry}, it will be requeued until the {b
-      file descriptor} becomes readable/writable again. *)
+    file descriptor} becomes readable/writable again. *)
 
 exception Retry_read
 (** If an action raises {!Retry_read}, it will be requeued until the
-      {b file descriptor} becomes readable. *)
+    {b file descriptor} becomes readable. *)
 
 exception Retry_write
 (** If an action raises {!Retry_read}, it will be requeued until the
-      {b file descriptor} becomes writables. *)
+    {b file descriptor} becomes writables. *)
 
 type io_event = Read | Write
 
 val wrap_syscall : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
 (** [wrap_syscall set fd action] wrap an action on a {b file
-      descriptor}. It tries to execute action, and if it can not be
-      performed immediately without blocking, it is registered for
-      later.
+    descriptor}. It tries to execute action, and if it can not be
+    performed immediately without blocking, it is registered for
+    later.
 
-      In the latter case, if the promise is canceled, [action] is
-      removed from [set]. *)
+    In the latter case, if the promise is canceled, [action] is
+    removed from [set]. *)
 
 val check_descriptor : file_descr -> unit
 (** [check_descriptor fd] raise an exception if [fd] is not in the
-      state [Open]. *)
+    state [Open]. *)
 
 val register_action : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
 (** [register_action set fd action] registers [action] on [fd]. When
-      [fd] becomes [readable]/[writable] [action] is called.
+    [fd] becomes [readable]/[writable] [action] is called.
 
-      Note:
+    Note:
 
-      - you must call [check_descriptor fd] before calling
-      [register_action]
+    - you must call [check_descriptor fd] before calling
+    [register_action]
 
-      - you should prefer using {!wrap_syscall}
-  *)
+    - you should prefer using {!wrap_syscall}
+*)
 
 type 'a job
 (** Type of job descriptions. A job description describe how to call
-      a C function and how to get its result. The C function may be
-      executed in another system thread. *)
+    a C function and how to get its result. The C function may be
+    executed in another system thread. *)
 
 val run_job : ?async_method:async_method -> 'a job -> 'a Lwt.t
 (** [run_job ?async_method job] starts [job] and wait for its
-      termination.
+    termination.
 
-      The [~async_method] argument will be ignored in Lwt 5.0.0, and this
-      function will always act as if [~async_method:Async_detach] is passed.
+    The [~async_method] argument will be ignored in Lwt 5.0.0, and this
+    function will always act as if [~async_method:Async_detach] is passed.
 
-      The async method is chosen follow:
-      - if the optional parameter [async_method] is specified, it is
-        used,
-      - otherwise if the local key {!async_method_key} is set in the
-        current thread, it is used,
-      - otherwise the default method (returned by
-        {!default_async_method}) is used.
+    The async method is chosen follow:
+    - if the optional parameter [async_method] is specified, it is
+      used,
+    - otherwise if the local key {!async_method_key} is set in the
+      current thread, it is used,
+    - otherwise the default method (returned by
+      {!default_async_method}) is used.
 
-      If the method is [Async_none] then the job is run synchronously
-      and may block the current system thread, thus blocking all Lwt
-      threads.
+    If the method is [Async_none] then the job is run synchronously
+    and may block the current system thread, thus blocking all Lwt
+    threads.
 
-      If the method is [Async_detach] then the job is run in another
-      system thread, unless the the maximum number of worker threads
-      has been reached (as given by {!pool_size}).
+    If the method is [Async_detach] then the job is run in another
+    system thread, unless the the maximum number of worker threads
+    has been reached (as given by {!pool_size}).
 
-      If the method is [Async_switch] then the job is run
-      synchronously and if it blocks, execution will continue in
-      another system thread (unless the limit is reached).
-  *)
+    If the method is [Async_switch] then the job is run
+    synchronously and if it blocks, execution will continue in
+    another system thread (unless the limit is reached).
+*)
 
 val abort_jobs : exn -> unit
 (** [abort_jobs exn] make all pending jobs to fail with exn. Note
-      that this does not abort the real job (i.e. the C function
-      executing it), just the lwt thread for it. *)
+    that this does not abort the real job (i.e. the C function
+    executing it), just the lwt thread for it. *)
 
 val cancel_jobs : unit -> unit
 (** [cancel_jobs ()] is the same as [abort_jobs Lwt.Canceled]. *)
@@ -1385,30 +1385,30 @@ type notification
 
 val make_notification : ?once:bool -> (unit -> unit) -> notification
 (** [make_notification ?once f] registers a new notifier. It returns the
-      id of the notifier. Each time a notification with this id is
-      received, [f] is called.
+    id of the notifier. Each time a notification with this id is
+    received, [f] is called.
 
-      if [once] is specified, then the notification is stopped after
-      the first time it is received. It defaults to [false]. *)
+    if [once] is specified, then the notification is stopped after
+    the first time it is received. It defaults to [false]. *)
 
 val send_notification : notification -> unit
 (** [send_notification id] sends a notification.
 
-      This function is thread-safe. *)
+    This function is thread-safe. *)
 
 val stop_notification : notification -> unit
 (** Stop the given notification. Note that you should not reuse the
-      id after the notification has been stopped, the result is
-      unspecified if you do so. *)
+    id after the notification has been stopped, the result is
+    unspecified if you do so. *)
 
 val call_notification : notification -> unit
 (** Call the handler associated to the given notification. Note that
-      if the notification was defined with [once = true] it is removed. *)
+    if the notification was defined with [once = true] it is removed. *)
 
 val set_notification : notification -> (unit -> unit) -> unit
 (** [set_notification id f] replace the function associated to the
-      notification by [f]. It raises [Not_found] if the given
-      notification is not found. *)
+    notification by [f]. It raises [Not_found] if the given
+    notification is not found. *)
 
 (** {2 System threads pool} *)
 
@@ -1418,7 +1418,7 @@ val set_notification : notification -> (unit -> unit) -> unit
 
 val pool_size : unit -> int
 (** Maximum number of system threads that can be started. If this
-      limit is reached, jobs will be executed synchronously. *)
+    limit is reached, jobs will be executed synchronously. *)
 
 val set_pool_size : int -> unit
 (** Change the size of the pool. *)
@@ -1433,16 +1433,16 @@ val thread_waiting_count : unit -> int
 
 val get_cpu : unit -> int
 (** [get_cpu ()] returns the number of the CPU the current thread is
-      running on. *)
+    running on. *)
 
 val get_affinity : ?pid:int -> unit -> int list
 (** [get_affinity ?pid ()] returns the list of CPUs the process with
-      pid [pid] is allowed to run on. If [pid] is not specified then
-      the affinity of the current process is returned. *)
+    pid [pid] is allowed to run on. If [pid] is not specified then
+    the affinity of the current process is returned. *)
 
 val set_affinity : ?pid:int -> int list -> unit
 (** [set_affinity ?pid cpus] sets the list of CPUs the given process
-      is allowed to run on. *)
+    is allowed to run on. *)
 
 (** {2 Versioned interfaces} *)
 

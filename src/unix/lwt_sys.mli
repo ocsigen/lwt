@@ -5,7 +5,7 @@
 
 exception Not_available of string
 (** [Not_available(feature)] is an exception that may be raised when
-      a feature is not available on the current system. *)
+    a feature is not available on the current system. *)
 
 type feature =
   [ `wait4
@@ -24,9 +24,10 @@ type feature =
 
 val have : feature -> bool
 (** Test whether the given feature is available on the current
-      system. *)
+    system. *)
 
-type byte_order = Little_endian | Big_endian  (** Type of byte order *)
+(** Type of byte order *)
+type byte_order = Little_endian | Big_endian
 
 val byte_order : byte_order
 (** The byte order used by the computer running the program. *)

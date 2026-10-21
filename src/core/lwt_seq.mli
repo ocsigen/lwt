@@ -13,7 +13,7 @@ and +'a node =
   | Nil
   | Cons of 'a * 'a t
   (** A fully-evaluated list node, either empty or containing an element
-  and a delayed tail. *)
+    and a delayed tail. *)
 
 val empty : 'a t
 (** The empty sequence, containing no elements. *)

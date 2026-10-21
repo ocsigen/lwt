@@ -77,10 +77,8 @@ let suite =
         >>= check_status)
     ; test "subproc cannot write on closed stdout" (fun () ->
         let args = [|"dummy.exe"; "write"|] in
-        let stderr =
-          `Dev_null
-          (* mask subproc stderr *)
-        in
+        (* mask subproc stderr *)
+        let stderr = `Dev_null in
         Lwt_process.exec ~stdout:`Close ~stderr ("./dummy.exe", args)
         >>= check_status ~status:(( <> ) 0))
     ; test "subproc cannot write on closed stderr" (fun () ->

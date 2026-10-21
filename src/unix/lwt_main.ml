@@ -73,13 +73,13 @@ let run p =
     | `No ->
         let called_from =
           (* See comment above.
-        if Printexc.backtrace_status () then
-          let backtrace =
-            try raise Exit
-            with Exit -> Printexc.get_backtrace ()
-          in
-          `From backtrace
-        else *)
+          if Printexc.backtrace_status () then
+            let backtrace =
+              try raise Exit
+              with Exit -> Printexc.get_backtrace ()
+            in
+            `From backtrace
+          else *)
           `From_somewhere
         in
         run_already_called := called_from;

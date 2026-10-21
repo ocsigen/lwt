@@ -388,7 +388,7 @@ class mapper =
           | None -> expr
           end
         (* [($e$)[%finally $f$]] ≡
-         [Lwt.finalize (fun () -> $e$) (fun () -> $f$)] *)
+           [Lwt.finalize (fun () -> $e$) (fun () -> $f$)] *)
         | [%expr [%e? exp] [%finally [%e? finally]]]
         | [%expr [%e? exp] [%lwt.finally [%e? finally]]] ->
             let new_exp =

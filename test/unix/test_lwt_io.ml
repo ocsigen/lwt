@@ -110,13 +110,13 @@ let suite =
                Lwt.return test_result)
           oc)
     ; (* Without the corresponding bugfix, which is to handle ENOTCONN from
-     Lwt_unix.shutdown, this test raises an exception from the handler's calls
-     to close. *)
+         Lwt_unix.shutdown, this test raises an exception from the handler's
+         calls to close. *)
       test "establish_server_1: shutdown: client closes first"
         ~only_if:(fun () ->
           not (Lwt_config._HAVE_LIBEV && Lwt_config.libev_default))
         (* Note: this test is currently flaky on Linux with libev enabled, so we skip
-     it in that case. *)
+           it in that case. *)
         (fun () ->
            let wait_for_client, client_finished = Lwt.wait () in
            let handler_wait, run_handler = Lwt.wait () in
@@ -135,7 +135,7 @@ let suite =
            Lwt.wakeup client_finished ();
            Lwt_io.shutdown_server server >>= fun () -> handler)
     ; (* Counterpart to establish_server: shutdown test. Confirms that shutdown is
-     implemented correctly in open_connection. *)
+         implemented correctly in open_connection. *)
       test "open_connection: shutdown: server closes first" (fun () ->
         let wait_for_server, server_finished = Lwt.wait () in
         let local = local () in
@@ -167,9 +167,9 @@ let suite =
         in
         run >>= fun () ->
         (* Give a little time for the close system calls on the connection sockets
-         to complete. The Lwt_io and Lwt_unix APIs do not currently allow
-         binding on the implicit closes of these sockets, so resorting to a
-         delay. *)
+           to complete. The Lwt_io and Lwt_unix APIs do not currently allow
+           binding on the implicit closes of these sockets, so resorting to a
+           delay. *)
         Lwt_unix.sleep 0.05 >>= fun () ->
         is_closed_in !in_channel' >>= fun in_closed_after_handler ->
         is_closed_out !out_channel' >|= fun out_closed_after_handler ->
@@ -197,8 +197,8 @@ let suite =
            is_closed_out !out_channel' >|= fun out_closed_after_handler ->
            in_closed_after_handler && out_closed_after_handler)
     ; (* This does a simple double close of the channels (second close is implicit).
-     If something breaks, the test will finish with an exception, or
-     Lwt.async_exception_hook will kill the process. *)
+         If something breaks, the test will finish with an exception, or
+         Lwt.async_exception_hook will kill the process. *)
       test "establish_server: explicit close" (fun () ->
         let open Establish_server in
         let closed_explicitly = ref false in
@@ -229,9 +229,9 @@ let suite =
         is_closed_out !out_channel' >|= fun out_closed ->
         in_closed && out_closed)
     ; (* Makes the channel fail with EBADF on close. Tries to close the channel
-     manually, and handles the exception. When with_close_connection tries to
-     close the socket again implicitly, that should not raise the exception
-     again. *)
+         manually, and handles the exception. When with_close_connection tries
+         to close the socket again implicitly, that should not raise the
+         exception again. *)
       test "with_close_connection: no duplicate exceptions" (fun () ->
         let exceptions_observed = ref 0 in
         let expecting_ebadf f =
@@ -276,7 +276,7 @@ let suite =
              else Lwt.return_false)
         >>= fun no_temps2 -> Lwt.return (no_temps1 && no_temps2))
     ; (* Verify that no exceptions are thrown if the function passed to
-     with_temp_file closes the channel on its own. *)
+         with_temp_file closes the channel on its own. *)
       test "with_temp_filename close handle" (fun () ->
         let f (_, chan) =
           Lwt_io.write chan "test file content" >>= fun _ -> Lwt_io.close chan

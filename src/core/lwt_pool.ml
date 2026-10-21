@@ -10,23 +10,18 @@ module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
 type 'a t =
-  { create : unit -> 'a Lwt.t
-  ; (* Create a new pool member. *)
-    check : 'a -> (bool -> unit) -> unit
-  ; (* Check validity of a pool member when use resulted in failed promise. *)
-    validate : 'a -> bool Lwt.t
-  ; (* Validate an existing free pool member before use. *)
-    dispose : 'a -> unit Lwt.t
-  ; (* Dispose of a pool member. *)
-    cleared : bool ref ref
-  ; (* Have the current pool elements been cleared out? *)
-    max : int
-  ; (* Size of the pool. *)
-    mutable count : int
-  ; (* Number of elements in the pool. *)
-    list : 'a Queue.t
-  ; (* Available pool members. *)
-    waiters : 'a Lwt.u Lwt_sequence.t
+  { create : unit -> 'a Lwt.t (* Create a new pool member. *)
+  ; check : 'a -> (bool -> unit) -> unit
+    (* Check validity of a pool member when use resulted in failed promise. *)
+  ; validate : 'a -> bool Lwt.t
+    (* Validate an existing free pool member before use. *)
+  ; dispose : 'a -> unit Lwt.t (* Dispose of a pool member. *)
+  ; cleared : bool ref ref
+    (* Have the current pool elements been cleared out? *)
+  ; max : int (* Size of the pool. *)
+  ; mutable count : int (* Number of elements in the pool. *)
+  ; list : 'a Queue.t (* Available pool members. *)
+  ; waiters : 'a Lwt.u Lwt_sequence.t
     (* Promise resolvers waiting for a free member. *) }
 
 let create
@@ -80,7 +75,7 @@ let replace_disposed p =
   match Lwt_sequence.take_opt_l p.waiters with
   | None ->
       (* No one is waiting, do not create a new member to avoid
-       losing an error if creation fails. *)
+         losing an error if creation fails. *)
       ()
   | Some wakener ->
       Lwt.on_any (Lwt.apply p.create ())
@@ -100,7 +95,7 @@ let validate_and_return p c =
           dispose p c >>= fun () -> create_member p)
     (fun e ->
        (* Validation failed: create a new member if at least one
-            resolver is waiting. *)
+          resolver is waiting. *)
        dispose p c >>= fun () -> replace_disposed p; Lwt.reraise e)
 
 (* Acquire a pool member. *)

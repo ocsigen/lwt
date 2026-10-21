@@ -1489,18 +1489,18 @@ end = struct
           let (State_may_now_be_pending_proxy p') = may_now_be_proxy p' in
           let p' = underlying p' in
           (* In this callback, [p'] will either still itself be pending, or it
-           will have become a proxy for a pending promise. The reasoning for
-           this is almost the same as in the comment at [may_now_be_proxy]. The
-           differences are:
+             will have become a proxy for a pending promise. The reasoning for
+             this is almost the same as in the comment at [may_now_be_proxy].
+             The differences are:
 
-           - [p'] *is* an initial promise, so it *can* get canceled. However, if
-             it does, the [on_cancel] handler installed below will remove this
-             callback.
-           - [p'] never gets passed to [make_into_proxy], the only effect of
-             which is that it cannot be the underlying promise of another
-             (proxy) promise. So, [p'] can only appear at the head of a chain of
-             [Proxy _] links, and it's not necessary to worry about whether the
-             inductive reasoning at [may_now_be_proxy] applies. *)
+             - [p'] *is* an initial promise, so it *can* get canceled. However,
+               if it does, the [on_cancel] handler installed below will remove
+               this callback.
+             - [p'] never gets passed to [make_into_proxy], the only effect of
+               which is that it cannot be the underlying promise of another
+               (proxy) promise. So, [p'] can only appear at the head of a chain
+               of [Proxy _] links, and it's not necessary to worry about whether
+               the inductive reasoning at [may_now_be_proxy] applies. *)
           let (State_may_have_changed p') =
             resolve ~allow_deferring:false p' p_result
           in
@@ -1525,9 +1525,9 @@ end = struct
           let (State_may_now_be_pending_proxy p') = may_now_be_proxy p' in
           let p' = underlying p' in
           (* In this callback, [p'] will either still itself be pending, or it
-           will have become a proxy for a pending promise. The reasoning for
-           this is as in [protected] and [may_now_be_proxy], but even simpler,
-           because [p'] is not cancelable. *)
+             will have become a proxy for a pending promise. The reasoning for
+             this is as in [protected] and [may_now_be_proxy], but even simpler,
+             because [p'] is not cancelable. *)
           let (State_may_have_changed p') =
             resolve ~allow_deferring:false p' p_result
           in
@@ -1674,16 +1674,17 @@ end = struct
           let (State_may_have_changed p') =
             set_promise_state p' (Proxy outer_promise)
           in
-          ignore p'; State_may_have_changed outer_promise
-  (* The state hasn't actually changed, but we still have to wrap
-           [outer_promise] for type checking. *)
+          ignore p';
+          (* The state hasn't actually changed, but we still have to wrap
+             [outer_promise] for type checking. *)
 
-  (* The state of [p'] may instead have changed -- it may have become a
-           proxy. However, callers of [make_into_proxy] don't know if
-           [user_provided_promise] was a proxy or not (that's why we call
-           underlying on it at the top of this function, to get [p']). We can
-           therefore take a dangerous shortcut and not bother returning a new
-           reference to [user_provided_promise] for shadowing. *)
+          (* The state of [p'] may instead have changed -- it may have become a
+             proxy. However, callers of [make_into_proxy] don't know if
+             [user_provided_promise] was a proxy or not (that's why we call
+             underlying on it at the top of this function, to get [p']). We can
+             therefore take a dangerous shortcut and not bother returning a new
+             reference to [user_provided_promise] for shadowing. *)
+          State_may_have_changed outer_promise
 
   (* Maintainer's note: a lot of the code below can probably be deduplicated in
      some way, especially if assuming Flambda. *)
@@ -1732,17 +1733,17 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             (* [p''] was an underlying promise when it was created above, but it
-             may have become a proxy by the time this code is being executed.
-             However, it is still either an underlying pending promise, or a
-             proxy for a pending promise. Therefore, [may_now_be_proxy] produces
-             a reference with the right type variables. We immediately get
-             [p'']'s current underlying promise. *)
+               may have become a proxy by the time this code is being executed.
+               However, it is still either an underlying pending promise, or a
+               proxy for a pending promise. Therefore, [may_now_be_proxy]
+               produces a reference with the right type variables. We
+               immediately get [p'']'s current underlying promise. *)
             let (State_may_have_changed p'') =
               make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
             (* Make the outer promise [p''] behaviorally identical to the promise
-             [p'] returned by [f] by making [p'] into a proxy of [p'']. *)
+               [p'] returned by [f] by making [p'] into a proxy of [p'']. *)
         | Rejected _ as p_result ->
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
@@ -2302,7 +2303,7 @@ end = struct
       | Fulfilled () -> ()
       | Rejected _ -> (
         (* For the first promise in [ps] to be rejected, set the result of the
-         [join] to rejected with the same exception.. *)
+           [join] to rejected with the same exception.. *)
         match !join_result with
         | Fulfilled () -> join_result := new_result
         | Rejected _ -> ())
@@ -2337,9 +2338,9 @@ end = struct
               attach_callback_or_resolve_immediately ps
           | Rejected _ as p_result ->
               (* As in the callback above, but for already-resolved promises in
-             [ps]: reject the [join] with the same exception as in the first
-             rejected promise found. [join] still waits for any pending promises
-             before actually resolving, though. *)
+                 [ps]: reject the [join] with the same exception as in the first
+                 rejected promise found. [join] still waits for any pending
+                 promises before actually resolving, though. *)
               begin match !join_result with
               | Fulfilled () -> join_result := p_result
               | Rejected _ -> ()
@@ -2657,7 +2658,7 @@ end = struct
       match ps with
       | [] ->
           (* Maintainer's note: should the pending promise list also be
-           reversed? It is reversed in finish. *)
+             reversed? It is reversed in finish. *)
           return (List.rev results, pending)
       | p :: ps -> (
           let (Internal p_internal) = to_internal_promise p in

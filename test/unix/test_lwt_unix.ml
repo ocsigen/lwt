@@ -81,8 +81,8 @@ let test_cloexec ~closed flags =
       let fd = string_of_int (Obj.magic (Lwt_unix.unix_file_descr fd)) in
       let expected_status = if closed then "--closed" else "--open" in
       (* There's no portable way to obtain the tester executable name (which may
-       even no longer exist at this point), but argv[0] fortunately has the
-       right value when the tests are run in the Lwt dev environment. *)
+         even no longer exist at this point), but argv[0] fortunately has the
+         right value when the tests are run in the Lwt dev environment. *)
       Unix.execv Sys.argv.(0) [|""; "--cloexec"; fd; expected_status|]
   | n -> (
       Lwt_unix.close fd >>= fun () ->
@@ -756,10 +756,10 @@ let bind_tests =
                    else bind_loop (attempts - 1)
                | Unix.Unix_error (Unix.EPERM, "bind", _) ->
                    (* On EPERM, assume that we are under WSL, but in the Windows
-                 filesystem. If this ever results in a false positive, this
-                 test should add a check for WSL by checking for the existence
-                 of /proc/version, reading it, and checking its contents for the
-                 string "WSL". *)
+                      filesystem. If this ever results in a false positive, this
+                      test should add a check for WSL by checking for the
+                      existence of /proc/version, reading it, and checking its
+                      contents for the string "WSL". *)
                    raise Skip
                | e -> Lwt.reraise e)
          in
@@ -780,7 +780,7 @@ let bind_tests =
          (try Unix.unlink chosen_path with _ -> ());
          (try Unix.unlink actual_path with _ -> ());
          (* Compare with a prefix of the actual path, due to
-         https://github.com/ocaml/ocaml/pull/987 *)
+            https://github.com/ocaml/ocaml/pull/987 *)
          try
            Lwt.return
              (chosen_path = String.sub actual_path 0 (String.length chosen_path))
@@ -925,7 +925,7 @@ let pread_tests ~blocking =
       >>= fun n ->
       assert (n = String.length file_contents);
       (* This should always be true in practice, show it if this is the reason
-          for failing *)
+         for failing *)
       let buf = Bytes.make 3 '\x00' in
       Lwt_unix.pread fd buf ~file_offset:3 0 3 >>= fun n ->
       assert (n = 3);

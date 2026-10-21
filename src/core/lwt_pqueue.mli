@@ -46,24 +46,24 @@ module type S = sig
 
   val add : elt -> t -> t
   (** [add e q] evaluates to a new priority queue, which contains all the
-        elements of [q], and the additional element [e]. *)
+      elements of [q], and the additional element [e]. *)
 
   val union : t -> t -> t
   (** [union q q'] evaluates to a new priority queue, which contains all the
-        elements of both [q] and [q']. *)
+      elements of both [q] and [q']. *)
 
   val find_min : t -> elt
   (** [find_min q] evaluates to the minimum element of [q] if it is not empty,
-        and raises [Not_found] otherwise. *)
+      and raises [Not_found] otherwise. *)
 
   val lookup_min : t -> elt option
   (** [lookup_min q] evaluates to [Some e], where [e] is the minimum element
-        of [q], if [q] is not empty, and evaluates to [None] otherwise. *)
+      of [q], if [q] is not empty, and evaluates to [None] otherwise. *)
 
   val remove_min : t -> t
   (** [remove_min q] evaluates to a new priority queue, which contains all the
-        elements of [q] except for its minimum element. Raises [Not_found] if
-        [q] is empty. *)
+      elements of [q] except for its minimum element. Raises [Not_found] if
+      [q] is empty. *)
 
   val size : t -> int
   (** [size q] evaluates to the number of elements in [q]. *)

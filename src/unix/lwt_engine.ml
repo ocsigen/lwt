@@ -13,9 +13,8 @@ module Lwt_sequence = Lwt_sequence
    +-----------------------------------------------------------------+ *)
 
 type _event =
-  { stop : unit Lazy.t
-  ; (* The stop method of the event. *)
-    node : Obj.t Lwt_sequence.node
+  { stop : unit Lazy.t (* The stop method of the event. *)
+  ; node : Obj.t Lwt_sequence.node
     (* The node in the sequence of registered events. *) }
 
 type event = _event ref
@@ -65,11 +64,11 @@ class virtual abstract =
 
     val readables = Lwt_sequence.create ()
     (* Sequence of callbacks waiting for a file descriptor to become
-     readable. *)
+       readable. *)
 
     val writables = Lwt_sequence.create ()
     (* Sequence of callbacks waiting for a file descriptor to become
-     writable. *)
+       writable. *)
 
     val timers = Lwt_sequence.create ()
     (* Sequence of timers. *)
@@ -284,9 +283,9 @@ let rec restart_actions sleep_queue now =
       restart_actions (Sleep_queue.remove_min sleep_queue) now
   | Some {time; action; _} when time <= now ->
       (* We have to remove the sleeper to the queue before performing
-       the action. The action can change the sleeper's time, and this
-       might break the priority queue invariant if the sleeper is
-       still in the queue. *)
+         the action. The action can change the sleeper's time, and this
+         might break the priority queue invariant if the sleeper is
+         still in the queue. *)
       let q = Sleep_queue.remove_min sleep_queue in
       action (); restart_actions q now
   | _ -> sleep_queue
@@ -318,16 +317,16 @@ class virtual select_or_poll_based =
     val mutable new_sleeps = []
     (* Sleepers added since the last iteration of the main loop:
 
-     They are not added immediately to the main sleep queue in order
-     to prevent them from being wakeup immediately.  *)
+       They are not added immediately to the main sleep queue in order
+       to prevent them from being wakeup immediately.  *)
 
     val mutable wait_readable = Fd_map.empty
     (* Sequences of actions waiting for file descriptors to become
-     readable. *)
+       readable. *)
 
     val mutable wait_writable = Fd_map.empty
     (* Sequences of actions waiting for file descriptors to become
-     writable. *)
+       writable. *)
 
     method private cleanup = ()
 
@@ -398,7 +397,7 @@ class virtual select_based =
 
     method iter block =
       (* Transfer all sleepers added since the last iteration to the
-       main sleep queue: *)
+         main sleep queue: *)
       sleep_queue <-
         List.fold_left (fun q e -> Sleep_queue.add e q) sleep_queue new_sleeps;
       new_sleeps <- [];
@@ -413,7 +412,7 @@ class virtual select_based =
         | Unix.Unix_error (Unix.EINTR, _, _) -> [], []
         | Unix.Unix_error (Unix.EBADF, _, _) ->
             (* Keeps only bad file descriptors. Actions registered on
-           them have to handle the error: *)
+               them have to handle the error: *)
             List.filter bad_fd fds_r, List.filter bad_fd fds_w
       in
       (* Restart threads waiting for a timeout: *)
@@ -439,7 +438,7 @@ class virtual poll_based =
 
     method iter block =
       (* Transfer all sleepers added since the last iteration to the
-       main sleep queue: *)
+         main sleep queue: *)
       sleep_queue <-
         List.fold_left (fun q e -> Sleep_queue.add e q) sleep_queue new_sleeps;
       new_sleeps <- [];
@@ -459,7 +458,7 @@ class virtual poll_based =
         | Unix.Unix_error (Unix.EINTR, _, _) -> []
         | Unix.Unix_error (Unix.EBADF, _, _) ->
             (* Keeps only bad file descriptors. Actions registered on
-           them have to handle the error: *)
+               them have to handle the error: *)
             List.filter (fun (fd, _, _) -> bad_fd fd) fds
       in
       (* Restart threads waiting for a timeout: *)

@@ -189,13 +189,13 @@ let bind_tests =
           let p = Lwt.bind p (fun s -> Lwt.return (s ^ "bar")) in
           state_is (Lwt.Return "foobar") p
         end
-    ; (* A somewhat surprising behavior of native [bind] is that if [p] is fulfilled
-     and [f] raises before evaluating to a promise, [bind p f] raises, instead
-     of evaluating to a promise. On the other hand, if [p] is pending, and [f]
-     raises, the exception is folded into the promise resulting from [bind].
-     See
+    ; (* A somewhat surprising behavior of native [bind] is that if [p] is
+         fulfilled and [f] raises before evaluating to a promise, [bind p f]
+         raises, instead of evaluating to a promise. On the other hand, if [p]
+         is pending, and [f] raises, the exception is folded into the promise
+         resulting from [bind]. See
 
-       https://github.com/ocsigen/lwt/issues/329 *)
+           https://github.com/ocsigen/lwt/issues/329 *)
       test "already fulfilled, f raises" begin fun () ->
           let p = Lwt.return "foo" in
           try
@@ -288,8 +288,8 @@ let bind_tests =
           Lwt.wakeup r2 "bar";
           state_is (Lwt.Return "foobar") p
         end
-    ; (* This tests an implementation detail, namely the construction and flattening
-     of a chain of proxy promises. *)
+    ; (* This tests an implementation detail, namely the construction and
+         flattening of a chain of proxy promises. *)
       test "proxy chain" begin fun () ->
           let p1, r1 = Lwt.wait () in
           let p2, r2 = Lwt.wait () in
@@ -305,7 +305,8 @@ let bind_tests =
                 Lwt.return (p3_correct && p4_correct && p5_correct))))
         end
     ; (* This tests an implementation detail, namely that proxy promise chaining
-     does not form cycles. It's only relevant for the native implementation. *)
+         does not form cycles. It's only relevant for the native
+         implementation. *)
       test "cycle" begin fun () ->
           let p, r = Lwt.wait () in
           let p' = ref Lwt.return_unit in
@@ -313,21 +314,21 @@ let bind_tests =
           Lwt.wakeup r ();
           Lwt.return (Lwt.state !p' = Lwt.Sleep)
         end
-    ; (* This tests the effect of an implementation detail: if a promise is going to
-     be resolved by a callback, but that promise becomes a proxy synchronously
-     during that callback, everything still works. *)
+    ; (* This tests the effect of an implementation detail: if a promise is
+         going to be resolved by a callback, but that promise becomes a proxy
+         synchronously during that callback, everything still works. *)
       test "proxy during callback" begin fun () ->
           let p1, r1 = Lwt.wait () in
           let p2, r2 = Lwt.wait () in
           let p3 =
             Lwt.bind p1 (fun () ->
-              (* Synchronously resolve [p2]. Because of the [bind] below, [p3] will
-             become a proxy for [p4] while this callback is still running. We
-             then finish the callback by returning [true]. If [bind] is
-             implemented correctly, it will follow the [p3] proxy link to [p4]
-             only after the callback returns. In an earlier incorrect
-             implementation, this code could cause Lwt to hang forever, or crash
-             the process. *)
+              (* Synchronously resolve [p2]. Because of the [bind] below, [p3]
+                 will become a proxy for [p4] while this callback is still
+                 running. We then finish the callback by returning [true]. If
+                 [bind] is implemented correctly, it will follow the [p3] proxy
+                 link to [p4] only after the callback returns. In an earlier
+                 incorrect implementation, this code could cause Lwt to hang
+                 forever, or crash the process. *)
               Lwt.wakeup r2 (); Lwt.return_true)
           in
           let p4 = Lwt.bind p2 (fun () -> p3) in
@@ -476,7 +477,7 @@ let catch_tests =
         end
     ; (* This is an analog of the "bind quirk," see
 
-       https://github.com/ocsigen/lwt/issues/329 *)
+           https://github.com/ocsigen/lwt/issues/329 *)
       test "rejected, h raises" begin fun () ->
           try
             ignore
@@ -1981,8 +1982,8 @@ let choose_tests =
           state_is (Lwt.Fail Exception) p
         end
     ; test "multiple resolved" begin fun () ->
-          (* This is run in a loop to check that it consistently returns the failed
-       result as per documentation. *)
+          (* This is run in a loop to check that it consistently returns the
+             failed result as per documentation. *)
           let rec repeat n =
             n <= 0
             || begin
@@ -2279,8 +2280,8 @@ let wakeup_later_tests =
           Lwt.return (!f_ran = true && Lwt.state p2 = Lwt.Return "foobar")
         end
     ; (* Only basic tests for wakeup_later and wakeup_later_exn, as they are
-     implemented in terms of wakeup_later_result. This isn't fully legitimate as
-     a reason, but oh well. *)
+         implemented in terms of wakeup_later_result. This isn't fully
+         legitimate as a reason, but oh well. *)
       test "wakeup_later: basic" begin fun () ->
           let p, r = Lwt.wait () in
           Lwt.wakeup_later r "foo";
@@ -2325,8 +2326,9 @@ let cancel_tests =
           Lwt.cancel p;
           Lwt.return (!saw = Some Lwt.Canceled)
         end
-    ; (* Behaves like wakeup rather than wakeup_later, even though that's probably
-     wrong. Calling cancel in a (functional) loop will cause stack overflow. *)
+    ; (* Behaves like wakeup rather than wakeup_later, even though that's
+         probably wrong. Calling cancel in a (functional) loop will cause stack
+         overflow. *)
       test "nested" begin fun () ->
           let f_ran = ref false in
           let p1, _ = Lwt.task () in
@@ -2365,7 +2367,7 @@ let on_cancel_tests =
         end
     ; test "ordering" begin fun () ->
           (* Two cancel callbacks to make sure they both run before the ordinary
-       callback. *)
+             callback. *)
           let on_cancel_1_ran = ref false in
           let on_cancel_2_ran = ref false in
           let callback_ran = ref false in
@@ -2394,9 +2396,9 @@ let on_cancel_tests =
           Lwt.on_cancel (Lwt.fail Lwt.Canceled) (fun () -> f_ran := true);
           Lwt.return (!f_ran = true)
         end
-    ; (* More generally, this tests that rejecting with [Lwt.Canceled] is equivalent
-     to calling [Lwt.cancel]. The difference is that [Lwt.cancel] can be called
-     on promises without the need of a resolver. *)
+    ; (* More generally, this tests that rejecting with [Lwt.Canceled] is
+         equivalent to calling [Lwt.cancel]. The difference is that [Lwt.cancel]
+         can be called on promises without the need of a resolver. *)
       test "reject with Canceled" begin fun () ->
           let f_ran = ref false in
           let p, r = Lwt.wait () in
@@ -2445,13 +2447,13 @@ let protected_tests =
             (Lwt.state p = Lwt.Return "foo"
             && Lwt.state p' = Lwt.Fail Lwt.Canceled)
         end
-    ; (* Implementation detail: [p' = Lwt.protected _] can still be resolved if it
-     becomes a proxy. *)
+    ; (* Implementation detail: [p' = Lwt.protected _] can still be resolved if
+         it becomes a proxy. *)
       test "pending, proxy" begin fun () ->
           let p1, r1 = Lwt.task () in
           let p2 = Lwt.protected p1 in
-          (* Make p2 a proxy for p4; p3 is just needed to suspend the bind, in order
-       to callback the code that makes p2 a proxy. *)
+          (* Make p2 a proxy for p4; p3 is just needed to suspend the bind, in
+             order to callback the code that makes p2 a proxy. *)
           let p3, r3 = Lwt.wait () in
           let _ = Lwt.bind p3 (fun () -> p2) in
           Lwt.wakeup r3 ();
@@ -2530,12 +2532,12 @@ let cancelable_tests =
             && Lwt.state p' = Lwt.Fail Lwt.Canceled)
         end
     ; (* Implementation detail: [p' = Lwt.wrap_in_cancelable _] can still be
-     resolved if it becomes a proxy. *)
+         resolved if it becomes a proxy. *)
       test "pending, proxy" begin fun () ->
           let p1, r1 = Lwt.task () in
           let p2 = Lwt.wrap_in_cancelable p1 in
-          (* Make p2 a proxy for p4; p3 is just needed to suspend the bind, in order
-       to callback the code that makes p2 a proxy. *)
+          (* Make p2 a proxy for p4; p3 is just needed to suspend the bind, in
+             order to callback the code that makes p2 a proxy. *)
           let p3, r3 = Lwt.wait () in
           let _ = Lwt.bind p3 (fun () -> p2) in
           Lwt.wakeup r3 ();
@@ -2586,7 +2588,8 @@ let resolve_already_canceled_promise_tests =
           Lwt.return (Lwt.state p = Lwt.Fail Lwt.Canceled)
         end
     ; (* This test can start falsely passing if the entire test is run inside an
-     Lwt promise resolution phase, e.g. inside an outer [Lwt.wakeup_later]. *)
+         Lwt promise resolution phase, e.g. inside an outer
+         [Lwt.wakeup_later]. *)
       test "wakeup_later: canceled" begin fun () ->
           let p, r = Lwt.task () in
           Lwt.cancel p;
@@ -2623,8 +2626,8 @@ let pick_tests =
             && Lwt.state p2 = Lwt.Fail Exception)
         end
     ; test "multiple resolved" begin fun () ->
-          (* This is run in a loop to check that it consistently returns the failed
-       result as per documentation. *)
+          (* This is run in a loop to check that it consistently returns the
+             failed result as per documentation. *)
           let rec repeat n =
             n <= 0
             || begin
@@ -2836,7 +2839,8 @@ let cancel_bind_tests =
           let p', _ = Lwt.wait () in
           let p'' = Lwt.bind p (fun () -> p') in
           Lwt.wakeup r ();
-          (* [bind]'s [f] ran, and now [p'] and [p''] should share the same state. *)
+          (* [bind]'s [f] ran, and now [p'] and [p''] should share the same
+             state. *)
           Lwt.cancel p'';
           Lwt.return (Lwt.state p' = Lwt.Sleep && Lwt.state p'' = Lwt.Sleep)
         end
@@ -2857,8 +2861,9 @@ let cancel_bind_tests =
           let p3 = Lwt.bind p1 (fun () -> p2) in
           let p4 = Lwt.bind p1 (fun () -> p3) in
           Lwt.wakeup r ();
-          (* At this point, [p4] and [p3] share the same state, and canceling [p4]
-       should chain to [p2], because [p3] is obtained by binding on [p2]. *)
+          (* At this point, [p4] and [p3] share the same state, and canceling
+             [p4] should chain to [p2], because [p3] is obtained by binding on
+             [p2]. *)
           Lwt.cancel p4;
           Lwt.return
             (Lwt.state p2 = Lwt.Fail Lwt.Canceled
@@ -2874,7 +2879,7 @@ let cancel_bind_tests =
           Lwt.on_cancel p2 (fun () -> g_ran := true);
           Lwt.cancel p2;
           (* Canceling [p2] doesn't cancel [p1], because the function passed to
-       [Lwt.bind] never ran. *)
+             [Lwt.bind] never ran. *)
           Lwt.return (!f_ran = false && !g_ran = true)
         end
     ; test "pending, fulfilled, on_cancel callbacks" begin fun () ->
@@ -2887,8 +2892,8 @@ let cancel_bind_tests =
           Lwt.on_cancel p3 (fun () -> g_ran := true);
           Lwt.wakeup r ();
           Lwt.cancel p3;
-          (* Canceling [p3] cancels [p2], because the function passed to [Lwt.bind]
-       did run, and evaluated to [p2]. *)
+          (* Canceling [p3] cancels [p2], because the function passed to
+             [Lwt.bind] did run, and evaluated to [p2]. *)
           Lwt.return (!f_ran = true && !g_ran = true)
         end ]
 
@@ -2921,8 +2926,8 @@ let suites = suites @ [cancel_map_tests]
 
 let cancel_catch_tests =
   suite "cancel catch"
-    [ (* In [p' = Lwt.catch (fun () -> p) f], if [p] is not cancelable, [p'] is also
-     not cancelable. *)
+    [ (* In [p' = Lwt.catch (fun () -> p) f], if [p] is not cancelable, [p'] is
+         also not cancelable. *)
       test "wait, pending, canceled" begin fun () ->
           let f_ran = ref false in
           let p, _ = Lwt.wait () in
@@ -2939,9 +2944,9 @@ let cancel_catch_tests =
             && Lwt.state p = Lwt.Sleep
             && Lwt.state p' = Lwt.Sleep)
         end
-    ; (* In [p' = Lwt.catch (fun () -> p) f], if [p] is cancelable, canceling [p']
-     propagates to [p], and then the cancellation exception can be "intercepted"
-     by [f], which can resolve [p'] in an arbitrary way. *)
+    ; (* In [p' = Lwt.catch (fun () -> p) f], if [p] is cancelable, canceling
+         [p'] propagates to [p], and then the cancellation exception can be
+         "intercepted" by [f], which can resolve [p'] in an arbitrary way. *)
       test "task, pending, canceled" begin fun () ->
           let saw = ref None in
           let p, _ = Lwt.task () in
@@ -2959,8 +2964,8 @@ let cancel_catch_tests =
             && Lwt.state p' = Lwt.Return "foo")
         end
     ; (* In [p' = Lwt.catch (fun () -> p) f], if [p] is cancelable, and cancel
-     callbacks are added to both [p] and [p'], and [f] does not resolve [p']
-     with [Lwt.Fail Lwt.Canceled], only the callback on [p] runs. *)
+         callbacks are added to both [p] and [p'], and [f] does not resolve [p']
+         with [Lwt.Fail Lwt.Canceled], only the callback on [p] runs. *)
       test "task, pending, canceled, on_cancel, intercepted" begin fun () ->
           let on_cancel_1_ran = ref false in
           let on_cancel_2_ran = ref false in
@@ -2981,7 +2986,7 @@ let cancel_catch_tests =
             && !on_cancel_2_ran = false)
         end
     ; (* Same as above, except this time, cancellation is passed on to the outer
-     promise, so we can expect both cancel callbacks to run. *)
+         promise, so we can expect both cancel callbacks to run. *)
       test "task, pending, canceled, on_cancel, forwarded" begin fun () ->
           let on_cancel_2_ran = ref false in
           let p, _ = Lwt.task () in
@@ -2993,9 +2998,9 @@ let cancel_catch_tests =
             && Lwt.state p' = Lwt.Fail Lwt.Canceled
             && !on_cancel_2_ran = true)
         end
-    ; (* (2 tests) If the handler passed to [Lwt.catch] already ran, canceling the
-     outer promise is the same as canceling the promise returned by the
-     handler. *)
+    ; (* (2 tests) If the handler passed to [Lwt.catch] already ran, canceling
+         the outer promise is the same as canceling the promise returned by the
+         handler. *)
       test "pending, wait, canceled" begin fun () ->
           let p1, r = Lwt.wait () in
           let p2, _ = Lwt.wait () in
@@ -3247,9 +3252,9 @@ let cancel_join_tests =
             (Lwt.state p1 = Lwt.Return ()
             && Lwt.state p3 = Lwt.Fail Lwt.Canceled)
         end
-    ; (* In [p' = Lwt.join [p; p]], if [p'] is canceled, the cancel handler on [p]
-     is called only once, even though it is reachable by two paths in the
-     cancellation graph. *)
+    ; (* In [p' = Lwt.join [p; p]], if [p'] is canceled, the cancel handler on
+         [p] is called only once, even though it is reachable by two paths in
+         the cancellation graph. *)
       test "cancel diamond" begin fun () ->
           let ran = ref 0 in
           let p, _ = Lwt.task () in
@@ -3797,8 +3802,8 @@ let pause_tests =
         end
     ; test "recursive pause in notifier" begin fun () ->
           Lwt.register_pause_notifier (fun _count ->
-            (* This will be called in response to a call to [Lwt.pause ()], so we can
-         expect one paused promise to already be in the queue. *)
+            (* This will be called in response to a call to [Lwt.pause ()], so
+               we can expect one paused promise to already be in the queue. *)
             assert (Lwt.paused_count () = 1);
             Lwt.register_pause_notifier ignore;
             Lwt.pause () |> ignore);

@@ -10,13 +10,14 @@ let timing_tests =
         Lwt.catch
           (fun () ->
              (* Block the entire process for one second. If using libev, libev's
-           notion of the current time is not updated during this period. *)
+                notion of the current time is not updated during this period. *)
              let () = Unix.sleep 1 in
-             (* At this point, libev thinks that the time is what it was about one
-           second ago. Now schedule exception Lwt_unix.Timeout to be raised in
-           0.5 seconds. If the implementation is incorrect, the exception will
-           be raised immediately, because the 0.5 seconds will be measured
-           relative to libev's "current" time of one second ago. *)
+             (* At this point, libev thinks that the time is what it was about
+                one second ago. Now schedule exception Lwt_unix.Timeout to be
+                raised in 0.5 seconds. If the implementation is incorrect, the
+                exception will be raised immediately, because the 0.5 seconds
+                will be measured relative to libev's "current" time of one
+                second ago. *)
              Lwt_unix.timeout 0.5)
           (function
             | Lwt_unix.Timeout -> Lwt.return (Unix.gettimeofday ())
@@ -29,10 +30,10 @@ let tests = timing_tests
 let run_tests =
   [ test "Lwt_main.run: nested call" ~sequential:true begin fun () ->
         (* The test itself is already running under Lwt_main.run, so we just have to
-       call it once and make sure we get an exception. *)
+           call it once and make sure we get an exception. *)
 
         (* Make sure we are running in a callback called by Lwt_main.run, not
-       synchronously when the testing executable is loaded. *)
+           synchronously when the testing executable is loaded. *)
         Lwt.pause () >>= fun () ->
         try
           Lwt_main.run Lwt.return_unit;
@@ -47,8 +48,9 @@ let run_tests =
         | Lwt_engine.Engine_id__select -> Lwt.return_true
         | Lwt_engine.Engine_id__poll ->
             Lwt.return_false (* never chosen by default *)
-        | _ -> Lwt.return_false
-        (* no way this has been extended in this test suite *)
+        | _ ->
+            (* no way this has been extended in this test suite *)
+            Lwt.return_false
       end ]
 
 let tests = tests @ run_tests

@@ -23,8 +23,8 @@ module E : sig
 
   val with_finaliser : (unit -> unit) -> 'a event -> 'a event
   (** [with_finaliser f e] returns an event [e'] which behave as
-        [e], except that [f] is called when [e'] is garbage
-        collected. *)
+      [e], except that [f] is called when [e'] is garbage
+      collected. *)
 
   val next : 'a event -> 'a Lwt.t
   (** [next e] returns the next occurrence of [e].
@@ -47,34 +47,34 @@ module E : sig
   val limit : (unit -> unit Lwt.t) -> 'a event -> 'a event
   (** [limit f e] limits the rate of [e] with [f].
 
-        For example, to limit the rate of an event to 1 per second you
-        can use: [limit (fun () -> Lwt_unix.sleep 1.0) event]. *)
+      For example, to limit the rate of an event to 1 per second you
+      can use: [limit (fun () -> Lwt_unix.sleep 1.0) event]. *)
 
   val from : (unit -> 'a Lwt.t) -> 'a event
   (** [from f] creates an event which occurs each time [f ()]
-        returns a value. If [f] raises an exception, the event is just
-        stopped. *)
+      returns a value. If [f] raises an exception, the event is just
+      stopped. *)
 
   val to_stream : 'a event -> 'a Lwt_stream.t
   (** Creates a stream holding all values occurring on the given
-        event *)
+      event *)
 
   val of_stream : 'a Lwt_stream.t -> 'a event
   (** [of_stream stream] creates an event which occurs each time a
-        value is available on the stream.
+      value is available on the stream.
 
-        If updating the event causes an exception at any point during the update
-        step, the exception is passed to [!]{!Lwt.async_exception_hook}, which
-        terminates the process by default. *)
+      If updating the event causes an exception at any point during the update
+      step, the exception is passed to [!]{!Lwt.async_exception_hook}, which
+      terminates the process by default. *)
 
   val delay : 'a event Lwt.t -> 'a event
   (** [delay promise] is an event which does not occur until
-        [promise] resolves. Then it behaves as the event returned by
-        [promise]. *)
+      [promise] resolves. Then it behaves as the event returned by
+      [promise]. *)
 
   val keep : 'a event -> unit
   (** [keep e] keeps a reference to [e] so it will never be garbage
-        collected. *)
+      collected. *)
 
   (** {2 Threaded versions of React transformation functions} *)
 
@@ -116,9 +116,9 @@ module S : sig
     -> ('a -> 'b signal)
     -> 'b signal
   (** [bind ?eq s f] is initially [f x] where [x] is the current
-        value of [s]. Each time [s] changes to a new value [y], [bind
-        signal f] is set to [f y], until the next change of
-        [signal]. *)
+      value of [s]. Each time [s] changes to a new value [y], [bind
+      signal f] is set to [f y], until the next change of
+      [signal]. *)
 
   val bind_s :
      ?eq:('b -> 'b -> bool)
@@ -126,14 +126,14 @@ module S : sig
     -> ('a -> 'b signal Lwt.t)
     -> 'b signal Lwt.t
   (** Same as {!bind} except that [f] returns a promise. Calls to [f]
-        are serialized. *)
+      are serialized. *)
 
   (** {2 Lwt-specific utilities} *)
 
   val with_finaliser : (unit -> unit) -> 'a signal -> 'a signal
   (** [with_finaliser f s] returns a signal [s'] which behaves as
-        [s], except that [f] is called when [s'] is garbage
-        collected. *)
+      [s], except that [f] is called when [s'] is garbage
+      collected. *)
 
   val limit :
      ?eq:('a -> 'a -> bool)
@@ -142,12 +142,12 @@ module S : sig
     -> 'a signal
   (** [limit f s] limits the rate of [s] update with [f].
 
-        For example, to limit it to 1 per second, you can use: [limit
-        (fun () -> Lwt_unix.sleep 1.0) s]. *)
+      For example, to limit it to 1 per second, you can use: [limit
+      (fun () -> Lwt_unix.sleep 1.0) s]. *)
 
   val keep : 'a signal -> unit
   (** [keep s] keeps a reference to [s] so it will never be garbage
-        collected. *)
+      collected. *)
 
   (** {2 Threaded versions of React transformation functions} *)
 

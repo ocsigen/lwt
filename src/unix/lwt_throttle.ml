@@ -65,7 +65,7 @@ module Make (H : Hashtbl.HashedType) : S with type key = H.t = struct
            (fun () -> clean_table t; Lwt.return_unit)
            (fun _exn ->
               (* Not good practice, but not worse than the code it is
-                replacing. *)
+                 replacing. *)
               prerr_endline "internal error";
               Printexc.print_backtrace stderr;
               Lwt.return_unit)

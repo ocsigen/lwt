@@ -52,7 +52,7 @@ type notifier =
   { notify_handler : unit -> unit (* The callback *)
   ; notify_once : bool
     (* Whether to remove the notifier after the reception of the first
-     notification *)
+       notification *)
   }
 
 module Notifiers = Hashtbl.Make (struct
@@ -425,8 +425,8 @@ let rec retry_syscall node event ch wakener action =
     | Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
     | Sys_blocked_io ->
         (* EINTR because we are catching SIG_CHLD hence the system
-         call might be interrupted to handle the signal; this lets
-         us restart the system call eventually. *)
+           call might be interrupted to handle the signal; this lets
+           us restart the system call eventually. *)
         Requeued event
     | Retry_read -> Requeued Read
     | Retry_write -> Requeued Write
@@ -1696,7 +1696,7 @@ let connect ch addr =
             try Unix.connect ch.fd addr
             with Unix.Unix_error (Unix.EISCONN, _, _) ->
               (* This is the windows way of telling that the connection
-               has completed. *)
+                 has completed. *)
               ()
           else raise Retry
         else
@@ -1713,7 +1713,7 @@ let connect ch addr =
         if !in_progress
         then
           (* If the connection is in progress, [getsockopt_error] tells
-           whether it succceed: *)
+             whether it succceed: *)
           match Unix.getsockopt_error ch.fd with
           | None ->
               (* The socket is connected *)
@@ -1724,7 +1724,7 @@ let connect ch addr =
         else
           try
             (* We should pass only one time here, unless the system call
-             is interrupted by a signal: *)
+               is interrupted by a signal: *)
             Unix.connect ch.fd addr
           with Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
             in_progress := true;
@@ -2273,7 +2273,7 @@ let fork () =
       (* Remove them all. *)
       Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
       (* And cancel them all. We yield first so that if the program
-       do an exec just after, it won't be executed. *)
+         do an exec just after, it won't be executed. *)
       Lwt.on_termination (Lwt.pause ()) (fun () ->
         List.iter (fun f -> f Lwt.Canceled) l);
       0

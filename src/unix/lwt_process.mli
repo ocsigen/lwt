@@ -11,38 +11,38 @@
 
 type command = string * string array
 (** A command. The first field is the name of the executable and
-        the second is the list of arguments. For example:
+    the second is the list of arguments. For example:
 
-        {[
-          ("ls", [|"ls"; "-l"|])
-        ]}
+    {[
+      ("ls", [|"ls"; "-l"|])
+    ]}
 
-        Notes:
+    Notes:
 
-        - if the name is the empty string, then the first argument
-        will be used. You should specify a name only if you do not
-        want the executable to be searched in the PATH. On Windows the
-        only way to enable automatic search in PATH is to pass an empty
-        name.
+    - if the name is the empty string, then the first argument
+    will be used. You should specify a name only if you do not
+    want the executable to be searched in the PATH. On Windows the
+    only way to enable automatic search in PATH is to pass an empty
+    name.
 
-        - it is possible to ``inline'' an argument, i.e. split it into
-        multiple arguments. To do that prefix it with ["\000"]. For
-        example:
+    - it is possible to ``inline'' an argument, i.e. split it into
+    multiple arguments. To do that prefix it with ["\000"]. For
+    example:
 
-        {[
-          ("", [|"echo"; "\000foo bar"|])
-        ]}
+    {[
+      ("", [|"echo"; "\000foo bar"|])
+    ]}
 
-        is the same as:
+    is the same as:
 
-        {[
-          ("", [|"echo"; "foo"; "bar"|])
-        ]}
-    *)
+    {[
+      ("", [|"echo"; "foo"; "bar"|])
+    ]}
+*)
 
 val shell : string -> command
 (** A command executed with the shell. (with ["/bin/sh -c <cmd>"] on
-      Unix and ["cmd.exe /c <cmd>"] on Windows). *)
+    Unix and ["cmd.exe /c <cmd>"] on Windows). *)
 
 (** All the following functions take an optional argument
     [timeout], in seconds. If specified, after expiration, the process will be
@@ -60,10 +60,10 @@ type redirection =
   | `Close  (** Close the file descriptor. *)
   | `FD_copy of Unix.file_descr
     (** Redirect to the file pointed to by [fd].
-                                      [fd] remains open in the parent.  *)
+        [fd] remains open in the parent.  *)
   | `FD_move of Unix.file_descr
     (** Redirect to the file pointed to by [fd].
-                                      [fd] is then closed in the parent. *)
+        [fd] is then closed in the parent. *)
   ]
 (** File descriptor redirections. These are used with the [~stdin], [~stdout],
     and [~stderr] arguments below to specify how the standard file descriptors
@@ -226,24 +226,24 @@ object
 
   method kill : int -> unit
   (** [kill signum] sends [signum] to the process if it is still
-        running. *)
+      running. *)
 
   method terminate : unit
   (** Terminates the process. It is equivalent to [kill Sys.sigkill]
-        on Unix but also works on Windows
-        (unlike {!Lwt_process.process_none.kill}). *)
+      on Unix but also works on Windows
+      (unlike {!Lwt_process.process_none.kill}). *)
 
   method status : Unix.process_status Lwt.t
   (** Threads which wait for the sub-process to exit then returns its
-        exit status *)
+      exit status *)
 
   method rusage : Lwt_unix.resource_usage Lwt.t
   (** Threads which wait for the sub-process to exit then returns
-        its resource usages *)
+      its resource usages *)
 
   method close : Unix.process_status Lwt.t
   (** Closes the process and returns its exit status. This closes all
-        channels used to communicate with the process *)
+      channels used to communicate with the process *)
 end
 
 val open_process_none :

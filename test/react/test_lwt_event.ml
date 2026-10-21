@@ -95,8 +95,7 @@ let suite =
         ignore event'';
         push 1;
         push 0;
-        push 2;
-        (* overwrites previous 0 *)
+        push 2 (* overwrites previous 0 *);
         Lwt_condition.signal cond ();
         Lwt.pause () >>= fun () ->
         push 3;

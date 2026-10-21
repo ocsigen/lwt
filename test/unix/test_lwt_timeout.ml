@@ -23,7 +23,7 @@ let suite =
             (delta >= 2. && delta < 3.)
             "Lwt_timeout: basic: %f %f" start_time delta
           (* The above is a bug of the current implementation: it always gives too
-       long a timeout. *)
+             long a timeout. *)
         end
     ; test "not started" begin fun () ->
           let p, r = Lwt.wait () in

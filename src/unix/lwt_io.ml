@@ -44,13 +44,13 @@ type 'mode state =
   | Busy_primitive (* A primitive is running on the channel *)
   | Busy_atomic of 'mode channel
     (* An atomic operations is being performed on the channel. The
-     argument is the temporary atomic wrapper. *)
+       argument is the temporary atomic wrapper. *)
   | Waiting_for_busy (* A queued operation has not yet started. *)
   | Idle (* The channel is unused *)
   | Closed (* The channel has been closed *)
-  | Invalid
-(* The channel is a temporary channel created for an atomic
+  (* The channel is a temporary channel created for an atomic
      operation which has terminated. *)
+  | Invalid
 
 (* A wrapper, which ensures that io operations are atomic: *)
 and 'mode channel =
@@ -65,11 +65,11 @@ and 'mode _channel =
   ; mutable ptr : int (* Current position *)
   ; mutable max : int
     (* Position of the end of data int the buffer. It is equal to
-     [length] for output channels. *)
+       [length] for output channels. *)
   ; abort_waiter : int Lwt.t
-  ; (* Thread which is wakeup with an exception when the channel is
-     closed. *)
-    abort_wakener : int Lwt.u
+    (* Thread which is wakeup with an exception when the channel is
+       closed. *)
+  ; abort_wakener : int Lwt.u
   ; mutable auto_flushing : bool
     (* Whether the auto-flusher is currently running or not *)
   ; main : 'mode channel (* The main wrapper *)
@@ -82,11 +82,10 @@ and typ =
   | Type_normal of
       (Lwt_bytes.t -> int -> int -> int Lwt.t)
       * (int64 -> Unix.seek_command -> int64 Lwt.t)
-  (* The channel has been created with [make]. The first argument
-     is the refill/flush function and the second is the seek
-     function. *)
-  | Type_bytes
-(* The channel has been created with [of_bytes]. *)
+    (* The channel has been created with [make]. The first argument
+       is the refill/flush function and the second is the seek
+       function. *)
+  | Type_bytes (* The channel has been created with [of_bytes]. *)
 
 [@@@ocaml.warning "+69"]
 
@@ -242,7 +241,7 @@ let auto_flush oc =
   match wrapper.state with
   | Busy_primitive | Waiting_for_busy ->
       (* The channel is used, cancel auto flushing. It will be
-       restarted when the channel Lwt.returns to the [Idle] state: *)
+         restarted when the channel Lwt.returns to the [Idle] state: *)
       oc.auto_flushing <- false;
       Lwt.return_unit
   | Busy_atomic _ ->
@@ -376,7 +375,7 @@ let rec abort wrapper =
   | Idle | Busy_primitive | Waiting_for_busy ->
       wrapper.state <- Closed;
       (* Abort any current real reading/writing operation on the
-       channel: *)
+         channel: *)
       Lwt.wakeup_exn wrapper.channel.abort_wakener
         (closed_channel wrapper.channel);
       Lazy.force wrapper.channel.close
@@ -478,7 +477,7 @@ let of_bytes (type m) ~(mode : m mode) bytes =
     ; abort_wakener
     ; main = wrapper
     ; (* Auto flush is set to [true] to prevent writing functions from
-       trying to launch the auto-fllushed. *)
+         trying to launch the auto-fllushed. *)
       auto_flushing = true
     ; mode
     ; offset = (match mode with Output -> 0L | Input -> Int64.of_int length)
@@ -538,7 +537,7 @@ let resize_buffer : type m. m channel -> int -> unit Lwt.t =
         | Input ->
             let unread_count = ch.max - ch.ptr in
             (* Fail if we want to decrease the buffer size and there is
-           too much unread data in the buffer: *)
+               too much unread data in the buffer: *)
             if len < unread_count
             then
               Lwt.fail
@@ -556,7 +555,7 @@ let resize_buffer : type m. m channel -> int -> unit Lwt.t =
             end
         | Output ->
             (* If we decrease the buffer size, flush the buffer until
-           the number of buffered bytes fits into the new buffer: *)
+               the number of buffered bytes fits into the new buffer: *)
             let rec loop () =
               if ch.ptr > len
               then flush_partial ch >>= fun _ -> loop ()
@@ -1330,8 +1329,9 @@ let win32_unlink fn =
     (fun () -> Lwt_unix.unlink fn)
     (function
       | Unix.Unix_error (Unix.EACCES, _, _) as exn ->
-          (* Try removing the read-only attribute before retrying unlink. We catch
-          any exception here and ignore it in favour of the original [exn]. *)
+          (* Try removing the read-only attribute before retrying unlink. We
+             catch any exception here and ignore it in favour of the original
+             [exn]. *)
           Lwt.catch
             (fun () ->
                Lwt_unix.lstat fn >>= fun {st_perm; _} ->
@@ -1341,7 +1341,7 @@ let win32_unlink fn =
                  (function
                    | _ ->
                    (* If everything succeeded but the final removal still failed,
-                   restore original permissions *)
+                      restore original permissions *)
                    Lwt_unix.chmod fn st_perm >>= fun () -> Lwt.reraise exn))
             (fun _ -> Lwt.reraise exn)
       | exn -> Lwt.reraise exn)
@@ -1552,8 +1552,8 @@ let establish_server_with_client_socket
   let handler client_address client_socket =
     Lwt.async begin fun () ->
         (* Not using Lwt.finalize here, to make sure that exceptions from [f]
-         reach !Lwt.async_exception_hook before exceptions from closing the
-         channels. *)
+           reach !Lwt.async_exception_hook before exceptions from closing the
+           channels. *)
         Lwt.catch
           (fun () -> f client_address client_socket)
           (fun exn ->

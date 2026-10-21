@@ -10,8 +10,8 @@ exception Empty
 (* A node in a queue of pending data. *)
 type 'a node =
   { mutable next : 'a node
-  ; (* Next node in the queue. For the last node it points to itself. *)
-    mutable data : 'a option
+    (* Next node in the queue. For the last node it points to itself. *)
+  ; mutable data : 'a option
     (* Data of this node. For the last node it is always [None]. *) }
 
 (* Note: a queue for an exhausted stream is represented by a node
@@ -25,46 +25,41 @@ let new_node () =
 (* Type of a stream source using a function to create new elements. *)
 type 'a from =
   { from_create : unit -> 'a option Lwt.t
-  ; (* Function used to create new elements. *)
-    mutable from_thread : unit Lwt.t
+    (* Function used to create new elements. *)
+  ; mutable from_thread : unit Lwt.t
     (* Thread which:
 
-     - wait for the thread returned by the last call to [from_next],
-     - add the next element to the end of the queue.
+       - wait for the thread returned by the last call to [from_next],
+       - add the next element to the end of the queue.
 
-     If it is a sleeping thread, then it must be used instead of creating a
-     new one with [from_create]. *)
+       If it is a sleeping thread, then it must be used instead of creating a
+       new one with [from_create]. *)
   }
 
-(* Type of a stream source for push streams. *)
 [@@@ocaml.warning "-69"]
 
+(* Type of a stream source for push streams. *)
 type push =
   { mutable push_signal : unit Lwt.t
-  ; (* Thread signaled when a new element is added to the stream. *)
-    mutable push_waiting : bool
-  ; (* Is a thread waiting on [push_signal] ? *)
-    mutable push_external : Obj.t [@ocaml.warning "-69"]
+    (* Thread signaled when a new element is added to the stream. *)
+  ; mutable push_waiting : bool (* Is a thread waiting on [push_signal] ? *)
+  ; mutable push_external : Obj.t [@ocaml.warning "-69"]
     (* Reference to an external source. *) }
 
 (* Type of a stream source for bounded-push streams. *)
 type 'a push_bounded =
   { mutable pushb_signal : unit Lwt.t
-  ; (* Thread signaled when a new element is added to the stream. *)
-    mutable pushb_waiting : bool
-  ; (* Is a thread waiting on [pushb_signal] ? *)
-    mutable pushb_size : int
-  ; (* Size of the queue. *)
-    mutable pushb_count : int
-  ; (* Current length of the queue. *)
-    mutable pushb_pending : 'a option
-  ; (* The next element to push if a thread blocked on push. We store it
-     here to be sure it will be the first element to be added when
-     space becomes available. *)
-    mutable pushb_push_waiter : unit Lwt.t
-  ; mutable pushb_push_wakener : unit Lwt.u
-  ; (* Thread blocked on push. *)
-    mutable pushb_external : Obj.t [@ocaml.warning "-69"]
+    (* Thread signaled when a new element is added to the stream. *)
+  ; mutable pushb_waiting : bool (* Is a thread waiting on [pushb_signal] ? *)
+  ; mutable pushb_size : int (* Size of the queue. *)
+  ; mutable pushb_count : int (* Current length of the queue. *)
+  ; mutable pushb_pending : 'a option
+    (* The next element to push if a thread blocked on push. We store it
+       here to be sure it will be the first element to be added when
+       space becomes available. *)
+  ; mutable pushb_push_waiter : unit Lwt.t
+  ; mutable pushb_push_wakener : unit Lwt.u (* Thread blocked on push. *)
+  ; mutable pushb_external : Obj.t [@ocaml.warning "-69"]
     (* Reference to an external source. *) }
 
 [@@@ocaml.warning "+69"]
@@ -77,16 +72,15 @@ type 'a source =
   | Push_bounded of 'a push_bounded
 
 type 'a t =
-  { source : 'a source
-  ; (* The source of the stream. *)
-    close : unit Lwt.u
-  ; (* A wakener for a thread that sleeps until the stream is closed. *)
-    closed : unit Lwt.t
-  ; (* A waiter for a thread that sleeps until the stream is closed. *)
-    mutable node : 'a node
-  ; (* Pointer to first pending element, or to [last] if there is no
-     pending element. *)
-    last : 'a node ref
+  { source : 'a source (* The source of the stream. *)
+  ; close : unit Lwt.u
+    (* A wakener for a thread that sleeps until the stream is closed. *)
+  ; closed : unit Lwt.t
+    (* A waiter for a thread that sleeps until the stream is closed. *)
+  ; mutable node : 'a node
+    (* Pointer to first pending element, or to [last] if there is no
+       pending element. *)
+  ; last : 'a node ref
     (* Node marking the end of the queue of pending elements. *) }
 
 class type ['a] bounded_push = object
@@ -269,7 +263,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close =
         enqueue' (Some x) last;
         info.pushb_count <- info.pushb_count + 1;
         (* Send a signal if at least one thread is waiting for a new
-         element. *)
+           element. *)
         if info.pushb_waiting
         then begin
           info.pushb_waiting <- false;
@@ -298,7 +292,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close =
           Lwt.wakeup_later_exn info.pushb_push_wakener Closed
         end;
         (* Send a signal if at least one thread is waiting for a new
-         element. *)
+           element. *)
         if info.pushb_waiting
         then begin
           info.pushb_waiting <- false;
@@ -342,16 +336,16 @@ let feed s =
   match s.source with
   | From from ->
       (* There is already a thread started to create a new element,
-       wait for this one to terminate. *)
+         wait for this one to terminate. *)
       if Lwt.is_sleeping from.from_thread
       then Lwt.protected from.from_thread
       else begin
         (* Otherwise request a new element. *)
         let thread =
           (* The function [from_create] can raise an exception (with
-           [raise], rather than returning a failed promise with
-           [Lwt.fail]). In this case, we have to catch the exception
-           and turn it into a safe failed promise. *)
+             [raise], rather than returning a failed promise with
+             [Lwt.fail]). In this case, we have to catch the exception
+             and turn it into a safe failed promise. *)
           Lwt.catch
             (fun () ->
                from.from_create () >>= fun x ->

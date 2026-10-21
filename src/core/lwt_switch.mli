@@ -62,35 +62,35 @@ val create : unit -> t
 
 val with_switch : (t -> 'a Lwt.t) -> 'a Lwt.t
 (** [with_switch fn] is [fn switch], where [switch] is a fresh switch
-      that is turned off when the callback thread finishes (whether it
-      succeeds or fails).
+    that is turned off when the callback thread finishes (whether it
+    succeeds or fails).
 
-      @since 2.6.0 *)
+    @since 2.6.0 *)
 
 val is_on : t -> bool
 (** [is_on switch] returns [true] if the switch is currently on, and
-      [false] otherwise. *)
+    [false] otherwise. *)
 
 val turn_off : t -> unit Lwt.t
 (** [turn_off switch] turns off the switch. It calls all registered
-      hooks, waits for all of them to terminate, then returns. If
-      one of the hooks failed, it will fail with the exception raised
-      by the hook. If the switch is already off, it does nothing. *)
+    hooks, waits for all of them to terminate, then returns. If
+    one of the hooks failed, it will fail with the exception raised
+    by the hook. If the switch is already off, it does nothing. *)
 
 exception Off
 (** Exception raised when trying to add a hook to a switch that is
-      already off. *)
+    already off. *)
 
 val check : t option -> unit
 (** [check switch] does nothing if [switch] is [None] or contains an
-      switch that is currently on, and raises {!Off} otherwise. *)
+    switch that is currently on, and raises {!Off} otherwise. *)
 
 val add_hook : t option -> (unit -> unit Lwt.t) -> unit
 (** [add_hook switch f] registers [f] so it will be called when
-      {!turn_off} is invoked. It does nothing if [switch] is
-      [None]. If [switch] contains an switch that is already off then
-      {!Off} is raised. *)
+    {!turn_off} is invoked. It does nothing if [switch] is
+    [None]. If [switch] contains an switch that is already off then
+    {!Off} is raised. *)
 
 val add_hook_or_exec : t option -> (unit -> unit Lwt.t) -> unit Lwt.t
 (** [add_hook_or_exec switch f] is the same as {!add_hook} except
-      that if the switch is already off, [f] is called immediately. *)
+    that if the switch is already off, [f] is called immediately. *)
