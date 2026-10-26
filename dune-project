@@ -33,10 +33,7 @@
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.36))
-  (lwt (>= 6)))
- (conflicts
-  (lwt (= 6.0.0~alpha00))
-  (lwt (= 6.0.0-beta01))))
+  (lwt (>= 6))))
 
 (package
  (name lwt_ppx__ppx_let_tests)
@@ -93,8 +90,9 @@ synchronization primitives. Code can be run in parallel on an opt-in basis.
  (maintenance_intent "(latest)")
  (depends
   (ocaml (>= 4.14))
-  (ocamlfind (and :dev (>= 1.7.3-1)))
+  (ocamlfind (and :with-dev-setup (>= 1.7.3-1)))
   (odoc (and :with-doc (>= 2.3)))
   dune-configurator
-  ocplib-endian)
+  ocplib-endian
+  (ocamlformat (and :with-dev-setup (= 0.29.0))))
  (depopts base-threads base-unix conf-libev lwt_runtime_events))
