@@ -799,8 +799,10 @@ Writes an IEEE double precision floating point value
 ```ocaml
 type byte_order = Lwt_sys.byte_order = 
   | Little_endian
-  | Big_endian (* Type of byte order *)
+  | Big_endian
 ```
+Type of byte order
+
 ```ocaml
 val system_byte_order : byte_order
 ```

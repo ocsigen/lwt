@@ -33,8 +33,10 @@ Test whether the given feature is available on the current system.
 ```ocaml
 type byte_order = 
   | Little_endian
-  | Big_endian (* Type of byte order *)
+  | Big_endian
 ```
+Type of byte order
+
 ```ocaml
 val byte_order : byte_order
 ```
