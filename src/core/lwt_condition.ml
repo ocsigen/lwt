@@ -39,23 +39,15 @@ let create = Lwt_sequence.create
 
 let wait ?mutex cvar =
   let waiter = (Lwt.add_task_r [@ocaml.warning "-3"]) cvar in
-  let () =
-    match mutex with
-    | Some m -> Lwt_mutex.unlock m
-    | None -> ()
-  in
+  let () = match mutex with Some m -> Lwt_mutex.unlock m | None -> () in
   Lwt.finalize
     (fun () -> waiter)
     (fun () ->
-       match mutex with
-       | Some m -> Lwt_mutex.lock m
-       | None -> Lwt.return_unit)
+       match mutex with Some m -> Lwt_mutex.lock m | None -> Lwt.return_unit)
 
 let signal cvar arg =
-  try
-    Lwt.wakeup_later (Lwt_sequence.take_l cvar) arg
-  with Lwt_sequence.Empty ->
-    ()
+  try Lwt.wakeup_later (Lwt_sequence.take_l cvar) arg
+  with Lwt_sequence.Empty -> ()
 
 let broadcast cvar arg =
   let wakeners = Lwt_sequence.fold_r (fun x l -> x :: l) cvar [] in

@@ -1,12 +1,9 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 exception Not_available of string
 
 let () = Callback.register_exception "lwt:not-available" (Not_available "")
-
 let windows = Sys.win32
 
 type feature =
@@ -24,14 +21,10 @@ type feature =
   | `libev ]
 
 let have = function
-  | `wait4
-  | `recv_msg
-  | `send_msg
-  | `madvise -> not Sys.win32
+  | `wait4 | `recv_msg | `send_msg | `madvise -> not Sys.win32
   | `mincore -> not (Sys.win32 || Sys.cygwin)
   | `get_cpu -> Lwt_config._HAVE_GETCPU
-  | `get_affinity
-  | `set_affinity -> Lwt_config._HAVE_AFFINITY
+  | `get_affinity | `set_affinity -> Lwt_config._HAVE_AFFINITY
   | `fd_passing -> Lwt_config._HAVE_FD_PASSING
   | `get_credentials -> Lwt_config._HAVE_GET_CREDENTIALS
   | `fdatasync -> Lwt_config._HAVE_FDATASYNC
