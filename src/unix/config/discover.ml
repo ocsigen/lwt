@@ -762,6 +762,31 @@ end = struct
 
   let () =
     feature
+      { pretty_name = "posix_spawnp"
+      ; macro_name = "HAVE_POSIX_SPAWN"
+      ; detect =
+          (fun context ->
+            skip_if_windows context @@ fun () ->
+            compiles context
+              {|
+        #include <spawn.h>
+
+        int main(void)
+        {
+            posix_spawn_file_actions_t actions;
+            posix_spawn_file_actions_init(&actions);
+            posix_spawn_file_actions_addclose(&actions, 0);
+            posix_spawn_file_actions_adddup2(&actions, 0, 1);
+            posix_spawn_file_actions_addopen(&actions, 2, "/dev/null", 0, 0);
+            posix_spawnp(0, "", &actions, 0, 0, 0);
+            posix_spawn_file_actions_destroy(&actions);
+            return 0;
+        }
+      |})
+      }
+
+  let () =
+    feature
       { pretty_name = "accept4"
       ; macro_name = "HAVE_ACCEPT4"
       ; detect =

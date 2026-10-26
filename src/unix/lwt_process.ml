@@ -129,7 +129,7 @@ let unix_redirect fd redirection =
       Unix.dup2 ~cloexec:false fd' fd;
       Unix.close fd'
 
-let unix_spawn
+let unix_spawn_impl_fork
       ?cwd
       ?(stdin : redirection = `Keep)
       ?(stdout : redirection = `Keep)
@@ -157,9 +157,113 @@ let unix_spawn
       let close = function `FD_move fd -> Unix.close fd | _ -> () in
       close stdin; close stdout; close stderr; {id; fd = Unix.stdin}
 
-let unix_waitproc proc = Lwt_unix.wait4 [] proc.id
+(* Passed to the C stub [lwt_process_posix_spawn]: the order of the constructors
+   matters, keep it in sync with the stub. *)
+type unix_spawn_redirection =
+  | Spawn_keep
+  | Spawn_dev_null
+  | Spawn_close
+  | Spawn_dup of Unix.file_descr
+  | Spawn_move of Unix.file_descr
+
+external unix_spawn_impl_posix_spawnp_raw :
+   string
+  -> string array
+  -> string array option
+  -> unix_spawn_redirection array
+  -> int
+  = "lwt_process_posix_spawn"
+
+let unix_close_moved stdin stdout stderr =
+  let close = function
+    | `FD_move fd -> ( try Unix.close fd with Unix.Unix_error _ -> ())
+    | _ -> ()
+  in
+  close stdin; close stdout; close stderr
+
+let unix_spawn_impl_posix_spawnp
+      ?(stdin : redirection = `Keep)
+      ?(stdout : redirection = `Keep)
+      ?(stderr : redirection = `Keep)
+      (prog, args)
+      env
+  =
+  let prog = if prog = "" && Array.length args > 0 then args.(0) else prog in
+  let prepare = function
+    | `Keep -> Spawn_keep
+    | `Dev_null -> Spawn_dev_null
+    | `Close -> Spawn_close
+    | `FD_copy fd -> Spawn_dup fd
+    | `FD_move fd -> Spawn_move fd
+  in
+  let id =
+    unix_spawn_impl_posix_spawnp_raw prog args env
+      [|prepare stdin; prepare stdout; prepare stderr|]
+  in
+  unix_close_moved stdin stdout stderr;
+  {id; fd = Unix.stdin}
+
+(* The process id of a process that could not be spawned. *)
+let unix_failed_id = -1
+
+let unix_spawn
+      ?cwd
+      ?(stdin : redirection = `Keep)
+      ?(stdout : redirection = `Keep)
+      ?(stderr : redirection = `Keep)
+      cmd
+      env
+  =
+  let spawn_impl_fork () =
+    unix_spawn_impl_fork ?cwd ~stdin ~stdout ~stderr cmd env
+  in
+  let spawn () =
+    (* posix_spawnp cannot change the working directory portably. *)
+    if Lwt_config._HAVE_POSIX_SPAWN && cwd = None
+    then (
+      match unix_spawn_impl_posix_spawnp ~stdin ~stdout ~stderr cmd env with
+      | proc -> proc
+      | exception Unix.Unix_error (Unix.ENOEXEC, _, _) ->
+          (* posix_spawnp does not fall back to /bin/sh for scripts without a
+             shebang, unlike execvp, so we fall back onto fork+execvp. *)
+          spawn_impl_fork ()
+      | exception Unix.Unix_error _ ->
+          (* Like the fork path, report exec failures as exit code 127. *)
+          unix_close_moved stdin stdout stderr;
+          {id = unix_failed_id; fd = Unix.stdin})
+    else spawn_impl_fork ()
+  in
+  match spawn () with
+  | proc -> proc
+  | exception exn ->
+      unix_close_moved stdin stdout stderr;
+      raise exn
+
+let unix_waitproc proc =
+  if proc.id = unix_failed_id
+  then
+    Lwt.return
+      ( proc.id
+      , Unix.WEXITED 127
+      , {Lwt_unix.ru_utime = 0.; Lwt_unix.ru_stime = 0.} )
+  else Lwt_unix.wait4 [] proc.id
+
 let unix_terminate proc = Unix.kill proc.id Sys.sigkill
-let spawn = if Sys.win32 then win32_spawn else unix_spawn
+
+(* If spawning fails, also closes [close_on_error] (the parent's ends of the
+   pipes). On Unix, the [`FD_move] fds are closed by [unix_spawn] itself. *)
+let spawn ?(close_on_error = []) ?cwd ?stdin ?stdout ?stderr cmd env =
+  let spawn = if Sys.win32 then win32_spawn else unix_spawn in
+  match spawn ?cwd ?stdin ?stdout ?stderr cmd env with
+  | proc -> proc
+  | exception exn ->
+      List.iter
+        (fun fd ->
+           try Unix.close (Lwt_unix.unix_file_descr fd)
+           with Unix.Unix_error _ -> ())
+        close_on_error;
+      raise exn
+
 let waitproc = if Sys.win32 then win32_waitproc else unix_waitproc
 let terminate = if Sys.win32 then win32_terminate else unix_terminate
 
@@ -238,7 +342,10 @@ class process_none ?timeout ?env ?cwd ?stdin ?stdout ?stderr cmd =
 
 class process_in ?timeout ?env ?cwd ?stdin ?stderr cmd =
   let stdout_r, stdout_w = Lwt_unix.pipe_in ~cloexec:true () in
-  let proc = spawn cmd env ?cwd ?stdin ~stdout:(`FD_move stdout_w) ?stderr in
+  let proc =
+    spawn ~close_on_error:[stdout_r] cmd env ?cwd ?stdin
+      ~stdout:(`FD_move stdout_w) ?stderr
+  in
   let stdout = Lwt_io.of_fd ~mode:Lwt_io.input stdout_r in
   object
     inherit common timeout proc [cast_chan stdout]
@@ -247,7 +354,10 @@ class process_in ?timeout ?env ?cwd ?stdin ?stderr cmd =
 
 class process_out ?timeout ?env ?cwd ?stdout ?stderr cmd =
   let stdin_r, stdin_w = Lwt_unix.pipe_out ~cloexec:true () in
-  let proc = spawn cmd env ?cwd ~stdin:(`FD_move stdin_r) ?stdout ?stderr in
+  let proc =
+    spawn ~close_on_error:[stdin_w] cmd env ?cwd ~stdin:(`FD_move stdin_r)
+      ?stdout ?stderr
+  in
   let stdin = Lwt_io.of_fd ~mode:Lwt_io.output stdin_w in
   object
     inherit common timeout proc [cast_chan stdin]
@@ -258,8 +368,8 @@ class process ?timeout ?env ?cwd ?stderr cmd =
   let stdin_r, stdin_w = Lwt_unix.pipe_out ~cloexec:true ()
   and stdout_r, stdout_w = Lwt_unix.pipe_in ~cloexec:true () in
   let proc =
-    spawn cmd env ?cwd ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w)
-      ?stderr
+    spawn ~close_on_error:[stdin_w; stdout_r] cmd env ?cwd
+      ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ?stderr
   in
   let stdin = Lwt_io.of_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_fd ~mode:Lwt_io.input stdout_r in
@@ -274,7 +384,9 @@ class process_full ?timeout ?env ?cwd cmd =
   and stdout_r, stdout_w = Lwt_unix.pipe_in ~cloexec:true ()
   and stderr_r, stderr_w = Lwt_unix.pipe_in ~cloexec:true () in
   let proc =
-    spawn cmd env ?cwd ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w)
+    spawn
+      ~close_on_error:[stdin_w; stdout_r; stderr_r]
+      cmd env ?cwd ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w)
       ~stderr:(`FD_move stderr_w)
   in
   let stdin = Lwt_io.of_fd ~mode:Lwt_io.output stdin_w

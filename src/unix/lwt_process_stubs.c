@@ -173,3 +173,92 @@ CAMLprim value lwt_process_terminate_process(value handle, value code) {
 void lwt_process_dummy_symbol(void) {}
 
 #endif /* defined(LWT_ON_WINDOWS) */
+
+#include <caml/fail.h>
+#include <caml/mlvalues.h>
+
+#if !defined(LWT_ON_WINDOWS) && defined(HAVE_POSIX_SPAWN)
+
+#include <fcntl.h>
+#include <spawn.h>
+#include <sys/types.h>
+#include <caml/memory.h>
+#include <caml/unixsupport.h>
+
+extern char **environ;
+
+CAMLprim value lwt_process_posix_spawn(value prog, value args, value env,
+                                       value redirections) {
+  CAMLparam4(prog, args, env, redirections);
+  char **argv;
+  char **envp;
+  const char *path;
+  pid_t pid;
+  posix_spawn_file_actions_t actions;
+  int actions_initialized = 0;
+  int r;
+
+  caml_unix_check_path(prog, "posix_spawnp");
+  path = String_val(prog);
+  argv = cstringvect(args, "posix_spawnp");
+  if (Is_some(env))
+    envp = cstringvect(Some_val(env), "posix_spawnp");
+  else
+    envp = environ;
+
+  r = posix_spawn_file_actions_init(&actions);
+  if (r != 0) goto cleanup;
+  actions_initialized = 1;
+
+  /* Mirrors [unix_redirect] in lwt_process.cppo.ml. [redirections] holds
+     stdin, stdout and stderr, in that order, as [unix_spawn_redirection] values:
+     - Spawn_keep (0), Spawn_dev_null (1), Spawn_close (2) are immediates;
+     - Spawn_dup fd (tag 0), Spawn_move fd (tag 1) are blocks.
+     File actions run in order, so later redirections see the effect of earlier
+     ones, as with the fork path. */
+  for (int dst = 0; dst < 3; dst++) {
+    value redirection = Field(redirections, dst);
+    if (Is_block(redirection)) {
+      int src = Int_val(Field(redirection, 0));
+      r = posix_spawn_file_actions_adddup2(&actions, src, dst);
+      if (r == 0 && Tag_val(redirection) == 1)
+        r = posix_spawn_file_actions_addclose(&actions, src);
+    } else {
+      switch (Long_val(redirection)) {
+        case 0:
+          r = 0;
+          break;
+        case 1:
+          r = posix_spawn_file_actions_addopen(
+            &actions, dst, "/dev/null", O_RDWR, 0666);
+          break;
+        default:
+          r = posix_spawn_file_actions_addclose(&actions, dst);
+          break;
+      }
+    }
+    if (r != 0) goto cleanup;
+  }
+
+  r = posix_spawnp(&pid, path, &actions, NULL, argv, envp);
+
+cleanup:
+  if (actions_initialized) posix_spawn_file_actions_destroy(&actions);
+  cstringvect_free(argv);
+  if (Is_some(env)) cstringvect_free(envp);
+  if (r != 0) unix_error(r, "posix_spawnp", prog);
+  CAMLreturn(Val_long(pid));
+}
+
+#else
+
+CAMLprim value lwt_process_posix_spawn(value prog, value args, value env,
+                                       value redirections) {
+  (void)prog;
+  (void)args;
+  (void)env;
+  (void)redirections;
+  caml_failwith("posix_spawnp is unavailable");
+}
+
+#endif

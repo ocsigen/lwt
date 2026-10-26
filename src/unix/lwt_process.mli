@@ -5,9 +5,9 @@
 
 (** This module allows you to spawn processes and communicate with them.
 
-    This module makes heavy use of {!Lwt_unix.fork}. Important caveats are
-    documented there. Read them. TL;DR: no domains, no threads, no preemptive,
-    yes [Async_none]. *)
+    On Unix, processes are spawned with [posix_spawnp] when available
+    (and when [?cwd] is [None]); otherwise they use {!Lwt_unix.fork}.
+    Windows uses [CreateProcess]. *)
 
 type command = string * string array
 (** A command. The first field is the name of the executable and
@@ -81,7 +81,13 @@ val exec :
   -> ?stderr:redirection
   -> command
   -> Unix.process_status Lwt.t
-(** Executes the given command and returns its exit status. *)
+(** Executes the given command and returns its exit status.
+
+    If [~cwd:_] is specified, or if the platform does not support
+    [posix_spawnp], this will call [Unix.fork()] followed by [Unix.execvpe];
+    this will cause a crash if any domain has been created in this process. On
+    platforms supporting [posix_spawnp] and with [?cwd:None] it is safe to call
+    this function after creating domains. *)
 
 (** {3 Receiving} *)
 
