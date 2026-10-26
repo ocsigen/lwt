@@ -18,10 +18,6 @@ depends: [
   "lwt" {>= "6"}
   "odoc" {with-doc}
 ]
-conflicts: [
-  "lwt" {= "6.0.0~alpha00"}
-  "lwt" {= "6.0.0-beta01"}
-]
 build: [
   ["dune" "subst"] {dev}
   [
