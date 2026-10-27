@@ -520,6 +520,7 @@ type open_flag = Unix.open_flag =
   | O_SHARE_DELETE
   | O_CLOEXEC
   | O_KEEPEXEC
+  | O_NOFOLLOW [@if ocaml_version >= (5, 7, 0)]
 
 external open_job :
    string
