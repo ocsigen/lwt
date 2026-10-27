@@ -61,6 +61,9 @@ val _HAVE_ST_MTIMENSEC : bool
 val _HAVE_BSD_MINCORE : bool
 ```
 ```ocaml
+val _HAVE_POSIX_SPAWN : bool
+```
+```ocaml
 val _HAVE_ACCEPT4 : bool
 ```
 ```ocaml
