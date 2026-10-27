@@ -27,6 +27,7 @@ depends: [
   "odoc" {with-doc & >= "2.3"}
   "dune-configurator"
   "ocplib-endian"
+  "ppx_devtools-optcomp"
   "ocamlformat" {with-dev-setup & = "0.29.0"}
 ]
 depopts: ["base-threads" "base-unix" "conf-libev" "lwt_runtime_events"]
@@ -56,3 +57,7 @@ build: [
   ]
 ]
 x-maintenance-intent:[ "(latest)" ]
+pin-depends: [
+  [ "ppx_devtools-optcomp.dev"
+    "git+https://github.com/ocsigen/ppx_devtools.git#96f0fe04f99f01cca3419851a42b79eec5094314" ]
+]
