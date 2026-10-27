@@ -94,5 +94,6 @@ synchronization primitives. Code can be run in parallel on an opt-in basis.
   (odoc (and :with-doc (>= 2.3)))
   dune-configurator
   ocplib-endian
+  ppx_devtools-optcomp
   (ocamlformat (and :with-dev-setup (= 0.29.0))))
  (depopts base-threads base-unix conf-libev lwt_runtime_events))
