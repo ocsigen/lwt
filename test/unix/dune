@@ -12,7 +12,9 @@
    ocaml_runtime_exc_4
    ocaml_runtime_exc_5
    ocaml_runtime_exc_6
-   set_engine)))
+   set_engine
+   stress_process
+   test_process_domain)))
 
 (executable
  (name dummy)
@@ -67,3 +69,23 @@
  (name set_engine)
  (libraries lwt lwt.unix)
  (modules set_engine))
+
+; Not part of [runtest]; run with [dune build @test/unix/stress] (or run the
+; executable directly under [timeout] and [ulimit -v]).
+(executable
+ (name stress_process)
+ (modules stress_process)
+ (libraries lwt lwt.unix unix))
+
+(rule
+ (alias stress)
+ (action
+  (run %{exe:stress_process.exe} 2000 32)))
+
+(test
+ (package lwt)
+ (name test_process_domain)
+ (modules test_process_domain)
+ (enabled_if
+  (>= %{ocaml_version} 5.0.0))
+ (libraries lwt lwt.unix unix))
