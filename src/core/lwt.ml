@@ -345,6 +345,12 @@
    module without triggering any more warnings. *)
 module Lwt_sequence = Lwt_sequence
 
+(* The public promise and resolver types. They are declared before the internal
+   types, as the scheduler state stores the paused promises. See module
+   [Public_types]. *)
+type +'a t
+type -'a u
+
 module Main_internal_types = struct
   (* Phantom types for use with types [promise] and [state]. These are never
      constructed; the purpose of the constructors is to prove to the type
@@ -434,6 +440,23 @@ module Main_internal_types = struct
         ('a, _, _) promise Lwt_sequence.node
         -> 'a cancel_callback_list
 
+  (* All the mutable state of the core, in one global record. A public entry
+     point gets it once with [self_sched] and passes it down. *)
+  and sched =
+    { mutable current_storage :
+        Lwt_storage.t (* See [Sequence_associated_storage]. *)
+    ; mutable current_callback_nesting_depth : int
+    ; deferred_callbacks : deferred_callbacks Queue.t
+      (* See [Resolution_loop]. *)
+    ; mutable paused : unit t list
+    ; mutable paused_count : int
+    ; mutable pause_hook : int -> unit (* See [Miscellaneous.pause]. *)
+    ; prng : Random.State.t Lazy.t (* See [Concurrent_composition.choose]. *) }
+
+  and deferred_callbacks =
+    | Deferred : ('a callbacks * 'a resolved_state) -> deferred_callbacks
+  [@@ocaml.unboxed]
+
   (* Notes:
 
      These type definitions are guilty of performing several optimizations,
@@ -496,9 +519,6 @@ end
 open Main_internal_types
 
 module Public_types = struct
-  type +'a t
-  type -'a u
-
   let to_public_promise : ('a, _, _) promise -> 'a t = Obj.magic
   let to_public_resolver : ('a, _, _) promise -> 'a u = Obj.magic
 
@@ -717,6 +737,25 @@ module Exception_filter = struct
   let run e = !v e
 end
 
+module Scheduler = struct
+  (* The PRNG state is initialized with a constant to make non-IO-based programs
+     deterministic. *)
+  (* Maintainer's note: is this necessary? *)
+  let new_sched () =
+    { current_storage = Lwt_storage.empty
+    ; current_callback_nesting_depth = 0
+    ; deferred_callbacks = Queue.create ()
+    ; paused = []
+    ; paused_count = 0
+    ; pause_hook = ignore
+    ; prng = lazy (Random.State.make [||]) }
+
+  let the_sched = new_sched ()
+  let self_sched () = the_sched
+end
+
+include Scheduler
+
 module Sequence_associated_storage : sig
   (* Public interface *)
   type 'v key = 'v Lwt_storage.key
@@ -726,7 +765,8 @@ module Sequence_associated_storage : sig
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
 
   (* Internal interface *)
-  val current_storage : Lwt_storage.t ref
+  val get_current_storage : unit -> Lwt_storage.t
+  val set_current_storage : Lwt_storage.t -> unit
 end = struct
   (* The idea behind sequence-associated storage is to preserve some values
      during a call to [bind] or other sequential composition operation, and
@@ -759,21 +799,25 @@ end = struct
 
   let new_key = Lwt_storage.new_key
 
-  (* built-in storage: propagated by bind and such *)
-  let current_storage = ref Lwt_storage.empty
-  let get key = Lwt_storage.find key !current_storage
+  (* built-in storage, [sched.current_storage]: propagated by bind and such *)
+  let get key = Lwt_storage.find key (self_sched ()).current_storage
 
   let with_value key value f =
-    let new_storage = Lwt_storage.set key value !current_storage in
-    let saved_storage = !current_storage in
-    current_storage := new_storage;
+    let sched = self_sched () in
+    let new_storage = Lwt_storage.set key value sched.current_storage in
+    let saved_storage = sched.current_storage in
+    sched.current_storage <- new_storage;
     try
       let result = f () in
-      current_storage := saved_storage;
+      sched.current_storage <- saved_storage;
       result
     with exn when Exception_filter.run exn ->
-      current_storage := saved_storage;
+      sched.current_storage <- saved_storage;
       raise exn
+
+  (* For [Lwt.Private]: functions, since a [ref] could not be per domain. *)
+  let get_current_storage () = (self_sched ()).current_storage
+  let set_current_storage storage = (self_sched ()).current_storage <- storage
 end
 
 include Sequence_associated_storage
@@ -795,7 +839,7 @@ module Pending_callbacks : sig
     -> 'a regular_callback
     -> cancel_callback
 
-  val add_cancel_callback : 'a callbacks -> cancel_callback -> unit
+  val add_cancel_callback : sched -> 'a callbacks -> cancel_callback -> unit
   val merge_callbacks : from:'a callbacks -> into:'a callbacks -> unit
 end = struct
   let concat_regular_callbacks l1 l2 =
@@ -956,8 +1000,8 @@ end = struct
     fun () ->
       clear_explicitly_removable_callback_cell cell ~originally_added_to:ps
 
-  let add_cancel_callback callbacks f =
-    let node = Cancel_callback_list_callback (!current_storage, f) in
+  let add_cancel_callback sched callbacks f =
+    let node = Cancel_callback_list_callback (sched.current_storage, f) in
     callbacks.cancel_callbacks <-
       (match callbacks.cancel_callbacks with
       | Cancel_callback_list_empty -> node
@@ -978,6 +1022,7 @@ module Resolution_loop : sig
   val resolve :
      ?allow_deferring:bool
     -> ?maximum_callback_nesting_depth:int
+    -> sched
     -> ('a, underlying, pending) promise
     -> 'a resolved_state
     -> ('a, underlying, resolved) state_changed
@@ -985,6 +1030,7 @@ module Resolution_loop : sig
   val run_callbacks_or_defer_them :
      ?allow_deferring:bool
     -> ?maximum_callback_nesting_depth:int
+    -> sched
     -> 'a callbacks
     -> 'a resolved_state
     -> unit
@@ -1110,15 +1156,17 @@ end = struct
      set to [Fulfilled _] or [Rejected _], so the callbacks are no longer
      reachable through the promise reference. This is why the direct [callbacks]
      record must be given to this function. *)
-  let run_callbacks (callbacks : 'a callbacks) (result : 'a resolved_state) :
-    unit
+  let run_callbacks
+        sched
+        (callbacks : 'a callbacks)
+        (result : 'a resolved_state) : unit
     =
     let run_cancel_callbacks fs =
       let rec iter_callback_list fs rest =
         match fs with
         | Cancel_callback_list_empty -> iter_list rest
         | Cancel_callback_list_callback (storage, f) ->
-            current_storage := storage;
+            sched.current_storage <- storage;
             handle_with_async_exception_hook f ();
             iter_list rest
         | Cancel_callback_list_remove_sequence_node node ->
@@ -1160,38 +1208,35 @@ end = struct
     run_regular_callbacks callbacks.regular_callbacks
 
   let default_maximum_callback_nesting_depth = 42
-  let current_callback_nesting_depth = ref 0
-
-  type deferred_callbacks =
-    | Deferred : ('a callbacks * 'a resolved_state) -> deferred_callbacks
-  [@@ocaml.unboxed]
-
-  let deferred_callbacks : deferred_callbacks Queue.t = Queue.create ()
 
   (* Before entering a resolution loop, it is necessary to take a snapshot of
      the current state of sequence-associated storage. This is because many of
      the callbacks that will be run will modify the storage. The storage is
      restored to the snapshot when the resolution loop is exited. *)
-  let enter_resolution_loop () =
-    current_callback_nesting_depth := !current_callback_nesting_depth + 1;
-    let storage_snapshot = !current_storage in
+  let enter_resolution_loop sched =
+    sched.current_callback_nesting_depth <-
+      sched.current_callback_nesting_depth + 1;
+    let storage_snapshot = sched.current_storage in
     storage_snapshot
 
-  let leave_resolution_loop (storage_snapshot : Lwt_storage.t) : unit =
-    if !current_callback_nesting_depth = 1
+  let leave_resolution_loop sched (storage_snapshot : Lwt_storage.t) : unit =
+    if sched.current_callback_nesting_depth = 1
     then begin
-      while not (Queue.is_empty deferred_callbacks) do
-        let (Deferred (callbacks, result)) = Queue.pop deferred_callbacks in
-        run_callbacks callbacks result
+      while not (Queue.is_empty sched.deferred_callbacks) do
+        let (Deferred (callbacks, result)) =
+          Queue.pop sched.deferred_callbacks
+        in
+        run_callbacks sched callbacks result
       done
     end;
-    current_callback_nesting_depth := !current_callback_nesting_depth - 1;
-    current_storage := storage_snapshot
+    sched.current_callback_nesting_depth <-
+      sched.current_callback_nesting_depth - 1;
+    sched.current_storage <- storage_snapshot
 
-  let run_in_resolution_loop f =
-    let storage_snapshot = enter_resolution_loop () in
+  let run_in_resolution_loop sched f =
+    let storage_snapshot = enter_resolution_loop sched in
     let result = f () in
-    leave_resolution_loop storage_snapshot;
+    leave_resolution_loop sched storage_snapshot;
     result
 
   (* This is basically a hack to fix https://github.com/ocsigen/lwt/issues/48.
@@ -1201,29 +1246,33 @@ end = struct
 
      The name should probably be [abaondon_resolution_loop]. *)
   let abandon_wakeups () =
-    if !current_callback_nesting_depth <> 0
-    then leave_resolution_loop Lwt_storage.empty
+    let sched = self_sched () in
+    if sched.current_callback_nesting_depth <> 0
+    then leave_resolution_loop sched Lwt_storage.empty
 
   let run_callbacks_or_defer_them
         ?(allow_deferring = true)
         ?(maximum_callback_nesting_depth =
           default_maximum_callback_nesting_depth)
+        sched
         callbacks
         result
     =
     let should_defer =
       allow_deferring
-      && !current_callback_nesting_depth >= maximum_callback_nesting_depth
+      && sched.current_callback_nesting_depth >= maximum_callback_nesting_depth
     in
     if should_defer
-    then Queue.push (Deferred (callbacks, result)) deferred_callbacks
-    else run_in_resolution_loop (fun () -> run_callbacks callbacks result)
+    then Queue.push (Deferred (callbacks, result)) sched.deferred_callbacks
+    else
+      run_in_resolution_loop sched (fun () ->
+        run_callbacks sched callbacks result)
 
-  let resolve ?allow_deferring ?maximum_callback_nesting_depth p result =
+  let resolve ?allow_deferring ?maximum_callback_nesting_depth sched p result =
     let (Pending callbacks) = p.state in
     let p = set_promise_state p result in
     run_callbacks_or_defer_them ?allow_deferring ?maximum_callback_nesting_depth
-      callbacks result;
+      sched callbacks result;
     p
 
   let run_callback_or_defer_it
@@ -1234,8 +1283,9 @@ end = struct
     if run_immediately_and_ensure_tail_call
     then f ()
     else
+      let sched = self_sched () in
       let should_defer =
-        !current_callback_nesting_depth
+        sched.current_callback_nesting_depth
         >= default_maximum_callback_nesting_depth
       in
       if should_defer
@@ -1253,10 +1303,10 @@ end = struct
         in
         Queue.push
           (Deferred (deferred_record, deferred_result))
-          deferred_callbacks;
+          sched.deferred_callbacks;
         immediate_result
       end
-      else run_in_resolution_loop (fun () -> f ())
+      else run_in_resolution_loop sched (fun () -> f ())
 end
 
 include Resolution_loop
@@ -1281,9 +1331,10 @@ end = struct
     | Fulfilled _ -> Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
     | Rejected _ -> Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
     | Pending _ ->
+        let sched = self_sched () in
         let result = state_of_result result in
         let (State_may_have_changed p) =
-          resolve ~allow_deferring:false p result
+          resolve ~allow_deferring:false sched p result
         in
         ignore p
 
@@ -1299,9 +1350,10 @@ end = struct
     | Fulfilled _ -> Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
     | Rejected _ -> Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
     | Pending _ ->
+        let sched = self_sched () in
         let result = state_of_result result in
         let (State_may_have_changed p) =
-          resolve ~maximum_callback_nesting_depth:1 p result
+          resolve ~maximum_callback_nesting_depth:1 sched p result
         in
         ignore p
 
@@ -1320,6 +1372,15 @@ end = struct
      that the functions local to [cancel] capture nothing, and are not
      allocated at each call. *)
   let canceled_result = Rejected Canceled
+
+  (* Rather than [List.iter], whose closure would capture [sched] and be
+     allocated at each call to [cancel]. *)
+  let rec run_canceled_callbacks sched = function
+    | [] -> ()
+    | Packed callbacks :: rest ->
+        run_callbacks_or_defer_them ~allow_deferring:false sched callbacks
+          canceled_result;
+        run_canceled_callbacks sched rest
 
   (* Note that this function deviates from the "ideal" callback deferral
      behavior: it runs callbacks directly on the current stack. It should
@@ -1367,10 +1428,7 @@ end = struct
     in
     let (Internal p) = to_internal_promise p in
     let callbacks = propagate_cancel p in
-    callbacks
-    |> List.iter (fun (Packed callbacks) ->
-      run_callbacks_or_defer_them ~allow_deferring:false callbacks
-        canceled_result)
+    run_canceled_callbacks (self_sched ()) callbacks
 end
 
 include Resolving
@@ -1480,6 +1538,7 @@ end = struct
     | Fulfilled _ -> p
     | Rejected _ -> p
     | Pending _ ->
+        let sched = self_sched () in
         let p' = new_pending ~how_to_cancel:Cancel_this_promise in
         let callback p_result =
           (* In this callback, [p'] will either still itself be pending, or it
@@ -1512,7 +1571,7 @@ end = struct
           match p'.state with
           | Pending _ ->
               let (State_may_have_changed p') =
-                resolve ~allow_deferring:false p' p_result
+                resolve ~allow_deferring:false sched p' p_result
               in
               ignore p'
           | Rejected Canceled -> ()
@@ -1523,7 +1582,7 @@ end = struct
             callback
         in
         let (Pending p'_callbacks) = p'.state in
-        add_cancel_callback p'_callbacks remove_the_callback;
+        add_cancel_callback sched p'_callbacks remove_the_callback;
         to_public_promise p'
 
   let no_cancel p =
@@ -1532,6 +1591,7 @@ end = struct
     | Fulfilled _ -> p
     | Rejected _ -> p
     | Pending p_callbacks ->
+        let sched = self_sched () in
         let p' = new_pending ~how_to_cancel:Not_cancelable in
         let callback p_result =
           let (State_may_now_be_pending_proxy p') = may_now_be_proxy p' in
@@ -1541,7 +1601,7 @@ end = struct
              this is as in [protected] and [may_now_be_proxy], but even simpler,
              because [p'] is not cancelable. *)
           let (State_may_have_changed p') =
-            resolve ~allow_deferring:false p' p_result
+            resolve ~allow_deferring:false sched p' p_result
           in
           ignore p'
         in
@@ -1663,6 +1723,7 @@ end = struct
        callbacks are run. *)
   let make_into_proxy
         (type c)
+        sched
         ~(outer_promise : ('a, underlying, pending) promise)
         ~(user_provided_promise : ('a, _, c) promise) :
     ('a, underlying, c) state_changed
@@ -1677,8 +1738,10 @@ end = struct
          the reference through [p'] has the right type. *)
     else
       match p'.state with
-      | Fulfilled _ -> resolve ~allow_deferring:false outer_promise p'.state
-      | Rejected _ -> resolve ~allow_deferring:false outer_promise p'.state
+      | Fulfilled _ ->
+          resolve ~allow_deferring:false sched outer_promise p'.state
+      | Rejected _ ->
+          resolve ~allow_deferring:false sched outer_promise p'.state
       | Pending p'_callbacks ->
           let (Pending outer_callbacks) = outer_promise.state in
           merge_callbacks ~from:p'_callbacks ~into:outer_callbacks;
@@ -1721,7 +1784,7 @@ end = struct
       API.
 
       Functions other than [Lwt.bind] have analogous deferral behavior. *)
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred sched () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
       (* The result promise is a fresh pending promise.
 
@@ -1732,11 +1795,11 @@ end = struct
          [p'] will become a proxy of [p'']. At that point, trying to cancel
          [p''] will be equivalent to trying to cancel [p'], so the behavior will
          depend on how the user obtained [p']. *)
-      let saved_storage = !current_storage in
+      let saved_storage = sched.current_storage in
       let callback p_result =
         match p_result with
         | Fulfilled v ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p' =
               try f v with exn when Exception_filter.run exn -> fail exn
             in
@@ -1751,7 +1814,7 @@ end = struct
                produces a reference with the right type variables. We
                immediately get [p'']'s current underlying promise. *)
             let (State_may_have_changed p'') =
-              make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
+              make_into_proxy sched ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
             (* Make the outer promise [p''] behaviorally identical to the promise
@@ -1760,7 +1823,7 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              resolve ~allow_deferring:false p'' p_result
+              resolve ~allow_deferring:false sched p'' p_result
             in
             ignore p''
       in
@@ -1772,12 +1835,15 @@ end = struct
           ~callback:(fun () -> f v)
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred ()
+              create_result_promise_and_callback_if_deferred (self_sched ()) ()
             in
             p'', callback, p.state)
     | Rejected _ as result -> to_public_promise {state = result}
     | Pending p_callbacks ->
-        let p'', callback = create_result_promise_and_callback_if_deferred () in
+        let sched = self_sched () in
+        let p'', callback =
+          create_result_promise_and_callback_if_deferred sched ()
+        in
         add_implicitly_removed_callback p_callbacks callback;
         p''
 
@@ -1785,14 +1851,14 @@ end = struct
     let trace_context = Sequence_associated_storage.get tracing_context in
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let create_result_promise_and_callback_if_deferred trace () =
+    let create_result_promise_and_callback_if_deferred sched trace () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-      let saved_storage = !current_storage in
+      let saved_storage = sched.current_storage in
       let callback p_result =
         if trace then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
         | Fulfilled v ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p' =
               try f v
               with exn when Exception_filter.run exn -> fail (add_loc exn)
@@ -1801,14 +1867,14 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
+              make_into_proxy sched ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
         | Rejected exn ->
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              resolve ~allow_deferring:false p'' (Rejected (add_loc exn))
+              resolve ~allow_deferring:false sched p'' (Rejected (add_loc exn))
             in
             ignore p''
       in
@@ -1820,14 +1886,16 @@ end = struct
           ~callback:(fun () -> f v)
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred false ()
+              create_result_promise_and_callback_if_deferred (self_sched ())
+                false ()
             in
             p'', callback, p.state)
     | Rejected exn -> to_public_promise {state = Rejected (add_loc exn)}
     | Pending p_callbacks ->
         Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
+        let sched = self_sched () in
         let p'', callback =
-          create_result_promise_and_callback_if_deferred true ()
+          create_result_promise_and_callback_if_deferred sched true ()
         in
         add_implicitly_removed_callback p_callbacks callback;
         p''
@@ -1835,13 +1903,13 @@ end = struct
   let map f p =
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred sched () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-      let saved_storage = !current_storage in
+      let saved_storage = sched.current_storage in
       let callback p_result =
         match p_result with
         | Fulfilled v ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p''_result =
               try Fulfilled (f v)
               with exn when Exception_filter.run exn -> Rejected exn
@@ -1849,14 +1917,14 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              resolve ~allow_deferring:false p'' p''_result
+              resolve ~allow_deferring:false sched p'' p''_result
             in
             ignore p''
         | Rejected _ as p_result ->
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              resolve ~allow_deferring:false p'' p_result
+              resolve ~allow_deferring:false sched p'' p_result
             in
             ignore p''
       in
@@ -1872,12 +1940,15 @@ end = struct
                    with exn when Exception_filter.run exn -> Rejected exn) })
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred ()
+              create_result_promise_and_callback_if_deferred (self_sched ()) ()
             in
             p'', callback, p.state)
     | Rejected _ as result -> to_public_promise {state = result}
     | Pending p_callbacks ->
-        let p'', callback = create_result_promise_and_callback_if_deferred () in
+        let sched = self_sched () in
+        let p'', callback =
+          create_result_promise_and_callback_if_deferred sched ()
+        in
         add_implicitly_removed_callback p_callbacks callback;
         p''
 
@@ -1887,20 +1958,20 @@ end = struct
     let p = try f () with exn when Exception_filter.run exn -> fail exn in
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred sched () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-      let saved_storage = !current_storage in
+      let saved_storage = sched.current_storage in
       let callback p_result =
         match p_result with
         | Fulfilled _ as p_result ->
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              resolve ~allow_deferring:false p'' p_result
+              resolve ~allow_deferring:false sched p'' p_result
             in
             ignore p''
         | Rejected exn ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p' =
               try h exn with exn when Exception_filter.run exn -> fail exn
             in
@@ -1908,7 +1979,7 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
+              make_into_proxy sched ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
       in
@@ -1921,11 +1992,14 @@ end = struct
           ~callback:(fun () -> h exn)
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred ()
+              create_result_promise_and_callback_if_deferred (self_sched ()) ()
             in
             p'', callback, p.state)
     | Pending p_callbacks ->
-        let p'', callback = create_result_promise_and_callback_if_deferred () in
+        let sched = self_sched () in
+        let p'', callback =
+          create_result_promise_and_callback_if_deferred sched ()
+        in
         add_implicitly_removed_callback p_callbacks callback;
         p''
 
@@ -1934,9 +2008,9 @@ end = struct
     let p = try f () with exn when Exception_filter.run exn -> fail exn in
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let create_result_promise_and_callback_if_deferred traced () =
+    let create_result_promise_and_callback_if_deferred sched traced () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-      let saved_storage = !current_storage in
+      let saved_storage = sched.current_storage in
       let callback p_result =
         if traced then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
@@ -1944,11 +2018,11 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              resolve ~allow_deferring:false p'' p_result
+              resolve ~allow_deferring:false sched p'' p_result
             in
             ignore p''
         | Rejected exn ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p' =
               try h exn
               with exn when Exception_filter.run exn -> fail (add_loc exn)
@@ -1957,7 +2031,7 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
+              make_into_proxy sched ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
       in
@@ -1970,13 +2044,15 @@ end = struct
           ~callback:(fun () -> h (add_loc exn))
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred false ()
+              create_result_promise_and_callback_if_deferred (self_sched ())
+                false ()
             in
             p'', callback, p.state)
     | Pending p_callbacks ->
         Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
+        let sched = self_sched () in
         let p'', callback =
-          create_result_promise_and_callback_if_deferred true ()
+          create_result_promise_and_callback_if_deferred sched true ()
         in
         add_implicitly_removed_callback p_callbacks callback;
         p''
@@ -1985,13 +2061,13 @@ end = struct
     let p = try f () with exn when Exception_filter.run exn -> fail exn in
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let create_result_promise_and_callback_if_deferred () =
+    let create_result_promise_and_callback_if_deferred sched () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-      let saved_storage = !current_storage in
+      let saved_storage = sched.current_storage in
       let callback p_result =
         match p_result with
         | Fulfilled v ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p' =
               try f' v with exn when Exception_filter.run exn -> fail exn
             in
@@ -1999,11 +2075,11 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
+              make_into_proxy sched ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
         | Rejected exn ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p' =
               try h exn with exn when Exception_filter.run exn -> fail exn
             in
@@ -2011,7 +2087,7 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
+              make_into_proxy sched ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
       in
@@ -2023,7 +2099,7 @@ end = struct
           ~callback:(fun () -> f' v)
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred ()
+              create_result_promise_and_callback_if_deferred (self_sched ()) ()
             in
             p'', callback, p.state)
     | Rejected exn ->
@@ -2031,11 +2107,14 @@ end = struct
           ~callback:(fun () -> h exn)
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred ()
+              create_result_promise_and_callback_if_deferred (self_sched ()) ()
             in
             p'', callback, p.state)
     | Pending p_callbacks ->
-        let p'', callback = create_result_promise_and_callback_if_deferred () in
+        let sched = self_sched () in
+        let p'', callback =
+          create_result_promise_and_callback_if_deferred sched ()
+        in
         add_implicitly_removed_callback p_callbacks callback;
         p''
 
@@ -2044,14 +2123,14 @@ end = struct
     let p = try f () with exn when Exception_filter.run exn -> fail exn in
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let create_result_promise_and_callback_if_deferred traced () =
+    let create_result_promise_and_callback_if_deferred sched traced () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-      let saved_storage = !current_storage in
+      let saved_storage = sched.current_storage in
       let callback p_result =
         if traced then Lwt_rte.emit_trace End trace_context loc_f loc_l;
         match p_result with
         | Fulfilled v ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p' =
               try f' v
               with exn when Exception_filter.run exn -> fail (add_loc exn)
@@ -2060,11 +2139,11 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
+              make_into_proxy sched ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
         | Rejected exn ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             let p' =
               try h exn
               with exn when Exception_filter.run exn -> fail (add_loc exn)
@@ -2073,7 +2152,7 @@ end = struct
             let (State_may_now_be_pending_proxy p'') = may_now_be_proxy p'' in
             let p'' = underlying p'' in
             let (State_may_have_changed p'') =
-              make_into_proxy ~outer_promise:p'' ~user_provided_promise:p'
+              make_into_proxy sched ~outer_promise:p'' ~user_provided_promise:p'
             in
             ignore p''
       in
@@ -2085,7 +2164,8 @@ end = struct
           ~callback:(fun () -> f' v)
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred false ()
+              create_result_promise_and_callback_if_deferred (self_sched ())
+                false ()
             in
             p'', callback, p.state)
     | Rejected exn ->
@@ -2093,13 +2173,15 @@ end = struct
           ~callback:(fun () -> h (add_loc exn))
           ~if_deferred:(fun () ->
             let p'', callback =
-              create_result_promise_and_callback_if_deferred false ()
+              create_result_promise_and_callback_if_deferred (self_sched ())
+                false ()
             in
             p'', callback, p.state)
     | Pending p_callbacks ->
         Lwt_rte.emit_trace Begin trace_context loc_f loc_l;
+        let sched = self_sched () in
         let p'', callback =
-          create_result_promise_and_callback_if_deferred true ()
+          create_result_promise_and_callback_if_deferred sched true ()
         in
         add_implicitly_removed_callback p_callbacks callback;
         p''
@@ -2125,17 +2207,17 @@ end = struct
             (), (fun _ -> handle_with_async_exception_hook f ()), Fulfilled ())
     | Rejected _ -> ()
     | Fulfilled _ -> ()
-    | Pending callbacks -> add_cancel_callback callbacks f
+    | Pending callbacks -> add_cancel_callback (self_sched ()) callbacks f
 
   let on_success p f =
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let callback_if_deferred () =
-      let saved_storage = !current_storage in
+    let callback_if_deferred sched () =
+      let saved_storage = sched.current_storage in
       fun result ->
         match result with
         | Fulfilled v ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             handle_with_async_exception_hook f v
         | Rejected _ -> ()
     in
@@ -2144,23 +2226,23 @@ end = struct
         run_callback_or_defer_it ~run_immediately_and_ensure_tail_call:true
           ~callback:(fun () -> handle_with_async_exception_hook f v)
           ~if_deferred:(fun () ->
-            let callback = callback_if_deferred () in
+            let callback = callback_if_deferred (self_sched ()) () in
             (), callback, p.state)
     | Rejected _ -> ()
     | Pending p_callbacks ->
-        let callback = callback_if_deferred () in
+        let callback = callback_if_deferred (self_sched ()) () in
         add_implicitly_removed_callback p_callbacks callback
 
   let on_failure p f =
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let callback_if_deferred () =
-      let saved_storage = !current_storage in
+    let callback_if_deferred sched () =
+      let saved_storage = sched.current_storage in
       fun result ->
         match result with
         | Fulfilled _ -> ()
         | Rejected exn ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             handle_with_async_exception_hook f exn
     in
     match p.state with
@@ -2169,19 +2251,19 @@ end = struct
         run_callback_or_defer_it ~run_immediately_and_ensure_tail_call:true
           ~callback:(fun () -> handle_with_async_exception_hook f exn)
           ~if_deferred:(fun () ->
-            let callback = callback_if_deferred () in
+            let callback = callback_if_deferred (self_sched ()) () in
             (), callback, p.state)
     | Pending p_callbacks ->
-        let callback = callback_if_deferred () in
+        let callback = callback_if_deferred (self_sched ()) () in
         add_implicitly_removed_callback p_callbacks callback
 
   let on_termination p f =
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let callback_if_deferred () =
-      let saved_storage = !current_storage in
+    let callback_if_deferred sched () =
+      let saved_storage = sched.current_storage in
       fun _result ->
-        current_storage := saved_storage;
+        sched.current_storage <- saved_storage;
         handle_with_async_exception_hook f ()
     in
     match p.state with
@@ -2189,30 +2271,30 @@ end = struct
         run_callback_or_defer_it ~run_immediately_and_ensure_tail_call:true
           ~callback:(fun () -> handle_with_async_exception_hook f ())
           ~if_deferred:(fun () ->
-            let callback = callback_if_deferred () in
+            let callback = callback_if_deferred (self_sched ()) () in
             (), callback, p.state)
     | Rejected _ ->
         run_callback_or_defer_it ~run_immediately_and_ensure_tail_call:true
           ~callback:(fun () -> handle_with_async_exception_hook f ())
           ~if_deferred:(fun () ->
-            let callback = callback_if_deferred () in
+            let callback = callback_if_deferred (self_sched ()) () in
             (), callback, p.state)
     | Pending p_callbacks ->
-        let callback = callback_if_deferred () in
+        let callback = callback_if_deferred (self_sched ()) () in
         add_implicitly_removed_callback p_callbacks callback
 
   let on_any p f g =
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
-    let callback_if_deferred () =
-      let saved_storage = !current_storage in
+    let callback_if_deferred sched () =
+      let saved_storage = sched.current_storage in
       fun result ->
         match result with
         | Fulfilled v ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             handle_with_async_exception_hook f v
         | Rejected exn ->
-            current_storage := saved_storage;
+            sched.current_storage <- saved_storage;
             handle_with_async_exception_hook g exn
     in
     match p.state with
@@ -2220,16 +2302,16 @@ end = struct
         run_callback_or_defer_it ~run_immediately_and_ensure_tail_call:true
           ~callback:(fun () -> handle_with_async_exception_hook f v)
           ~if_deferred:(fun () ->
-            let callback = callback_if_deferred () in
+            let callback = callback_if_deferred (self_sched ()) () in
             (), callback, p.state)
     | Rejected exn ->
         run_callback_or_defer_it ~run_immediately_and_ensure_tail_call:true
           ~callback:(fun () -> handle_with_async_exception_hook g exn)
           ~if_deferred:(fun () ->
-            let callback = callback_if_deferred () in
+            let callback = callback_if_deferred (self_sched ()) () in
             (), callback, p.state)
     | Pending p_callbacks ->
-        let callback = callback_if_deferred () in
+        let callback = callback_if_deferred (self_sched ()) () in
         add_implicitly_removed_callback p_callbacks callback
 end
 
@@ -2304,6 +2386,7 @@ end = struct
         add_implicitly_removed_callback p_callbacks callback
 
   let join ps =
+    let sched = self_sched () in
     let p' = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
     let number_pending_in_ps = ref 0 in
     let join_result = ref (Fulfilled ()) in
@@ -2327,7 +2410,7 @@ end = struct
       then begin
         let p' = underlying p' in
         let (State_may_have_changed p') =
-          resolve ~allow_deferring:false (underlying p') !join_result
+          resolve ~allow_deferring:false sched (underlying p') !join_result
         in
         ignore p'
       end
@@ -2470,31 +2553,29 @@ end = struct
             then (List.iter cancel ps; p)
             else nth_resolved_and_cancel_pending ps (n - 1))
 
-  (* The PRNG state is initialized with a constant to make non-IO-based programs
-     deterministic. *)
-  (* Maintainer's note: is this necessary? *)
-  let prng = lazy (Random.State.make [||])
-
   let choose ps =
     if ps = []
     then
       invalid_arg "Lwt.choose [] would return a promise that is pending forever";
     match count_resolved_promises_in ps with
     | Ok 0 ->
+        let sched = self_sched () in
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
         let callback result =
           let (State_may_now_be_pending_proxy p) = may_now_be_proxy p in
           let p = underlying p in
           let (State_may_have_changed p) =
-            resolve ~allow_deferring:false p result
+            resolve ~allow_deferring:false sched p result
           in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
         to_public_promise p
     | Ok 1 -> nth_resolved ps 0
-    | Ok n -> nth_resolved ps (Random.State.int (Lazy.force prng) n)
-    | Error (n, ps) -> nth_resolved ps (Random.State.int (Lazy.force prng) n)
+    | Ok n ->
+        nth_resolved ps (Random.State.int (Lazy.force (self_sched ()).prng) n)
+    | Error (n, ps) ->
+        nth_resolved ps (Random.State.int (Lazy.force (self_sched ()).prng) n)
 
   let pick ps =
     if ps = []
@@ -2502,13 +2583,14 @@ end = struct
       invalid_arg "Lwt.pick [] would return a promise that is pending forever";
     match count_resolved_promises_in ps with
     | Ok 0 ->
+        let sched = self_sched () in
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
         let callback result =
           let (State_may_now_be_pending_proxy p) = may_now_be_proxy p in
           List.iter cancel ps;
           let p = underlying p in
           let (State_may_have_changed p) =
-            resolve ~allow_deferring:false p result
+            resolve ~allow_deferring:false sched p result
           in
           ignore p
         in
@@ -2517,10 +2599,10 @@ end = struct
     | Ok 1 -> nth_resolved_and_cancel_pending ps 0
     | Ok n ->
         nth_resolved_and_cancel_pending ps
-          (Random.State.int (Lazy.force prng) n)
+          (Random.State.int (Lazy.force (self_sched ()).prng) n)
     | Error (n, qs) ->
         List.iter cancel ps;
-        nth_resolved qs (Random.State.int (Lazy.force prng) n)
+        nth_resolved qs (Random.State.int (Lazy.force (self_sched ()).prng) n)
 
   (* If [nchoose ps] or [npick ps] found all promises in [ps] pending, the
      callback added to each promise in [ps] eventually calls this function. The
@@ -2567,13 +2649,14 @@ end = struct
     let rec check_for_already_resolved_promises ps' =
       match ps' with
       | [] ->
+          let sched = self_sched () in
           let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
           let callback _result =
             let (State_may_now_be_pending_proxy p) = may_now_be_proxy p in
             let p = underlying p in
             let result = collect_fulfilled_promises_after_pending [] ps in
             let (State_may_have_changed p) =
-              resolve ~allow_deferring:false p result
+              resolve ~allow_deferring:false sched p result
             in
             ignore p
           in
@@ -2615,6 +2698,7 @@ end = struct
     let rec check_for_already_resolved_promises ps' =
       match ps' with
       | [] ->
+          let sched = self_sched () in
           let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
           let callback _result =
             let (State_may_now_be_pending_proxy p) = may_now_be_proxy p in
@@ -2622,7 +2706,7 @@ end = struct
             let result = collect_fulfilled_promises_after_pending [] ps in
             List.iter cancel ps;
             let (State_may_have_changed p) =
-              resolve ~allow_deferring:false p result
+              resolve ~allow_deferring:false sched p result
             in
             ignore p
           in
@@ -2648,6 +2732,7 @@ end = struct
       invalid_arg
         "Lwt.nchoose_split [] would return a promise that is pending forever";
     let rec finish
+              sched
               (to_resolve : ('a list * 'a t list, underlying, pending) promise)
               (fulfilled : 'a list)
               (pending : 'a t list)
@@ -2656,15 +2741,15 @@ end = struct
       =
       match ps with
       | [] ->
-          resolve ~allow_deferring:false to_resolve
+          resolve ~allow_deferring:false sched to_resolve
             (Fulfilled (List.rev fulfilled, List.rev pending))
       | p :: ps -> (
           let (Internal p_internal) = to_internal_promise p in
           match (underlying p_internal).state with
-          | Fulfilled v -> finish to_resolve (v :: fulfilled) pending ps
+          | Fulfilled v -> finish sched to_resolve (v :: fulfilled) pending ps
           | Rejected _ as result ->
-              resolve ~allow_deferring:false to_resolve result
-          | Pending _ -> finish to_resolve fulfilled (p :: pending) ps)
+              resolve ~allow_deferring:false sched to_resolve result
+          | Pending _ -> finish sched to_resolve fulfilled (p :: pending) ps)
     in
     let rec collect_already_resolved_promises results pending ps =
       match ps with
@@ -2684,11 +2769,12 @@ end = struct
     let rec check_for_already_resolved_promises pending_acc ps' =
       match ps' with
       | [] ->
+          let sched = self_sched () in
           let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
           let callback _result =
             let (State_may_now_be_pending_proxy p) = may_now_be_proxy p in
             let p = underlying p in
-            let (State_may_have_changed p) = finish p [] [] ps in
+            let (State_may_have_changed p) = finish sched p [] [] ps in
             ignore p
           in
           add_explicitly_removable_callback_to_each_of ps callback;
@@ -2827,32 +2913,29 @@ end = struct
     try return (f x1 x2 x3 x4 x5 x6 x7)
     with exn when Exception_filter.run exn -> fail exn
 
-  let pause_hook = ref ignore
-
-  (* The paused promises, the most recent first. A paused promise that is
-     canceled stays here until the next [wakeup_paused], which leaves it
-     alone. *)
-  let paused : unit t list ref = ref []
-  let paused_count = ref 0
+  (* [sched.paused] holds the paused promises, the most recent first. A paused
+     promise that is canceled stays there until the next [wakeup_paused],
+     which skips it. *)
 
   let pause () =
+    let sched = self_sched () in
     let p =
       to_public_promise (new_pending ~how_to_cancel:Cancel_this_promise)
     in
-    paused := p :: !paused;
-    incr paused_count;
-    !pause_hook !paused_count;
+    sched.paused <- p :: sched.paused;
+    sched.paused_count <- sched.paused_count + 1;
+    sched.pause_hook sched.paused_count;
     p
 
   (* Resolves a paused promise, unless it was canceled. It may have become a
      proxy, if it was returned by a [bind] callback. *)
-  let wakeup_paused_promise p =
+  let wakeup_paused_promise sched p =
     let (Internal p) = to_internal_promise p in
     let p = underlying p in
     match p.state with
     | Pending _ ->
         let (State_may_have_changed p) =
-          resolve ~allow_deferring:false p (Fulfilled ())
+          resolve ~allow_deferring:false sched p (Fulfilled ())
         in
         ignore p
     | Rejected Canceled -> ()
@@ -2860,20 +2943,22 @@ end = struct
 
   (* The promises paused while these are woken up wait for the next call. *)
   let wakeup_paused () =
-    match !paused with
+    let sched = self_sched () in
+    match sched.paused with
     | [] -> ()
     | ps ->
-        paused := [];
-        paused_count := 0;
-        List.iter wakeup_paused_promise (List.rev ps)
+        sched.paused <- [];
+        sched.paused_count <- 0;
+        List.iter (wakeup_paused_promise sched) (List.rev ps)
 
-  let register_pause_notifier f = pause_hook := f
+  let register_pause_notifier f = (self_sched ()).pause_hook <- f
 
   let abandon_paused () =
-    paused := [];
-    paused_count := 0
+    let sched = self_sched () in
+    sched.paused <- [];
+    sched.paused_count <- 0
 
-  let paused_count () = !paused_count
+  let paused_count () = (self_sched ()).paused_count
 end
 
 include Miscellaneous
@@ -2917,7 +3002,8 @@ module Private = struct
     let get_from_storage = Lwt_storage.find
     let modify_storage = Lwt_storage.set
     let empty_storage = Lwt_storage.empty
-    let current_storage = Sequence_associated_storage.current_storage
+    let get_current_storage = Sequence_associated_storage.get_current_storage
+    let set_current_storage = Sequence_associated_storage.set_current_storage
   end
 
   let tracing_context = tracing_context
