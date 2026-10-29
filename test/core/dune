@@ -2,7 +2,12 @@
  (name main)
  (package lwt)
  (modules
-  (:standard \ test_protected_cancel test_storage_domains))
+  (:standard
+   \
+   test_protected_cancel
+   test_storage_domains
+   test_lwt_dls
+   test_lwt_dls_domains))
  (libraries lwttester))
 
 ; p resolving after Lwt.protected p has been canceled. This used to crash, so
@@ -20,6 +25,24 @@
  (name test_storage_domains)
  (package lwt)
  (modules test_storage_domains)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt))
+
+; The per-domain slot, single-domain half: builds everywhere, including 4.14.
+
+(test
+ (name test_lwt_dls)
+ (package lwt)
+ (modules test_lwt_dls)
+ (libraries lwt))
+
+; The half that needs two domains.
+
+(test
+ (name test_lwt_dls_domains)
+ (package lwt)
+ (modules test_lwt_dls_domains)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt))
