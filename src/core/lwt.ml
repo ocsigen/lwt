@@ -744,9 +744,11 @@ module Exception_filter = struct
     | Stack_overflow -> false
     | _ -> true
 
-  let v = ref handle_all_except_runtime
-  let set f = v := f
-  let run e = !v e
+  (* Process-wide, and atomic so that it can be set on one domain and read on
+     another. *)
+  let v = Atomic.make handle_all_except_runtime
+  let set f = Atomic.set v f
+  let run e = (Atomic.get v) e
 end
 
 (* Outside [Scheduler], so that it prints as [Lwt.Foreign_promise]. *)
