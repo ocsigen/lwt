@@ -1829,7 +1829,9 @@ let () =
 val wakeup_paused : unit -> unit
 (** [Lwt.wakeup_paused ()] fulfills all promises created with {!Lwt.pause} since
     the last time [Lwt.wakeup_paused] was called, or since the process was
-    started.
+    started. Each domain has its own paused promises: this function, like
+    {!Lwt.paused_count} and {!Lwt.abandon_paused}, acts on those of the
+    calling domain.
 
     This function is intended for internal use by Lwt. *)
 
@@ -1844,8 +1846,8 @@ val register_pause_notifier : (int -> unit) -> unit
     {!Lwt.pause} is called. The result of [Lwt.paused_count ()] is passed to
     [f].
 
-    Only one such function can be registered at a time. There is only a single
-    internal reference cell available for this purpose.
+    Only one such function can be registered at a time on each domain, and it
+    is called only for the pauses of that domain.
 
     This function is intended for internal use by Lwt. *)
 

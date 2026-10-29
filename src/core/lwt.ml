@@ -345,6 +345,13 @@
    module without triggering any more warnings. *)
 module Lwt_sequence = Lwt_sequence
 
+(* Lwt_dls is internal; the core may use it. *)
+[@@@alert "-trespassing"]
+
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
 (* The public promise and resolver types. They are declared before the internal
    types, as the scheduler state stores the paused promises. See module
    [Public_types]. *)
@@ -440,8 +447,8 @@ module Main_internal_types = struct
         ('a, _, _) promise Lwt_sequence.node
         -> 'a cancel_callback_list
 
-  (* All the mutable state of the core, in one global record. A public entry
-     point gets it once with [self_sched] and passes it down. *)
+  (* All the mutable state of the core, in one record per domain. A public
+     entry point gets it once with [self_sched] and passes it down. *)
   and sched =
     { mutable current_storage :
         Lwt_storage.t (* See [Sequence_associated_storage]. *)
@@ -750,8 +757,8 @@ module Scheduler = struct
     ; pause_hook = ignore
     ; prng = lazy (Random.State.make [||]) }
 
-  let the_sched = new_sched ()
-  let self_sched () = the_sched
+  let sched_slot : sched Lwt_dls.t = Lwt_dls.new_key new_sched
+  let self_sched () = Lwt_dls.get sched_slot
 end
 
 include Scheduler
