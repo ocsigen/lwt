@@ -76,18 +76,18 @@ module Storage = struct
 
   let set k v =
     let open Seq_storage in
-    current_storage := modify_storage k (Some v) !current_storage
+    set_current_storage (modify_storage k (Some v) (get_current_storage ()))
 
   let remove k =
     let open Seq_storage in
-    current_storage := modify_storage k None !current_storage
+    set_current_storage (modify_storage k None (get_current_storage ()))
 
   let reset_to_empty () =
     let open Seq_storage in
-    current_storage := empty_storage
+    set_current_storage empty_storage
 
-  let save_current () = !Seq_storage.current_storage
-  let restore_current saved = Seq_storage.current_storage := saved
+  let save_current () = Seq_storage.get_current_storage ()
+  let restore_current saved = Seq_storage.set_current_storage saved
 end
 
 (* part 3: handling effects *)
