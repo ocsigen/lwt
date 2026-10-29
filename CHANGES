@@ -1,5 +1,14 @@
 ===== dev =====
 
+====== Additions ======
+
+  * The state of Lwt's core (the Lwt.key storage, the resolution loop, the
+    paused promises) is per domain. A pending promise belongs to the domain
+    that created it, and changing it from another domain raises the new
+    exception Lwt.Foreign_promise. A resolved promise can be used from any
+    domain. With a single domain, nothing changes.
+    (Vincent Balat, Jérôme Vouillon, #1141)
+
 ====== Fixes ======
 
   * Lwt.cancel no longer crashes when canceling Lwt.protected p makes p resolve,
