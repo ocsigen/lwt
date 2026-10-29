@@ -356,7 +356,7 @@ module Storage_map = Map.Make (struct
     let compare = compare
   end)
 
-type storage = (unit -> unit) Storage_map.t
+type storage = Lwt_key_storage.t Storage_map.t
 
 module Main_internal_types = struct
   (* Phantom types for use with types [promise] and [state]. These are never
@@ -739,33 +739,27 @@ end = struct
      Maintainer's note: I think using this mechanism should be discouraged in
      new code. *)
 
-  type 'v key = {id : int; mutable value : 'v option}
+  (* The storage maps keys of unrelated types to their values, through the
+     universal type [Lwt_key_storage.t]. *)
+  type 'v key = 'v Lwt_key_storage.key
 
-  let next_key_id = ref 0
-
-  let new_key () =
-    let id = !next_key_id in
-    next_key_id := id + 1;
-    {id; value = None}
+  let new_key = Lwt_key_storage.new_key
 
   (* generic storage *)
   let empty_storage = Storage_map.empty
 
   let get_from_storage key storage =
-    match Storage_map.find_opt key.id storage with
-    | Some refresh ->
-        refresh ();
-        let value = key.value in
-        key.value <- None;
-        value
+    match Storage_map.find_opt (Lwt_key_storage.id key) storage with
+    | Some u -> Lwt_key_storage.project key u
     | None -> None
 
   let modify_storage key value storage =
     match value with
     | Some _ ->
-        let refresh = fun () -> key.value <- value in
-        Storage_map.add key.id refresh storage
-    | None -> Storage_map.remove key.id storage
+        Storage_map.add (Lwt_key_storage.id key)
+          (Lwt_key_storage.inject key value)
+          storage
+    | None -> Storage_map.remove (Lwt_key_storage.id key) storage
 
   (* built-in storage: propagated by bind and such *)
   let current_storage = ref Storage_map.empty

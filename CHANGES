@@ -1,3 +1,9 @@
+===== dev =====
+
+====== Fixes ======
+
+  * Make the Lwt.key storage thread-safe.
+
 ===== 6.1.2 =====
 
 ====== Fixes ======

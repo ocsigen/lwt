@@ -1,4 +1,16 @@
 (test
  (name main)
  (package lwt)
+ (modules
+  (:standard \ test_storage_domains))
  (libraries lwttester))
+
+; Needs real parallelism, so it only builds on OCaml 5.
+
+(test
+ (name test_storage_domains)
+ (package lwt)
+ (modules test_storage_domains)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt))
