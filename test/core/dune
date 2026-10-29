@@ -8,7 +8,9 @@
    test_storage_domains
    test_lwt_dls
    test_lwt_dls_domains
-   test_sched_domains))
+   test_sched_domains
+   test_storage_domains
+   test_ownership))
  (libraries lwttester))
 
 ; p resolving after Lwt.protected p has been canceled. This used to crash, so
@@ -54,6 +56,17 @@
  (name test_sched_domains)
  (package lwt)
  (modules test_sched_domains)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt))
+
+; The always-on ownership check, and what it must not reject. Needs a second
+; domain, hence OCaml 5.
+
+(test
+ (name test_ownership)
+ (package lwt)
+ (modules test_ownership)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt))
