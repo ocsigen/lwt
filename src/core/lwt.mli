@@ -905,7 +905,10 @@ v}
     needs.
 
     If you are writing a library, you should leave this reference alone. Its
-    behavior should be determined by the application. *)
+    behavior should be determined by the application.
+
+    It is shared by all domains: with several domains, set it before spawning
+    them. *)
 
 (** {2:2_Concurrency Concurrency} *)
 
