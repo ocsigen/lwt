@@ -1062,6 +1062,17 @@ exception Canceled
 (** Canceled promises are those rejected with this exception, [Lwt.Canceled].
     See {!Lwt.cancel}. *)
 
+exception Foreign_promise
+(** Raised when a {e pending} promise is changed from a domain other than the
+    one that created it: binding on it, resolving it, canceling it, or
+    attaching a callback to it. A pending promise belongs to the domain that
+    created it, and its callbacks run there.
+
+    A {e resolved} promise has no owner, and can be used from any domain.
+    Reading a pending promise, with {!Lwt.state} for example, is not checked.
+
+    @since 6.2.0 *)
+
 val task : unit -> 'a t * 'a u
 (** [Lwt.task] is the same as {!Lwt.wait}, except the resulting promise [p] is
     {{!Lwt.cancel} cancelable}.
