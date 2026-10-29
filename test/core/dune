@@ -2,7 +2,7 @@
  (name main)
  (package lwt)
  (modules
-  (:standard \ test_protected_cancel))
+  (:standard \ test_protected_cancel test_storage_domains))
  (libraries lwttester))
 
 ; p resolving after Lwt.protected p has been canceled. This used to crash, so
@@ -12,4 +12,14 @@
  (name test_protected_cancel)
  (package lwt)
  (modules test_protected_cancel)
+ (libraries lwt))
+
+; Needs real parallelism, so it only builds on OCaml 5.
+
+(test
+ (name test_storage_domains)
+ (package lwt)
+ (modules test_storage_domains)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
  (libraries lwt))

@@ -2,6 +2,11 @@
  (public_name lwt)
  (synopsis "Monadic promises and concurrent I/O")
  (wrapped false)
+ (preprocess
+  (per_module
+   ((pps ppx_devtools-optcomp)
+    lwt_key_storage)))
+ (private_modules lwt_key_storage)
  (libraries
   (select
    lwt_rte.ml
