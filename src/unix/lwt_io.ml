@@ -1359,15 +1359,7 @@ let rec delete_recursively directory =
       else
         let path = Filename.concat directory entry in
         Lwt_unix.lstat path >>= fun {Lwt_unix.st_kind; _} ->
-        match st_kind with
-        | S_DIR -> delete_recursively path
-        | S_LNK when Sys.win32 || Sys.cygwin ->
-            Lwt_unix.stat path >>= fun {Lwt_unix.st_kind; _} ->
-            begin match st_kind with
-            | S_DIR -> Lwt_unix.rmdir path
-            | _ -> unlink path
-            end
-        | _ -> unlink path
+        match st_kind with S_DIR -> delete_recursively path | _ -> unlink path
     end
   >>= fun () -> Lwt_unix.rmdir directory
 
