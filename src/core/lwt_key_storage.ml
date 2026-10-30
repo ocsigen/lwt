@@ -18,17 +18,17 @@ end
 [@@if ocaml_version >= (5, 1, 0)]
 
 module Impl = struct
-  (* Each key owns a fresh exception constructor. *)
+  (* Each key owns a fresh constructor of an extensible type. *)
 
-  type t = exn
-  type 'v key = {id : int; inject : 'v option -> exn; project : exn -> 'v option}
+  type t = ..
+  type 'v key = {id : int; inject : 'v option -> t; project : t -> 'v option}
 
   (* Atomic, so that keys created at once on two domains get distinct ids. *)
   let next_key_id = Atomic.make 0
 
   let new_key (type v) () : v key =
     let module M = struct
-      exception E of v option
+      type t += E of v option
     end in
     let id = Atomic.fetch_and_add next_key_id 1 in
     { id

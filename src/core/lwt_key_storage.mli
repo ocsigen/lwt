@@ -3,7 +3,8 @@
 
 (** The universal type behind {!Lwt.key}: a value of {!t} holds a value of any
     key's type, and only the key that injected it can project it back. Built on
-    [Type.Id] from OCaml 5.1, on a fresh exception constructor per key before.
+    [Type.Id] from OCaml 5.1, on a fresh constructor of an extensible type per
+    key before.
 
     A key carries a ['v option], so that a lookup returns the stored option
     without allocating one. *)
