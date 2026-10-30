@@ -5,8 +5,8 @@
  (preprocess
   (per_module
    ((pps ppx_devtools-optcomp)
-    lwt_key_storage)))
- (private_modules lwt_key_storage)
+    lwt_storage)))
+ (private_modules lwt_storage)
  (libraries
   (select
    lwt_rte.ml

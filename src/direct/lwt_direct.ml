@@ -65,7 +65,7 @@ let yield () : unit = Effect.perform Yield
 module Storage = struct
   [@@@alert "-trespassing"]
 
-  module Lwt_storage = Lwt.Private.Sequence_associated_storage
+  module Seq_storage = Lwt.Private.Sequence_associated_storage
 
   [@@@alert "+trespassing"]
 
@@ -75,19 +75,19 @@ module Storage = struct
   let get = Lwt.get
 
   let set k v =
-    let open Lwt_storage in
+    let open Seq_storage in
     current_storage := modify_storage k (Some v) !current_storage
 
   let remove k =
-    let open Lwt_storage in
+    let open Seq_storage in
     current_storage := modify_storage k None !current_storage
 
   let reset_to_empty () =
-    let open Lwt_storage in
+    let open Seq_storage in
     current_storage := empty_storage
 
-  let save_current () = !Lwt_storage.current_storage
-  let restore_current saved = Lwt_storage.current_storage := saved
+  let save_current () = !Seq_storage.current_storage
+  let restore_current saved = Seq_storage.current_storage := saved
 end
 
 (* part 3: handling effects *)

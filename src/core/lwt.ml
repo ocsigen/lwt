@@ -345,19 +345,6 @@
    module without triggering any more warnings. *)
 module Lwt_sequence = Lwt_sequence
 
-(* Some sequence-associated storage types
-
-   Sequence-associated storage is defined and documented later, in module
-   [Sequence_associated_storage]. However, the following types are mentioned in
-   the definition of [promise], so they must be defined here first. *)
-module Storage_map = Map.Make (struct
-    type t = int
-
-    let compare = compare
-  end)
-
-type storage = Lwt_key_storage.t Storage_map.t
-
 module Main_internal_types = struct
   (* Phantom types for use with types [promise] and [state]. These are never
      constructed; the purpose of the constructors is to prove to the type
@@ -441,7 +428,7 @@ module Main_internal_types = struct
         'a cancel_callback_list * 'a cancel_callback_list
         -> 'a cancel_callback_list
     | Cancel_callback_list_callback :
-        storage * cancel_callback
+        Lwt_storage.t * cancel_callback
         -> _ cancel_callback_list
     | Cancel_callback_list_remove_sequence_node :
         ('a, _, _) promise Lwt_sequence.node
@@ -701,17 +688,14 @@ end
 
 module Sequence_associated_storage : sig
   (* Public interface *)
-  type 'v key
+  type 'v key = 'v Lwt_storage.key
 
   val new_key : unit -> _ key
   val get : 'v key -> 'v option
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
-  val get_from_storage : 'v key -> storage -> 'v option
-  val modify_storage : 'v key -> 'v option -> storage -> storage
-  val empty_storage : storage
 
   (* Internal interface *)
-  val current_storage : storage ref
+  val current_storage : Lwt_storage.t ref
 end = struct
   (* The idea behind sequence-associated storage is to preserve some values
      during a call to [bind] or other sequential composition operation, and
@@ -739,34 +723,17 @@ end = struct
      Maintainer's note: I think using this mechanism should be discouraged in
      new code. *)
 
-  (* The storage maps keys of unrelated types to their values, through the
-     universal type [Lwt_key_storage.t]. *)
-  type 'v key = 'v Lwt_key_storage.key
+  (* generic storage: see [Lwt_storage] *)
+  type 'v key = 'v Lwt_storage.key
 
-  let new_key = Lwt_key_storage.new_key
-
-  (* generic storage *)
-  let empty_storage = Storage_map.empty
-
-  let get_from_storage key storage =
-    match Storage_map.find_opt (Lwt_key_storage.id key) storage with
-    | Some u -> Lwt_key_storage.project key u
-    | None -> None
-
-  let modify_storage key value storage =
-    match value with
-    | Some _ ->
-        Storage_map.add (Lwt_key_storage.id key)
-          (Lwt_key_storage.inject key value)
-          storage
-    | None -> Storage_map.remove (Lwt_key_storage.id key) storage
+  let new_key = Lwt_storage.new_key
 
   (* built-in storage: propagated by bind and such *)
-  let current_storage = ref Storage_map.empty
-  let get key = get_from_storage key !current_storage
+  let current_storage = ref Lwt_storage.empty
+  let get key = Lwt_storage.find key !current_storage
 
   let with_value key value f =
-    let new_storage = modify_storage key value !current_storage in
+    let new_storage = Lwt_storage.set key value !current_storage in
     let saved_storage = !current_storage in
     current_storage := new_storage;
     try
@@ -1179,7 +1146,7 @@ end = struct
     let storage_snapshot = !current_storage in
     storage_snapshot
 
-  let leave_resolution_loop (storage_snapshot : storage) : unit =
+  let leave_resolution_loop (storage_snapshot : Lwt_storage.t) : unit =
     if !current_callback_nesting_depth = 1
     then begin
       while not (Queue.is_empty deferred_callbacks) do
@@ -1204,7 +1171,7 @@ end = struct
      The name should probably be [abaondon_resolution_loop]. *)
   let abandon_wakeups () =
     if !current_callback_nesting_depth <> 0
-    then leave_resolution_loop Storage_map.empty
+    then leave_resolution_loop Lwt_storage.empty
 
   let run_callbacks_or_defer_them
         ?(allow_deferring = true)
@@ -2871,9 +2838,14 @@ module Syntax = struct
 end
 
 module Private = struct
-  type nonrec storage = storage
+  type storage = Lwt_storage.t
 
-  module Sequence_associated_storage = Sequence_associated_storage
+  module Sequence_associated_storage = struct
+    let get_from_storage = Lwt_storage.find
+    let modify_storage = Lwt_storage.set
+    let empty_storage = Lwt_storage.empty
+    let current_storage = Sequence_associated_storage.current_storage
+  end
 
   let tracing_context = tracing_context
 end
