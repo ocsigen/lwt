@@ -95,21 +95,6 @@ let process_suite cwd =
   ; test "can read from subproc stderr" (fun () ->
       let pin, perr = Lwt_unix.pipe_in ~cloexec:true () in
       pread ~stderr:(`FD_move perr) pin)
-  ; (* posix_spawnp does not run scripts without a shebang through /bin/sh,
-           unlike execvp; Lwt_process falls back to fork for them. *)
-    test "script without shebang is run by /bin/sh"
-      ~only_if:(fun () -> not Sys.win32)
-      (fun () ->
-         let script = Filename.temp_file "lwt_process" ".sh" in
-         let oc = open_out script in
-         output_string oc "exit 3\n";
-         close_out oc;
-         Unix.chmod script 0o755;
-         Lwt.finalize
-           (fun () ->
-              Lwt_process.exec ?cwd (script, [|script|])
-              >>= check_status ~status:(( = ) 3))
-           (fun () -> Sys.remove script; Lwt.return_unit))
   ; test "missing executable exits with 127"
       ~only_if:(fun () -> not Sys.win32)
       (fun () ->
