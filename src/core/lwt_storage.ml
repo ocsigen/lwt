@@ -1,7 +1,10 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-module Impl = struct
+(* The universal type: [inject k v] holds a value of any key's type, and only
+   [k] can project it back. A key carries a ['v option], so that a lookup
+   returns the stored option without allocating one. *)
+module Univ = struct
   type 'v key = 'v option Type.Id.t
   type t = Binding : 'v key * 'v option -> t
 
@@ -17,7 +20,7 @@ module Impl = struct
 end
 [@@if ocaml_version >= (5, 1, 0)]
 
-module Impl = struct
+module Univ = struct
   (* Each key owns a fresh constructor of an extensible type. *)
 
   type t = ..
@@ -41,4 +44,22 @@ module Impl = struct
 end
 [@@if ocaml_version < (5, 1, 0)]
 
-include Impl
+type 'v key = 'v Univ.key
+
+let new_key = Univ.new_key
+
+module Int_map = Map.Make (Int)
+
+type t = Univ.t Int_map.t
+
+let empty = Int_map.empty
+
+let find key storage =
+  match Int_map.find_opt (Univ.id key) storage with
+  | Some u -> Univ.project key u
+  | None -> None
+
+let set key value storage =
+  match value with
+  | Some _ -> Int_map.add (Univ.id key) (Univ.inject key value) storage
+  | None -> Int_map.remove (Univ.id key) storage
