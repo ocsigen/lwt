@@ -326,18 +326,30 @@ let suite =
           let directory_removed = not (Sys.file_exists path) in
           Lwt.return (directory_existed && had_files && directory_removed)
         end
-    ; test "with_temp_dir: symlink to a sibling inside the tree"
-        ~sequential:true ~only_if:can_symlink begin fun () ->
+    ; test "with_temp_dir: symlink broken by the traversal" ~sequential:true
+        ~only_if:can_symlink begin fun () ->
           Lwt_io.with_temp_dir ~parent:Filename.current_dir_name
             ~prefix:"temp_dir" begin fun path ->
+              (* The two directories point at each other, so whichever one the
+                 traversal enters first is removed while the other's target
+                 still exists, leaving the second directory's link dangling.
+                 Exactly one link is broken by the traversal whatever order the
+                 entries are read in. *)
+              let entry directory name =
+                Filename.concat path (Filename.concat directory name)
+              in
+              let target directory name =
+                Filename.concat Filename.parent_dir_name
+                  (Filename.concat directory name)
+              in
               Unix.mkdir (Filename.concat path "a") 0o755;
               Unix.mkdir (Filename.concat path "b") 0o755;
-              open_out (Filename.concat path (Filename.concat "a" "file"))
-              |> close_out;
-              Unix.symlink ~to_dir:false
-                (Filename.concat Filename.parent_dir_name
-                   (Filename.concat "a" "file"))
-                (Filename.concat path (Filename.concat "b" "link"));
+              open_out (entry "a" "file_a") |> close_out;
+              open_out (entry "b" "file_b") |> close_out;
+              Unix.symlink ~to_dir:false (target "b" "file_b")
+                (entry "a" "link_a");
+              Unix.symlink ~to_dir:false (target "a" "file_a")
+                (entry "b" "link_b");
               Lwt.return path
             end
           >>= fun path -> Lwt.return (not (Sys.file_exists path))
