@@ -1,3 +1,12 @@
+===== dev =====
+
+====== Fixes ======
+
+  * Lwt.cancel no longer crashes when canceling Lwt.protected p makes p resolve,
+    for example in Lwt.cancel (Lwt.join [Lwt.protected p; p]) with p a task,
+    or when an Lwt.on_cancel handler of Lwt.protected p resolves p.
+    (Jérôme Vouillon, Vincent Balat)
+
 ===== 6.1.2 =====
 
 ====== Fixes ======

@@ -569,6 +569,14 @@ module Basic_helpers : sig
   val may_now_be_proxy :
      ('a, underlying, pending) promise
     -> 'a may_now_be_proxy
+
+  type 'a may_now_be_canceled =
+    | State_may_now_be_canceled : ('a, _, _) promise -> 'a may_now_be_canceled
+  [@@ocaml.unboxed]
+
+  val may_now_be_canceled :
+     ('a, underlying, pending) promise
+    -> 'a may_now_be_canceled
 end = struct
   (* Checks physical equality ([==]) of two internal promises. Unlike [==], does
      not force unification of their invariants. *)
@@ -679,6 +687,29 @@ end = struct
      The cast is a no-op cast. The introduction and immediate elimination of
      [State_may_have_changed _] seems to be optimized away even on old versions
      of OCaml. *)
+
+  type 'a may_now_be_canceled =
+    | State_may_now_be_canceled : ('a, _, _) promise -> 'a may_now_be_canceled
+  [@@ocaml.unboxed]
+
+  let may_now_be_canceled p = State_may_now_be_canceled p
+
+  (* The argument at [may_now_be_proxy] does not hold for a promise that the
+     user can cancel, such as the one returned by [Lwt.protected]: by the time
+     the callback is called, the promise, or the promise it has become a proxy
+     for, may have been canceled. The cast
+
+       let State_may_now_be_canceled p = may_now_be_canceled p in ...
+
+     replaces a reference
+
+       p : ('a, underlying, pending)
+
+     with
+
+       p : ('a, $Unknown, $Unknown)
+
+     so that the callback has to check the state of [p] before resolving it. *)
 end
 
 open Basic_helpers
@@ -1486,25 +1517,41 @@ end = struct
     | Pending _ ->
         let p' = new_pending ~how_to_cancel:Cancel_this_promise in
         let callback p_result =
-          let (State_may_now_be_pending_proxy p') = may_now_be_proxy p' in
-          let p' = underlying p' in
           (* In this callback, [p'] will either still itself be pending, or it
-             will have become a proxy for a pending promise. The reasoning for
-             this is almost the same as in the comment at [may_now_be_proxy].
-             The differences are:
+             will have become a proxy for a pending promise, or that underlying
+             promise will have been canceled. The reasoning for this is almost
+             the same as in the comment at [may_now_be_proxy]. The differences
+             are:
 
-             - [p'] *is* an initial promise, so it *can* get canceled. However,
-               if it does, the [on_cancel] handler installed below will remove
-               this callback.
-             - [p'] never gets passed to [make_into_proxy], the only effect of
-               which is that it cannot be the underlying promise of another
-               (proxy) promise. So, [p'] can only appear at the head of a chain
-               of [Proxy _] links, and it's not necessary to worry about whether
-               the inductive reasoning at [may_now_be_proxy] applies. *)
-          let (State_may_have_changed p') =
-            resolve ~allow_deferring:false p' p_result
-          in
-          ignore p'
+             - [p'] *is* an initial promise, so it *can* get canceled. The
+               [on_cancel] handler installed below then removes this callback,
+               but this callback may still run before that handler: [Lwt.cancel]
+               marks all the promises it reaches as canceled before running
+               their callbacks, and cancel callbacks run newest first, so a
+               cancel callback that the user added to [p'] may resolve [p]. If
+               [p'] has become a proxy, it is the underlying promise that gets
+               canceled, as it took over the cancelation behavior of [p'] (see
+               [make_into_proxy]).
+             - [p'] never gets passed to [make_into_proxy] as
+               [~outer_promise], the only effect of which is that it cannot be
+               the underlying promise of another (proxy) promise. So, [p'] can
+               only appear at the head of a chain of [Proxy _] links, and it's
+               not necessary to worry about whether the inductive reasoning at
+               [may_now_be_proxy] applies.
+
+             Because of the first point, [p'] is cast with
+             [may_now_be_canceled] rather than [may_now_be_proxy], and its
+             state is checked as in [Lwt.wakeup]. *)
+          let (State_may_now_be_canceled p') = may_now_be_canceled p' in
+          let p' = underlying p' in
+          match p'.state with
+          | Pending _ ->
+              let (State_may_have_changed p') =
+                resolve ~allow_deferring:false p' p_result
+              in
+              ignore p'
+          | Rejected Canceled -> ()
+          | Fulfilled _ | Rejected _ -> assert false
         in
         let remove_the_callback =
           add_explicitly_removable_callback_and_give_remove_function [p]
