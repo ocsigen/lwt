@@ -905,7 +905,10 @@ v}
     needs.
 
     If you are writing a library, you should leave this reference alone. Its
-    behavior should be determined by the application. *)
+    behavior should be determined by the application.
+
+    It is shared by all domains: with several domains, set it before spawning
+    them. *)
 
 (** {2:2_Concurrency Concurrency} *)
 
@@ -1061,6 +1064,17 @@ val nchoose_split : 'a t list -> ('a list * 'a t list) t
 exception Canceled
 (** Canceled promises are those rejected with this exception, [Lwt.Canceled].
     See {!Lwt.cancel}. *)
+
+exception Foreign_promise
+(** Raised when a {e pending} promise is changed from a domain other than the
+    one that created it: binding on it, resolving it, canceling it, or
+    attaching a callback to it. A pending promise belongs to the domain that
+    created it, and its callbacks run there.
+
+    A {e resolved} promise has no owner, and can be used from any domain.
+    Reading a pending promise, with {!Lwt.state} for example, is not checked.
+
+    @since 6.2.0 *)
 
 val task : unit -> 'a t * 'a u
 (** [Lwt.task] is the same as {!Lwt.wait}, except the resulting promise [p] is
@@ -1829,7 +1843,9 @@ let () =
 val wakeup_paused : unit -> unit
 (** [Lwt.wakeup_paused ()] fulfills all promises created with {!Lwt.pause} since
     the last time [Lwt.wakeup_paused] was called, or since the process was
-    started.
+    started. Each domain has its own paused promises: this function, like
+    {!Lwt.paused_count} and {!Lwt.abandon_paused}, acts on those of the
+    calling domain.
 
     This function is intended for internal use by Lwt. *)
 
@@ -1844,8 +1860,8 @@ val register_pause_notifier : (int -> unit) -> unit
     {!Lwt.pause} is called. The result of [Lwt.paused_count ()] is passed to
     [f].
 
-    Only one such function can be registered at a time. There is only a single
-    internal reference cell available for this purpose.
+    Only one such function can be registered at a time on each domain, and it
+    is called only for the pauses of that domain.
 
     This function is intended for internal use by Lwt. *)
 
@@ -2057,7 +2073,10 @@ module Private : sig
     val get_from_storage : 'a key -> storage -> 'a option
     val modify_storage : 'a key -> 'a option -> storage -> storage
     val empty_storage : storage
-    val current_storage : storage ref
+    val get_current_storage : unit -> storage
+
+    val set_current_storage : storage -> unit
+    (** The current storage of the calling domain. *)
   end
 
   val tracing_context : string key
