@@ -9,6 +9,7 @@
 
 #include <caml/alloc.h>
 #include <caml/mlvalues.h>
+#include <caml/memory.h>
 #include <caml/unixsupport.h>
 #include <caml/version.h>
 #include <sys/types.h>
@@ -112,6 +113,7 @@ static value result_open(struct job_open *job)
 
 CAMLprim value lwt_unix_open_job(value name, value flags, value perms)
 {
+    CAMLparam3(name, flags, perms);
     LWT_UNIX_INIT_JOB_STRING(job, open, 0, name);
     job->fd = lwt_convert_flag_list(flags, open_cloexec_table);
     job->flags = lwt_convert_flag_list(flags, open_flag_table);

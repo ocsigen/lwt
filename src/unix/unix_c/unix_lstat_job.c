@@ -8,6 +8,7 @@
 #if !defined(LWT_ON_WINDOWS)
 
 #include <caml/mlvalues.h>
+#include <caml/memory.h>
 #include <caml/unixsupport.h>
 
 #include "lwt_unix.h"
@@ -15,6 +16,7 @@
 
 CAMLprim value lwt_unix_lstat_job(value name)
 {
+    CAMLparam1(name);
     LWT_UNIX_INIT_JOB_STRING(job, lstat, 0, name);
     return lwt_unix_alloc_job(&(job->job));
 }
