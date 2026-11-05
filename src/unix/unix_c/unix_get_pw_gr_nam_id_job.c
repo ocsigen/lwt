@@ -120,10 +120,10 @@ static value alloc_group_entry(struct group *entry)
         return lwt_unix_alloc_job(&job->job);                          \
     }
 
-JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getpwnam, 0, name), getpwnam, GETPW,
+JOB_GET_ENTRY(CAMLparam1(name); LWT_UNIX_INIT_JOB_STRING(job, getpwnam, 0, name), getpwnam, GETPW,
               passwd, name, char *name;
               char data[], caml_copy_string(job->name))
-JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getgrnam, 0, name), getgrnam, GETGR,
+JOB_GET_ENTRY(CAMLparam1(name); LWT_UNIX_INIT_JOB_STRING(job, getgrnam, 0, name), getgrnam, GETGR,
               group, name, char *name;
               char data[], caml_copy_string(job->name))
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getpwuid, 0); job->uid = Int_val(uid),
