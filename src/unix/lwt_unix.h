@@ -280,6 +280,10 @@ void lwt_unix_free_job(lwt_unix_job job);
 
    The structure definition must ends with: char data[]; */
 #define LWT_UNIX_INIT_JOB_STRING2(VAR, FUNC, SIZE, ARG1, ARG2) \
+    if (! caml_string_is_c_safe(ARG1))                  \
+      unix_error(ENOENT, #FUNC, ARG1);                 \
+    if (! caml_string_is_c_safe(ARG2))                  \
+      unix_error(ENOENT, #FUNC, ARG2);                 \
     mlsize_t __len1 = caml_string_length(ARG1);                \
     mlsize_t __len2 = caml_string_length(ARG2);                \
     LWT_UNIX_INIT_JOB(VAR, FUNC, SIZE + __len1 + __len2 + 2);  \
