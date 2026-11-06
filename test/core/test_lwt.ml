@@ -2531,6 +2531,20 @@ let cancelable_tests =
             (Lwt.state p = Lwt.Return "foo"
             && Lwt.state p' = Lwt.Fail Lwt.Canceled)
         end
+    ; (* Once [p'] is canceled, nothing attached to [p] keeps it alive. *)
+      test "pending(wait), canceled, not retained" begin fun () ->
+          let p, r = Lwt.wait () in
+          let collected = Weak.create 1 in
+          begin
+            let p' = Lwt.wrap_in_cancelable p in
+            Weak.set collected 0 (Some p');
+            Lwt.cancel p'
+          end;
+          Gc.full_major ();
+          let ok = not (Weak.check collected 0) in
+          Lwt.wakeup r "foo";
+          Lwt.return (ok && Lwt.state p = Lwt.Return "foo")
+        end
     ; (* Implementation detail: [p' = Lwt.wrap_in_cancelable _] can still be
          resolved if it becomes a proxy. *)
       test "pending, proxy" begin fun () ->

@@ -9,6 +9,9 @@
 
   * Lwt_unix: the signal handler no longer overwrites errno. (Vincent Balat, #1139)
 
+  * Lwt.wrap_in_cancelable p no longer leaks when the returned promise is canceled
+    while p stays pending. (Vincent Balat, #1140)
+
 ===== 6.1.2 =====
 
 ====== Fixes ======

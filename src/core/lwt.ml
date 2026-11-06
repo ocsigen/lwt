@@ -2284,8 +2284,14 @@ let wrap_in_cancelable p =
   | Rejected _ -> p
   | Pending _ ->
       let p', r = task () in
-      on_cancel p' (fun () -> cancel p);
-      on_any p (wakeup r) (wakeup_exn r);
+      (* As in [protected], canceling [p'] removes the callback on [p], which
+         would otherwise keep [p'] alive as long as [p] is pending. *)
+      let remove_the_callback =
+        add_explicitly_removable_callback_and_give_remove_function [p] (function
+          | Fulfilled v -> wakeup r v
+          | Rejected exn -> wakeup_exn r exn)
+      in
+      on_cancel p' (fun () -> cancel p; remove_the_callback ());
       p'
 
 module Concurrent_composition : sig
