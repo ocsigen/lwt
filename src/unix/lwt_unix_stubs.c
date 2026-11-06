@@ -799,8 +799,12 @@ static intnat signal_notifications[NSIG];
 
 CAMLextern int caml_convert_signal_number(int);
 
-/* Send a notification when a signal is received. */
+/* Send a notification when a signal is received. [errno] is saved and
+   restored: sending the notification may set it, and the handler may have
+   interrupted a thread between a failing system call and its reading of
+   [errno]. */
 static void handle_signal(int signum) {
+  int saved_errno = errno;
   if (signum >= 0 && signum < NSIG) {
     intnat id = signal_notifications[signum];
     if (id != -1) {
@@ -812,6 +816,7 @@ static void handle_signal(int signum) {
       lwt_unix_send_notification(id);
     }
   }
+  errno = saved_errno;
 }
 
 CAMLprim value lwt_unix_handle_signal(value val_signum) {
