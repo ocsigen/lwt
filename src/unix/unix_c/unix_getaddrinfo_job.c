@@ -123,6 +123,6 @@ CAMLprim value lwt_unix_getaddrinfo_job(value node, value service, value hints)
                     break;
             }
     }
-    return lwt_unix_alloc_job(&job->job);
+    CAMLreturn(lwt_unix_alloc_job(&job->job));
 }
 #endif

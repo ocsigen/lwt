@@ -18,6 +18,6 @@ CAMLprim value lwt_unix_stat_job(value name)
 {
     CAMLparam1(name);
     LWT_UNIX_INIT_JOB_STRING(job, stat, 0, name);
-    return lwt_unix_alloc_job(&(job->job));
+    CAMLreturn(lwt_unix_alloc_job(&(job->job)));
 }
 #endif

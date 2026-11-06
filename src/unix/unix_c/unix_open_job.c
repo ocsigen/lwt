@@ -118,6 +118,6 @@ CAMLprim value lwt_unix_open_job(value name, value flags, value perms)
     job->fd = lwt_convert_flag_list(flags, open_cloexec_table);
     job->flags = lwt_convert_flag_list(flags, open_flag_table);
     job->perms = Int_val(perms);
-    return lwt_unix_alloc_job(&(job->job));
+    CAMLreturn(lwt_unix_alloc_job(&(job->job)));
 }
 #endif

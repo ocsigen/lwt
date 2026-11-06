@@ -59,6 +59,6 @@ CAMLprim value lwt_unix_utimes_job(value path, value val_atime, value val_mtime)
         job->times_pointer = job->times;
     }
 
-    return lwt_unix_alloc_job(&(job->job));
+    CAMLreturn(lwt_unix_alloc_job(&(job->job)));
 }
 #endif

@@ -19,6 +19,6 @@ CAMLprim value lwt_unix_lstat_64_job(value name)
     CAMLparam1(name);
     LWT_UNIX_INIT_JOB_STRING(job, lstat, 0, name);
     job->job.result = (lwt_unix_job_result)result_lstat_64;
-    return lwt_unix_alloc_job(&(job->job));
+    CAMLreturn(lwt_unix_alloc_job(&(job->job)));
 }
 #endif
