@@ -44,6 +44,6 @@ CAMLprim value lwt_unix_opendir_job(value path)
 {
     CAMLparam1(path);
     LWT_UNIX_INIT_JOB_STRING(job, opendir, 0, path);
-    return lwt_unix_alloc_job(&job->job);
+    CAMLreturn(lwt_unix_alloc_job(&job->job));
 }
 #endif
