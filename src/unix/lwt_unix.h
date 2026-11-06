@@ -13,6 +13,7 @@
 
 #include <caml/socketaddr.h>
 #include <string.h>
+#include <errno.h>
 
 // The following macro is for backwards compatibility.
 // It is given an `lwt_` prefix to avoid name collisions for code which
@@ -265,6 +266,8 @@ void lwt_unix_free_job(lwt_unix_job job);
 
    The structure must ends with: char data[]; */
 #define LWT_UNIX_INIT_JOB_STRING(VAR, FUNC, SIZE, ARG) \
+    if (! caml_string_is_c_safe(ARG))                  \
+      unix_error(ENOENT, #FUNC, ARG);                 \
     mlsize_t __len = caml_string_length(ARG);          \
     LWT_UNIX_INIT_JOB(VAR, FUNC, SIZE + __len + 1);    \
     VAR->ARG = VAR->data + SIZE;                       \
@@ -277,6 +280,10 @@ void lwt_unix_free_job(lwt_unix_job job);
 
    The structure definition must ends with: char data[]; */
 #define LWT_UNIX_INIT_JOB_STRING2(VAR, FUNC, SIZE, ARG1, ARG2) \
+    if (! caml_string_is_c_safe(ARG1))                  \
+      unix_error(ENOENT, #FUNC, ARG1);                 \
+    if (! caml_string_is_c_safe(ARG2))                  \
+      unix_error(ENOENT, #FUNC, ARG2);                 \
     mlsize_t __len1 = caml_string_length(ARG1);                \
     mlsize_t __len2 = caml_string_length(ARG2);                \
     LWT_UNIX_INIT_JOB(VAR, FUNC, SIZE + __len1 + __len2 + 2);  \

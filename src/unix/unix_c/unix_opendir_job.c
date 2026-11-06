@@ -9,6 +9,7 @@
 
 #include <caml/alloc.h>
 #include <caml/mlvalues.h>
+#include <caml/memory.h>
 #include <caml/unixsupport.h>
 #include <errno.h>
 #include <dirent.h>
@@ -41,7 +42,8 @@ static value result_opendir(struct job_opendir *job)
 
 CAMLprim value lwt_unix_opendir_job(value path)
 {
+    CAMLparam1(path);
     LWT_UNIX_INIT_JOB_STRING(job, opendir, 0, path);
-    return lwt_unix_alloc_job(&job->job);
+    CAMLreturn(lwt_unix_alloc_job(&job->job));
 }
 #endif

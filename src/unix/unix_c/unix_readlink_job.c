@@ -9,6 +9,7 @@
 
 #include <caml/alloc.h>
 #include <caml/mlvalues.h>
+#include <caml/memory.h>
 #include <caml/unixsupport.h>
 #include <errno.h>
 
@@ -60,7 +61,8 @@ static value result_readlink(struct job_readlink *job)
 
 CAMLprim value lwt_unix_readlink_job(value name)
 {
+    CAMLparam1(name);
     LWT_UNIX_INIT_JOB_STRING(job, readlink, 0, name);
-    return lwt_unix_alloc_job(&(job->job));
+    CAMLreturn(lwt_unix_alloc_job(&(job->job)));
 }
 #endif

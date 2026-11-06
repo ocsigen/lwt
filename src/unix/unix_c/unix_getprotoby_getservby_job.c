@@ -106,7 +106,7 @@ static value alloc_servent(struct servent *entry)
     CAMLprim value lwt_unix_##FUNC##_job(ARGS_VAL)                           \
     {                                                                        \
         INIT;                                                                \
-        return lwt_unix_alloc_job(&(job->job));                              \
+        CAMLreturn(lwt_unix_alloc_job(&(job->job)));                              \
     }
 
 #else /* defined(HAVE_NETDB_REENTRANT) */
@@ -229,17 +229,17 @@ static void protoent_free(struct protoent *p)
 
 #endif /* defined(HAVE_NETDB_REENTRANT) */
 
-JOB_GET_ENTRY2(LWT_UNIX_INIT_JOB_STRING(job, getprotobyname, 0, name),
+JOB_GET_ENTRY2(CAMLparam1(name); LWT_UNIX_INIT_JOB_STRING(job, getprotobyname, 0, name),
                getprotobyname, protoent, value name, char *name;
                char data[], job->name)
-JOB_GET_ENTRY2(LWT_UNIX_INIT_JOB(job, getprotobynumber, 0);
+JOB_GET_ENTRY2(CAMLparam1(num); LWT_UNIX_INIT_JOB(job, getprotobynumber, 0);
                job->num = Int_val(num), getprotobynumber, protoent, value num,
                int num, job->num)
-JOB_GET_ENTRY2(LWT_UNIX_INIT_JOB_STRING2(job, getservbyname, 0, name, proto),
+JOB_GET_ENTRY2(CAMLparam2(name, proto); LWT_UNIX_INIT_JOB_STRING2(job, getservbyname, 0, name, proto),
                getservbyname, servent, ARGS(value name, value proto),
                char *name;
                char *proto; char data[], ARGS(job->name, job->proto))
-JOB_GET_ENTRY2(LWT_UNIX_INIT_JOB_STRING(job, getservbyport, 0, proto);
+JOB_GET_ENTRY2(CAMLparam2(port, proto); LWT_UNIX_INIT_JOB_STRING(job, getservbyport, 0, proto);
                job->port = htons(Int_val(port)), getservbyport, servent,
                ARGS(value port, value proto), int port;
                char *proto; char data[], ARGS(job->port, job->proto))
