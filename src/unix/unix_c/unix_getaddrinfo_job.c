@@ -90,6 +90,7 @@ static value result_getaddrinfo(struct job_getaddrinfo *job)
 
 CAMLprim value lwt_unix_getaddrinfo_job(value node, value service, value hints)
 {
+    CAMLparam3(node, service, hints);
     LWT_UNIX_INIT_JOB_STRING2(job, getaddrinfo, 0, node, service);
     job->info = NULL;
     memset(&job->hints, 0, sizeof(struct addrinfo));
@@ -122,6 +123,6 @@ CAMLprim value lwt_unix_getaddrinfo_job(value node, value service, value hints)
                     break;
             }
     }
-    return lwt_unix_alloc_job(&job->job);
+    CAMLreturn(lwt_unix_alloc_job(&job->job));
 }
 #endif

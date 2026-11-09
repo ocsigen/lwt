@@ -9,6 +9,7 @@
 
 #include <caml/alloc.h>
 #include <caml/mlvalues.h>
+#include <caml/memory.h>
 #include <caml/unixsupport.h>
 #include <errno.h>
 #include <sys/time.h>
@@ -40,6 +41,7 @@ static value result_utimes(struct job_utimes *job)
 
 CAMLprim value lwt_unix_utimes_job(value path, value val_atime, value val_mtime)
 {
+    CAMLparam3(path, val_atime, val_mtime);
     LWT_UNIX_INIT_JOB_STRING(job, utimes, 0, path);
 
     double atime = Double_val(val_atime);
@@ -57,6 +59,6 @@ CAMLprim value lwt_unix_utimes_job(value path, value val_atime, value val_mtime)
         job->times_pointer = job->times;
     }
 
-    return lwt_unix_alloc_job(&(job->job));
+    CAMLreturn(lwt_unix_alloc_job(&(job->job)));
 }
 #endif

@@ -70,7 +70,8 @@ static value result_gethostbyname(struct job_gethostbyname *job)
 
 CAMLprim value lwt_unix_gethostbyname_job(value name)
 {
+    CAMLparam1(name);
     LWT_UNIX_INIT_JOB_STRING(job, gethostbyname, 0, name);
-    return lwt_unix_alloc_job(&(job->job));
+    CAMLreturn(lwt_unix_alloc_job(&(job->job)));
 }
 #endif

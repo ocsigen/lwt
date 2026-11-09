@@ -117,21 +117,21 @@ static value alloc_group_entry(struct group *entry)
     CAMLprim value lwt_unix_##FUNC##_job(value ARG)                    \
     {                                                                  \
         INIT;                                                          \
-        return lwt_unix_alloc_job(&job->job);                          \
+        CAMLreturn (lwt_unix_alloc_job(&job->job));                    \
     }
 
-JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getpwnam, 0, name), getpwnam, GETPW,
-              passwd, name, char *name;
-              char data[], caml_copy_string(job->name))
-JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getgrnam, 0, name), getgrnam, GETGR,
-              group, name, char *name;
-              char data[], caml_copy_string(job->name))
-JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getpwuid, 0); job->uid = Int_val(uid),
-                                                   getpwuid, GETPW, passwd, uid,
-                                                   int uid, Nothing)
-JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getgrgid, 0); job->gid = Int_val(gid),
-                                                   getgrgid, GETGR, group, gid,
-                                                   int gid, Nothing)
+JOB_GET_ENTRY(CAMLparam1(name); LWT_UNIX_INIT_JOB_STRING(job, getpwnam, 0, name),
+              getpwnam, GETPW, passwd, name,
+              char *name; char data[],
+              caml_copy_string(job->name))
+JOB_GET_ENTRY(CAMLparam1(name); LWT_UNIX_INIT_JOB_STRING(job, getgrnam, 0, name),
+              getgrnam, GETGR, group, name,
+              char *name; char data[],
+              caml_copy_string(job->name))
+JOB_GET_ENTRY(CAMLparam1(uid); LWT_UNIX_INIT_JOB(job, getpwuid, 0); job->uid = Int_val(uid),
+              getpwuid, GETPW, passwd, uid, int uid, Nothing)
+JOB_GET_ENTRY(CAMLparam1(gid); LWT_UNIX_INIT_JOB(job, getgrgid, 0); job->gid = Int_val(gid),
+              getgrgid, GETGR, group, gid, int gid, Nothing)
 
 #else
 
