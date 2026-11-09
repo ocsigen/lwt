@@ -40,13 +40,14 @@ static const int open_flag_table[] = {
     O_EXCL,   O_NOCTTY, O_DSYNC, O_SYNC,     O_RSYNC,  0, /* O_SHARE_DELETE,
                                                              Windows-only */
     0, /* O_CLOEXEC, treated specially */
-    0  /* O_KEEPEXEC, treated specially */
+    0, /* O_KEEPEXEC, treated specially */
+    O_NOFOLLOW /* OCaml >= 5.7 */
 };
 
 enum { CLOEXEC = 1, KEEPEXEC = 2 };
 
-static int open_cloexec_table[15] = {0, 0, 0, 0, 0, 0,       0,       0,
-                                     0, 0, 0, 0, 0, CLOEXEC, KEEPEXEC};
+static int open_cloexec_table[16] = {0, 0, 0, 0, 0, 0,       0,       0,
+                                     0, 0, 0, 0, 0, CLOEXEC, KEEPEXEC, 0};
 
 struct job_open {
     struct lwt_unix_job job;
