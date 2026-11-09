@@ -91,6 +91,14 @@ let test_cloexec ~closed flags =
       | _, (Unix.WEXITED _ | Unix.WSIGNALED _ | Unix.WSTOPPED _) ->
           Lwt.return_false)
 
+let test_nullbyte fname =
+  Lwt.try_bind
+    (fun () -> Lwt_unix.openfile fname [O_CREAT; O_RDWR] 0o644)
+    (fun fd -> Lwt_unix.close fd >>= fun () -> Lwt.return_false)
+    (function
+      | Unix.Unix_error (ENOENT, _, _) -> Lwt.return_true
+      | exc -> Lwt.reraise exc)
+
 let openfile_tests =
   [ test "openfile: O_CLOEXEC"
       ~only_if:(fun () -> not Sys.win32)
@@ -106,7 +114,15 @@ let openfile_tests =
       (fun () -> test_cloexec ~closed:true [Unix.O_CLOEXEC; Unix.O_KEEPEXEC])
   ; test "openfile: O_KEEPEXEC, O_CLOEXEC"
       ~only_if:(fun () -> not Sys.win32)
-      (fun () -> test_cloexec ~closed:true [Unix.O_KEEPEXEC; Unix.O_CLOEXEC]) ]
+      (fun () -> test_cloexec ~closed:true [Unix.O_KEEPEXEC; Unix.O_CLOEXEC])
+  ; test "openfile: null-byte rejection infix" (fun () ->
+      test_nullbyte "foo\000bad")
+  ; test "openfile: null-byte rejection prefix" (fun () ->
+      test_nullbyte "\000bad")
+  ; test "openfile: null-byte rejection suffix" (fun () ->
+      test_nullbyte "foo\000")
+  ; test "openfile: null-byte rejection dirs" (fun () ->
+      test_nullbyte "foo/\000../../../") ]
 
 let utimes_tests =
   [ test "utimes: basic" (fun () ->
