@@ -12,6 +12,8 @@
   * Lwt.wrap_in_cancelable p no longer leaks when the returned promise is canceled
     while p stays pending. (Vincent Balat, #1140)
 
+  * Make the Lwt.key storage thread-safe.
+
 ===== 6.1.2 =====
 
 ====== Fixes ======

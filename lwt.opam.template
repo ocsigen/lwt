@@ -23,3 +23,7 @@ build: [
   ]
 ]
 x-maintenance-intent:[ "(latest)" ]
+pin-depends: [
+  [ "ppx_devtools-optcomp.dev"
+    "git+https://github.com/ocsigen/ppx_devtools.git#96f0fe04f99f01cca3419851a42b79eec5094314" ]
+]
