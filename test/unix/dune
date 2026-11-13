@@ -17,7 +17,8 @@
    domain_exit_hooks
    domain_engines
    domain_channels
-   domain_unix_policy)))
+   domain_unix_policy
+   domain_timeouts)))
 
 (executable
  (name dummy)
@@ -123,6 +124,17 @@
  (name domain_unix_policy)
  (package lwt)
  (modules domain_unix_policy)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; A timer wheel per domain, and detach only on the domain that initialized
+; Lwt_unix. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_timeouts)
+ (package lwt)
+ (modules domain_timeouts)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))

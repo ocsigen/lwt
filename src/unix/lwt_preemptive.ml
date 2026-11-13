@@ -9,6 +9,11 @@
 module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
+(* The worker pool is process-wide, but only the domain that initialized
+   Lwt_unix may [detach], since the result comes back through a notification.
+   So only that domain touches the pool, which needs no lock. [run_in_main] may
+   be called from any domain, and runs its function on that domain. *)
+
 (* +-----------------------------------------------------------------+
    | Parameters                                                      |
    +-----------------------------------------------------------------+ *)
@@ -120,6 +125,8 @@ let get_worker () =
 let get_bounds () = !min_threads, !max_threads
 
 let set_bounds (min, max) =
+  (Lwt_unix.check_notification_owner [@alert "-trespassing"])
+    "Lwt_preemptive.set_bounds";
   if min < 0 || max < min then invalid_arg "Lwt_preemptive.set_bounds";
   let diff = min - !threads_count in
   min_threads := min;
@@ -132,6 +139,10 @@ let set_bounds (min, max) =
 let initialized = ref false
 
 let init min max _errlog =
+  (* Before setting [initialized]: a refused call must leave it unset, or the
+     next [detach] would skip [simple_init] and find no worker. *)
+  (Lwt_unix.check_notification_owner [@alert "-trespassing"])
+    "Lwt_preemptive.init";
   initialized := true;
   set_bounds (min, max)
 
@@ -153,6 +164,8 @@ let nbthreadsbusy () = !threads_count - Queue.length workers
 let init_result = Result.Error (Failure "Lwt_preemptive.detach")
 
 let detach f args =
+  (Lwt_unix.check_notification_owner [@alert "-trespassing"])
+    "Lwt_preemptive.detach";
   simple_init ();
   let result = ref init_result in
   (* The task for the worker thread: *)
