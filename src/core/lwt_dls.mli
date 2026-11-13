@@ -31,6 +31,10 @@ val check_owner : string -> token -> unit
 (** [check_owner name owner] raises [Invalid_argument], mentioning [name],
     unless [owner] is the calling domain's token. *)
 
+val foreign : string -> 'a
+(** Raises the [Invalid_argument] of {!check_owner}, for hot paths that compare
+    with {!self_token} themselves. *)
+
 val is_main_domain : unit -> bool
 (** Always [true] on 4.14, where there is one domain and it is the main one. *)
 
