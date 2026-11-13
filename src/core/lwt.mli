@@ -1067,11 +1067,17 @@ exception Canceled
 
 exception Foreign_promise
 (** Raised when a {e pending} promise is changed from a domain other than the
-    one that created it: binding on it, resolving it, canceling it, or
-    attaching a callback to it. A pending promise belongs to the domain that
-    created it, and its callbacks run there.
+    one that created it:
+
+    - resolving or rejecting it, including by canceling it,
+    - attaching a callback to it, explicitly with the [on_*] functions or
+      implicitly by binding on it.
+
+    A pending promise belongs to the domain that created it. Its callbacks run
+    on that domain.
 
     A {e resolved} promise has no owner, and can be used from any domain.
+
     Reading a pending promise, with {!Lwt.state} for example, is not checked.
 
     @since 6.2.0 *)
