@@ -187,7 +187,8 @@ val flush : output_channel -> unit Lwt.t
 (** [flush oc] performs all pending writes on [oc] *)
 
 val flush_all : unit -> unit Lwt.t
-(** [flush_all ()] flushes all open output channels *)
+(** [flush_all ()] flushes the output channels opened by the calling domain.
+    Each domain flushes its own channels when it exits. *)
 
 val buffer_size : 'a channel -> int
 (** Returns the size of the internal buffer. *)
