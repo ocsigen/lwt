@@ -15,7 +15,8 @@
    set_engine
    domain_shared_lazies
    domain_exit_hooks
-   domain_engines)))
+   domain_engines
+   domain_channels)))
 
 (executable
  (name dummy)
@@ -99,6 +100,17 @@
  (name domain_engines)
  (package lwt)
  (modules domain_engines)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Each domain flushes its own output channels. Needs a second domain, hence
+; OCaml 5.
+
+(test
+ (name domain_channels)
+ (package lwt)
+ (modules domain_channels)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
