@@ -14,7 +14,8 @@
    ocaml_runtime_exc_6
    set_engine
    domain_shared_lazies
-   domain_exit_hooks)))
+   domain_exit_hooks
+   domain_engines)))
 
 (executable
  (name dummy)
@@ -88,6 +89,16 @@
  (name domain_exit_hooks)
  (package lwt)
  (modules domain_exit_hooks)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Each domain has its own engine. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_engines)
+ (package lwt)
+ (modules domain_engines)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))

@@ -484,29 +484,43 @@ class select =
    | The current engine                                              |
    +-----------------------------------------------------------------+ *)
 
-let current =
-  if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default
-  then ref (new libev () :> t)
-  else ref (new select :> t)
+(* Per domain, since each domain runs its own loop. Lwt's libev binding
+   creates its loops with [ev_loop_new] rather than using libev's default loop
+   (see lwt_libev_stubs.c), so several of them can coexist. libev allows a loop
+   to be used by one thread at a time, and the functions below always take the
+   calling domain's engine. An engine object kept by one domain and used on
+   another is not checked. *)
+[@@@alert "-trespassing"]
 
-let get () = !current
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
+let current : t Lwt_dls.t =
+  Lwt_dls.new_key (fun () ->
+    if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default
+    then (new libev () :> t)
+    else (new select :> t))
+
+let get () = Lwt_dls.get current
 
 let set ?(transfer = true) ?(destroy = true) engine =
-  if transfer then !current#transfer (engine : #t :> abstract);
-  if destroy then !current#destroy;
-  current := (engine : #t :> t)
+  let previous = Lwt_dls.get current in
+  if transfer then previous#transfer (engine : #t :> abstract);
+  if destroy then previous#destroy;
+  Lwt_dls.set current (engine : #t :> t)
 
-let id () = !current#id
-let iter block = !current#iter block
-let on_readable fd f = !current#on_readable fd f
-let on_writable fd f = !current#on_writable fd f
-let on_timer delay repeat f = !current#on_timer delay repeat f
-let fake_io fd = !current#fake_io fd
-let readable_count () = !current#readable_count
-let writable_count () = !current#writable_count
-let timer_count () = !current#timer_count
-let fork () = !current#fork
-let forwards_signal n = !current#forwards_signal n
+let id () = (Lwt_dls.get current)#id
+let iter block = (Lwt_dls.get current)#iter block
+let on_readable fd f = (Lwt_dls.get current)#on_readable fd f
+let on_writable fd f = (Lwt_dls.get current)#on_writable fd f
+let on_timer delay repeat f = (Lwt_dls.get current)#on_timer delay repeat f
+let fake_io fd = (Lwt_dls.get current)#fake_io fd
+let readable_count () = (Lwt_dls.get current)#readable_count
+let writable_count () = (Lwt_dls.get current)#writable_count
+let timer_count () = (Lwt_dls.get current)#timer_count
+let fork () = (Lwt_dls.get current)#fork
+let forwards_signal n = (Lwt_dls.get current)#forwards_signal n
 
 module Versioned = struct
   class libev_1 = libev_deprecated
