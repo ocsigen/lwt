@@ -21,7 +21,11 @@ open Lwt.Infix
 type hooks =
   { enter_iter : (unit -> unit) Lwt_sequence.t
   ; leave_iter : (unit -> unit) Lwt_sequence.t
-  ; exits : (unit -> unit Lwt.t) Lwt_sequence.t }
+  ; exits : (unit -> unit Lwt.t) Lwt_sequence.t
+  ; mutable running : [`No | `From_somewhere | `From of string]
+    (* Per domain, so that several loops can run at once. The mutex guards
+       against two system threads of this domain. *)
+  ; running_mutex : Mutex.t }
 
 let drain_exit_hooks = ref (fun () -> ())
 
@@ -43,7 +47,9 @@ let hooks : hooks Lwt_dls.t =
     end;
     { enter_iter = Lwt_sequence.create ()
     ; leave_iter = Lwt_sequence.create ()
-    ; exits = Lwt_sequence.create () })
+    ; exits = Lwt_sequence.create ()
+    ; running = `No
+    ; running_mutex = Mutex.create () })
 
 let enter_iter_hooks () = (Lwt_dls.get hooks).enter_iter
 let leave_iter_hooks () = (Lwt_dls.get hooks).leave_iter
@@ -76,20 +82,20 @@ let run p =
     ~finally:(fun () -> Lwt_rte.emit_sch_call_end ())
     (fun () -> run_loop ())
 
-let run_already_called = ref `No
-let run_already_called_mutex = Mutex.create ()
-
 let finished () =
-  Mutex.lock run_already_called_mutex;
-  run_already_called := `No;
-  Mutex.unlock run_already_called_mutex
+  let h = Lwt_dls.get hooks in
+  Mutex.lock h.running_mutex;
+  h.running <- `No;
+  Mutex.unlock h.running_mutex
 
 let run p =
   (* Fail in case a call to Lwt_main.run is nested under another invocation of
-     Lwt_main.run. *)
-  Mutex.lock run_already_called_mutex;
+     Lwt_main.run on this domain. Another domain running its own loop is not a
+     nested call. *)
+  let h = Lwt_dls.get hooks in
+  Mutex.lock h.running_mutex;
   let error_message_if_call_is_nested =
-    match !run_already_called with
+    match h.running with
     (* `From is effectively disabled for the time being, because there is a bug,
        present in all versions of OCaml supported by Lwt, where, with the
        bytecode runtime, if one changes the working directory and then attempts
@@ -119,10 +125,10 @@ let run p =
           else *)
           `From_somewhere
         in
-        run_already_called := called_from;
+        h.running <- called_from;
         None
   in
-  Mutex.unlock run_already_called_mutex;
+  Mutex.unlock h.running_mutex;
   begin match error_message_if_call_is_nested with
   | Some message -> failwith message
   | None -> ()
@@ -146,7 +152,8 @@ let rec call_hooks () =
 
 (* Runs this domain's exit hooks: at process exit on the main domain, through
    the [Stdlib.at_exit] below, and when the domain exits on the others, through
-   the [Lwt_dls.at_domain_exit] registered by the [hooks] slot. *)
+   the [Lwt_dls.at_domain_exit] registered by the [hooks] slot. The
+   [finished ()] it calls clears only this domain's flag. *)
 let drain () =
   if not (Lwt_sequence.is_empty (exit_hooks ()))
   then begin
