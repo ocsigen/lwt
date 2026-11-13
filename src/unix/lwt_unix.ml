@@ -2305,9 +2305,12 @@ let do_wait4 flags pid =
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
 
-(* The lazy value is forced when calling [Lwt_main.run]. This is to avoid
-   installing the sigchld_handler in cases where the user is not really using
-   Lwt (just linking against it for some reason). *)
+(* The lazy value is forced by [install_sigchld_handler] below, which
+   [Lwt_main.run] calls. This is to avoid installing the sigchld_handler in
+   cases where the user is not really using Lwt (just linking against it for
+   some reason). Do not force it directly: forcing a [lazy] from two domains at
+   once raises [Lazy.Undefined]. The value stays, deprecated, as part of the
+   interface. *)
 let sigchld_handler_installer =
   lazy begin if not Sys.win32
   then
@@ -2330,6 +2333,27 @@ let sigchld_handler_installer =
       end
   end
 
+(* The SIGCHLD handler is process-wide, so it is installed once per process.
+   Once it is installed, checking the atomic flag is all a call costs. The
+   mutex serializes the installation itself, and is released even if forcing
+   the lazy value raises. *)
+let sigchld_installed = Atomic.make false
+let sigchld_install_mutex = Mutex.create ()
+
+let install_sigchld_handler () =
+  if not (Atomic.get sigchld_installed)
+  then begin
+    Mutex.lock sigchld_install_mutex;
+    Fun.protect
+      ~finally:(fun () -> Mutex.unlock sigchld_install_mutex)
+      (fun () ->
+         if not (Atomic.get sigchld_installed)
+         then begin
+           Lazy.force sigchld_handler_installer;
+           Atomic.set sigchld_installed true
+         end)
+  end
+
 let _waitpid flags pid =
   Lwt.catch (fun () -> Lwt.return (Unix.waitpid flags pid)) Lwt.reraise
 
@@ -2338,7 +2362,7 @@ let waitpid =
   then _waitpid
   else
     fun flags pid ->
-      Lazy.force sigchld_handler_installer;
+      install_sigchld_handler ();
       if List.mem Unix.WNOHANG flags
       then _waitpid flags pid
       else
@@ -2354,7 +2378,7 @@ let waitpid =
         end
 
 let wait4 flags pid =
-  Lazy.force sigchld_handler_installer;
+  install_sigchld_handler ();
   if Sys.win32 || Lwt_config.android
   then Lwt.return (do_wait4 flags pid)
   else if List.mem Unix.WNOHANG flags

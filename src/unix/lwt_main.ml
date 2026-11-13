@@ -90,7 +90,7 @@ let run p =
   | Some message -> failwith message
   | None -> ()
   end;
-  Lazy.force Lwt_unix.sigchld_handler_installer;
+  Lwt_unix.install_sigchld_handler ();
   match run p with
   | result -> finished (); result
   | exception exn when Lwt.Exception_filter.run exn -> finished (); raise exn

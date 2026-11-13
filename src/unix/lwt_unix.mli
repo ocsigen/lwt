@@ -1521,4 +1521,13 @@ val write_bigarray :
 (** @deprecated This is for internal use only. *)
 
 val write_job_count_runtimte_event : unit -> unit
+
 val sigchld_handler_installer : unit Lazy.t
+[@@ocaml.deprecated
+  " Use Lwt_unix.install_sigchld_handler: forcing this value from two domains at once raises Lazy.Undefined."]
+(** @deprecated Do not force this directly; see {!install_sigchld_handler}. *)
+
+val install_sigchld_handler : unit -> unit
+(** Installs the process-wide SIGCHLD handler, once per process. Safe to call
+    concurrently, unlike forcing {!sigchld_handler_installer}. For internal
+    use: [Lwt_main.run] and {!waitpid} call it. *)

@@ -1268,10 +1268,20 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
   open_file ?buffer ?flags ?perm ~mode filename >>= fun ic ->
   Lwt.finalize (fun () -> f ic) (fun () -> close ic)
 
-let prng = lazy (Random.State.make_self_init ())
+(* Lwt_io may use the per-domain slot, internal to the Lwt packages. *)
+[@@@alert "-trespassing"]
+
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
+(* One generator per domain: forcing a shared [lazy] from two domains at once
+   raises [Lazy.Undefined], and a [Random.State.t] must not be shared. *)
+let prng : Random.State.t Lwt_dls.t =
+  Lwt_dls.new_key (fun () -> Random.State.make_self_init ())
 
 let temp_file_name temp_dir prefix suffix =
-  let rnd = Random.State.int (Lazy.force prng) 0x1000000 in
+  let rnd = Random.State.int (Lwt_dls.get prng) 0x1000000 in
   Filename.concat temp_dir (Printf.sprintf "%s%06x%s" prefix rnd suffix)
 
 let open_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix ?(suffix = "") () =

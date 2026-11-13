@@ -12,7 +12,8 @@
    ocaml_runtime_exc_4
    ocaml_runtime_exc_5
    ocaml_runtime_exc_6
-   set_engine)))
+   set_engine
+   domain_shared_lazies)))
 
 (executable
  (name dummy)
@@ -67,3 +68,14 @@
  (name set_engine)
  (libraries lwt lwt.unix)
  (modules set_engine))
+
+; The SIGCHLD handler installed, and temporary names drawn, from several
+; domains at once. OCaml 5 only.
+
+(test
+ (package lwt)
+ (name domain_shared_lazies)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt lwt.unix)
+ (modules domain_shared_lazies))
