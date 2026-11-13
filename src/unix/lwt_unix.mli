@@ -1543,5 +1543,11 @@ val sigchld_handler_installer : unit Lazy.t
 
 val install_sigchld_handler : unit -> unit
 (** Installs the process-wide SIGCHLD handler, once per process. Safe to call
-    concurrently, unlike forcing {!sigchld_handler_installer}. For internal
-    use: [Lwt_main.run] and {!waitpid} call it. *)
+    concurrently, unlike forcing {!sigchld_handler_installer}. Does nothing on
+    a domain other than the one that initialized this module. For internal use:
+    [Lwt_main.run] and {!waitpid} call it. *)
+
+val check_notification_owner : string -> unit
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** [check_notification_owner name] fails, mentioning [name], unless called on
+    the domain that initialized this module. For {!Lwt_preemptive}. *)

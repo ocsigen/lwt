@@ -1,7 +1,13 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-(** Cancelable timeouts. *)
+(** Cancelable timeouts.
+
+    A timeout is created, started and stopped on one domain: the one whose
+    [Lwt_main.run] runs its action. Each domain has its own timer wheel, so
+    several domains can use this module at the same time. Starting a timeout
+    on a domain other than the one that created it raises
+    [Invalid_argument]. *)
 
 type t
 
