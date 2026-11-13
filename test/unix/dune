@@ -13,7 +13,8 @@
    ocaml_runtime_exc_5
    ocaml_runtime_exc_6
    set_engine
-   domain_shared_lazies)))
+   domain_shared_lazies
+   domain_exit_hooks)))
 
 (executable
  (name dummy)
@@ -79,3 +80,14 @@
   (>= %{ocaml_version} "5.0"))
  (libraries lwt lwt.unix)
  (modules domain_shared_lazies))
+
+; Exit hooks run on the domain that registered them. Needs a second domain,
+; hence OCaml 5.
+
+(test
+ (name domain_exit_hooks)
+ (package lwt)
+ (modules domain_exit_hooks)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
