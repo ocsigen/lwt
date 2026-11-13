@@ -111,12 +111,13 @@ let mode wrapper = wrapper.channel.mode
    suitable, because then all channels will end up in the same hash bucket.
 
    A weak hash set is used instead of a weak array to avoid having to include
-   resizing and compaction code in Lwt_io. *)
+   resizing and compaction code in Lwt_io.
+
+   The counter is shared by all domains, and atomic. Bucket spread only
+   matters inside one table, so a per-domain counter would not help. *)
 let hash_output_channel =
-  let index = ref 0 in
-  fun () ->
-    index := !index + 1;
-    !index
+  let index = Atomic.make 0 in
+  fun () -> Atomic.fetch_and_add index 1
 
 module Outputs = Weak.Make (struct
     type t = output_channel
@@ -124,10 +125,6 @@ module Outputs = Weak.Make (struct
     let hash _ = hash_output_channel ()
     let equal = ( == )
   end)
-
-(* Table of all opened output channels. On exit they are all
-   flushed: *)
-let outputs = Outputs.create 32
 
 let position : type mode. mode channel -> int64 =
  fun wrapper ->
@@ -407,8 +404,8 @@ let is_closed wrapper =
   | Closed -> true
   | Busy_primitive | Busy_atomic _ | Waiting_for_busy | Idle | Invalid -> false
 
-let flush_all () =
-  let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
+let flush_registry registry =
+  let wrappers = Outputs.fold (fun x l -> x :: l) registry [] in
   Lwt_list.iter_p
     (fun wrapper ->
        Lwt.catch
@@ -416,9 +413,35 @@ let flush_all () =
          (fun _ -> Lwt.return_unit))
     wrappers
 
+(* Lwt_dls is internal; Lwt_io may use it. *)
+[@@@alert "-trespassing"]
+
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
+(* Per domain: the table of open output channels, flushed on exit. On a spawned
+   domain, the slot initializer adds the flush as the last exit hook, so that
+   it runs after the domain's other exit hooks, whether they were registered
+   before or after its first channel. The main domain keeps the registration
+   below, made at module initialization, so that it runs after every exit hook
+   a user adds later. *)
+
+let outputs : Outputs.t Lwt_dls.t =
+  Lwt_dls.new_key (fun () ->
+    let registry = Outputs.create 32 in
+    if not (Lwt_dls.is_main_domain ())
+    then
+      ignore
+        (Lwt_main.Exit_hooks.add_last (fun () -> flush_registry registry)
+         : Lwt_main.Exit_hooks.hook);
+    registry)
+
+let flush_all () = flush_registry (Lwt_dls.get outputs)
+
 let () =
-  (* Flush all opened output channels on exit: *)
-  Lwt_main.at_exit flush_all
+  (* Flush all output channels opened by the main domain on exit: *)
+  if Lwt_dls.is_main_domain () then Lwt_main.at_exit flush_all
 
 let no_seek _pos _cmd =
   Lwt.fail (Failure "Lwt_io.seek: seek not supported on this channel")
@@ -461,7 +484,9 @@ let make : type m.
               try seek pos cmd
               with e when Lwt.Exception_filter.run e -> Lwt.reraise e ) }
   and wrapper = {state = Idle; channel = ch; queued = Lwt_sequence.create ()} in
-  (match mode with Input -> () | Output -> Outputs.add outputs wrapper);
+  (match mode with
+  | Input -> ()
+  | Output -> Outputs.add (Lwt_dls.get outputs) wrapper);
   wrapper
 
 let of_bytes (type m) ~(mode : m mode) bytes =
@@ -1267,13 +1292,6 @@ let open_file : type m.
 let with_file ?buffer ?flags ?perm ~mode filename f =
   open_file ?buffer ?flags ?perm ~mode filename >>= fun ic ->
   Lwt.finalize (fun () -> f ic) (fun () -> close ic)
-
-(* Lwt_io may use the per-domain slot, internal to the Lwt packages. *)
-[@@@alert "-trespassing"]
-
-module Lwt_dls = Lwt_dls
-
-[@@@alert "+trespassing"]
 
 (* One generator per domain: forcing a shared [lazy] from two domains at once
    raises [Lazy.Undefined], and a [Random.State.t] must not be shared. *)
