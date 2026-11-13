@@ -20,7 +20,8 @@
    domain_unix_policy
    domain_timeouts
    domain_io_affinity
-   domain_two_loops)))
+   domain_two_loops
+   domain_upstream_scenarios)))
 
 (executable
  (name dummy)
@@ -159,6 +160,17 @@
  (name domain_two_loops)
  (package lwt)
  (modules domain_two_loops)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; The five multidomain scenarios of 6.0.0-beta00, adapted to values bound to
+; their domain. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_upstream_scenarios)
+ (package lwt)
+ (modules domain_upstream_scenarios)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
