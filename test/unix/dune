@@ -21,7 +21,8 @@
    domain_timeouts
    domain_io_affinity
    domain_two_loops
-   domain_upstream_scenarios)))
+   domain_upstream_scenarios
+   domain_shared_resolved)))
 
 (executable
  (name dummy)
@@ -171,6 +172,17 @@
  (name domain_upstream_scenarios)
  (package lwt)
  (modules domain_upstream_scenarios)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Which values a resolved promise can share across domains. Needs a second
+; domain, hence OCaml 5.
+
+(test
+ (name domain_shared_resolved)
+ (package lwt)
+ (modules domain_shared_resolved)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
