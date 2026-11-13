@@ -19,7 +19,8 @@
    domain_channels
    domain_unix_policy
    domain_timeouts
-   domain_io_affinity)))
+   domain_io_affinity
+   domain_two_loops)))
 
 (executable
  (name dummy)
@@ -147,6 +148,17 @@
  (name domain_io_affinity)
  (package lwt)
  (modules domain_io_affinity)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Two Lwt loops at once, each with real I/O and timers. Needs a second domain,
+; hence OCaml 5.
+
+(test
+ (name domain_two_loops)
+ (package lwt)
+ (modules domain_two_loops)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
