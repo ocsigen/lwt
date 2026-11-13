@@ -13,6 +13,8 @@ module Impl = struct
   type token = int
 
   let self_token () = (Domain.self () :> int)
+  let is_main_domain () = Domain.is_main_domain ()
+  let at_domain_exit f = Domain.at_exit f
 end
 [@@if ocaml_version >= (5, 0, 0)]
 
@@ -28,6 +30,11 @@ module Impl = struct
   type token = int
 
   let self_token () = 0
+
+  (* One domain, the main one. [at_domain_exit] is [Stdlib.at_exit] here, so
+     that callers need no version test. *)
+  let is_main_domain () = true
+  let at_domain_exit f = Stdlib.at_exit f
 end
 [@@if ocaml_version < (5, 0, 0)]
 
