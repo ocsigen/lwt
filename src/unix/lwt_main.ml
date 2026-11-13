@@ -34,7 +34,13 @@ module Lwt_dls = Lwt_dls
 let hooks : hooks Lwt_dls.t =
   Lwt_dls.new_key (fun () ->
     if not (Lwt_dls.is_main_domain ())
-    then Lwt_dls.at_domain_exit (fun () -> !drain_exit_hooks ());
+    then begin
+      (* Build the engine first: it registers its own destruction with
+         [Domain.at_exit], whose callbacks run last-registered first, so the
+         exit hooks registered below run while the engine still exists. *)
+      ignore (Lwt_engine.get () : Lwt_engine.t);
+      Lwt_dls.at_domain_exit (fun () -> !drain_exit_hooks ())
+    end;
     { enter_iter = Lwt_sequence.create ()
     ; leave_iter = Lwt_sequence.create ()
     ; exits = Lwt_sequence.create () })
