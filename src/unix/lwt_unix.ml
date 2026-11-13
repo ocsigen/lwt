@@ -304,7 +304,12 @@ type file_descr =
   ; hooks_readable : (unit -> unit) Lwt_sequence.t
     (* Hooks to call when the file descriptor becomes readable. *)
   ; hooks_writable : (unit -> unit) Lwt_sequence.t
-    (* Hooks to call when the file descriptor becomes writable. *) }
+    (* Hooks to call when the file descriptor becomes writable. *)
+  ; owner : Lwt_dls.token
+    (* The domain that created the descriptor. Its readiness events are
+       registered on that domain's engine, and its hooks run there. Checked in
+       [check_descriptor], which every operation calls. *)
+  }
 
 external is_socket : Unix.file_descr -> bool = "lwt_unix_is_socket" "noalloc"
 [@@ocaml.warning "-3"]
@@ -353,9 +358,21 @@ let mk_ch ?blocking ?(set_flags = true) fd =
   ; event_readable = None
   ; event_writable = None
   ; hooks_readable = Lwt_sequence.create ()
-  ; hooks_writable = Lwt_sequence.create () }
+  ; hooks_writable = Lwt_sequence.create ()
+  ; owner = Lwt_dls.self_token () }
+
+(* Written out rather than a call to [Lwt_dls.check_owner]: this runs on every
+   operation, and the call would cost more than the check. The operations that
+   force [ch.blocking] before reaching [check_descriptor] call this first: on
+   another domain, forcing [ch.blocking] could run [guess_blocking] there, and
+   the lazy value would keep the result for the domain that owns the
+   descriptor. *)
+let[@inline] check_descriptor_owner ch =
+  if ch.owner <> Lwt_dls.self_token ()
+  then Lwt_dls.foreign "Lwt_unix file descriptor"
 
 let check_descriptor ch =
+  check_descriptor_owner ch;
   match ch.state with
   | Opened -> ()
   | Aborted e -> raise e
@@ -411,6 +428,7 @@ let clear_events ch =
   end
 
 let abort ch e =
+  Lwt_dls.check_owner "Lwt_unix.abort" ch.owner;
   if ch.state <> Closed
   then begin
     set_state ch (Aborted e); clear_events ch
@@ -595,6 +613,7 @@ let openfile name flags perms =
 external close_job : Unix.file_descr -> unit job = "lwt_unix_close_job"
 
 let close ch =
+  Lwt_dls.check_owner "Lwt_unix.close" ch.owner;
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
   clear_events ch;
@@ -646,15 +665,18 @@ external pread_job :
 let read ch buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len
   then invalid_arg "Lwt_unix.read"
-  else
+  else begin
+    check_descriptor_owner ch;
     Lazy.force ch.blocking >>= function
     | true -> wait_read ch >>= fun () -> run_job (read_job ch.fd buf pos len)
     | false -> wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
+  end
 
 let pread ch buf ~file_offset pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len
   then invalid_arg "Lwt_unix.pread"
-  else
+  else begin
+    check_descriptor_owner ch;
     Lazy.force ch.blocking >>= function
     | true ->
         wait_read ch >>= fun () ->
@@ -662,6 +684,7 @@ let pread ch buf ~file_offset pos len =
     | false ->
         wrap_syscall Read ch (fun () ->
           stub_pread ch.fd buf ~file_offset pos len)
+  end
 
 external stub_read_bigarray :
    Unix.file_descr
@@ -734,15 +757,18 @@ external pwrite_job :
 let write ch buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len
   then invalid_arg "Lwt_unix.write"
-  else
+  else begin
+    check_descriptor_owner ch;
     Lazy.force ch.blocking >>= function
     | true -> wait_write ch >>= fun () -> run_job (write_job ch.fd buf pos len)
     | false -> wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
+  end
 
 let pwrite ch buf ~file_offset pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len
   then invalid_arg "Lwt_unix.pwrite"
-  else
+  else begin
+    check_descriptor_owner ch;
     Lazy.force ch.blocking >>= function
     | true ->
         wait_write ch >>= fun () ->
@@ -750,6 +776,7 @@ let pwrite ch buf ~file_offset pos len =
     | false ->
         wrap_syscall Write ch (fun () ->
           stub_pwrite ch.fd buf ~file_offset pos len)
+  end
 
 let write_string ch buf pos len =
   let buf = Bytes.unsafe_of_string buf in
@@ -903,13 +930,15 @@ let readv fd io_vectors =
       | Bytes buffer -> read fd buffer first.offset first.length
       | Bigarray buffer ->
           read_bigarray "Lwt_unix.readv" fd buffer first.offset first.length)
-  else
+  else begin
+    check_descriptor_owner fd;
     Lazy.force fd.blocking >>= function
     | true ->
         wait_read fd >>= fun () -> run_job (readv_job fd.fd io_vectors count)
     | false ->
         wrap_syscall Read fd (fun () ->
           stub_readv fd.fd io_vectors.IO_vectors.prefix count)
+  end
 
 external stub_writev :
    Unix.file_descr
@@ -936,13 +965,15 @@ let writev fd io_vectors =
       | Bytes buffer -> write fd buffer first.offset first.length
       | Bigarray buffer ->
           write_bigarray "Lwt_unix.writev" fd buffer first.offset first.length)
-  else
+  else begin
+    check_descriptor_owner fd;
     Lazy.force fd.blocking >>= function
     | true ->
         wait_write fd >>= fun () -> run_job (writev_job fd.fd io_vectors count)
     | false ->
         wrap_syscall Write fd (fun () ->
           stub_writev fd.fd io_vectors.IO_vectors.prefix count)
+  end
 
 (* +-----------------------------------------------------------------+
    | Seeking and truncating                                          |
@@ -1261,10 +1292,14 @@ let dup ?cloexec ch =
   ; event_readable = None
   ; event_writable = None
   ; hooks_readable = Lwt_sequence.create ()
-  ; hooks_writable = Lwt_sequence.create () }
+  ; hooks_writable = Lwt_sequence.create ()
+  ; (* [check_descriptor] above checked that [ch] belongs to this domain, and
+       so does its duplicate. *)
+    owner = ch.owner }
 
 let dup2 ?cloexec ch1 ch2 =
   check_descriptor ch1;
+  check_descriptor_owner ch2;
   Unix.dup2 ?cloexec ch1.fd ch2.fd;
   ch2.set_flags <- ch1.set_flags;
   ch2.blocking <-
@@ -1716,6 +1751,7 @@ let accept ?cloexec ch =
 
 let accept_n ?cloexec ch n =
   let l = ref [] in
+  check_descriptor_owner ch;
   Lazy.force ch.blocking >>= fun blocking ->
   Lwt.catch
     (fun () ->

@@ -18,7 +18,8 @@
    domain_engines
    domain_channels
    domain_unix_policy
-   domain_timeouts)))
+   domain_timeouts
+   domain_io_affinity)))
 
 (executable
  (name dummy)
@@ -135,6 +136,17 @@
  (name domain_timeouts)
  (package lwt)
  (modules domain_timeouts)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Descriptors and channels belong to the domain that created them. Needs a
+; second domain, hence OCaml 5.
+
+(test
+ (name domain_io_affinity)
+ (package lwt)
+ (modules domain_io_affinity)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
