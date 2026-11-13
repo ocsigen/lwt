@@ -32,3 +32,12 @@ end
 [@@if ocaml_version < (5, 0, 0)]
 
 include Impl
+
+(* For Lwt_mutex, Lwt_condition, Lwt_mvar, Lwt_pool, Lwt_stream and
+   Lwt_switch, whose values belong to the domain that created them. *)
+
+let[@inline never] foreign name =
+  invalid_arg (name ^ ": this value belongs to another domain")
+
+let[@inline] check_owner name owner =
+  if owner <> self_token () then foreign name

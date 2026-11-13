@@ -36,23 +36,36 @@
    module without triggering any more warnings. *)
 module Lwt_sequence = Lwt_sequence
 
+(* An mvar belongs to the domain that created it, like a mutex: a [put] into
+   an empty mvar with no reader only fills the cell, with no promise for the
+   core to check. *)
+[@@@alert "-trespassing"]
+
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
 type 'a t =
   { mutable mvar_contents : 'a option (* Current contents *)
   ; writers : ('a * unit Lwt.u) Lwt_sequence.t
     (* Threads waiting to put a value *)
-  ; readers : 'a Lwt.u Lwt_sequence.t (* Threads waiting for a value *) }
+  ; readers : 'a Lwt.u Lwt_sequence.t (* Threads waiting for a value *)
+  ; owner : Lwt_dls.token (* The domain that created the mvar *) }
 
 let create_empty () =
   { mvar_contents = None
   ; writers = Lwt_sequence.create ()
-  ; readers = Lwt_sequence.create () }
+  ; readers = Lwt_sequence.create ()
+  ; owner = Lwt_dls.self_token () }
 
 let create v =
   { mvar_contents = Some v
   ; writers = Lwt_sequence.create ()
-  ; readers = Lwt_sequence.create () }
+  ; readers = Lwt_sequence.create ()
+  ; owner = Lwt_dls.self_token () }
 
 let put mvar v =
+  Lwt_dls.check_owner "Lwt_mvar.put" mvar.owner;
   match mvar.mvar_contents with
   | None ->
       begin match Lwt_sequence.take_opt_l mvar.readers with
@@ -73,15 +86,21 @@ let next_writer mvar =
       Lwt.wakeup_later w ()
   | None -> mvar.mvar_contents <- None
 
-let take_available mvar =
+let take_available_unchecked mvar =
   match mvar.mvar_contents with
   | Some v -> next_writer mvar; Some v
   | None -> None
 
+let take_available mvar =
+  Lwt_dls.check_owner "Lwt_mvar.take_available" mvar.owner;
+  take_available_unchecked mvar
+
 let take mvar =
-  match take_available mvar with
+  Lwt_dls.check_owner "Lwt_mvar.take" mvar.owner;
+  match take_available_unchecked mvar with
   | Some v -> Lwt.return v
   | None -> (Lwt.add_task_r [@ocaml.warning "-3"]) mvar.readers
 
+(* Not checked: it only reads the mvar, like [Lwt_mutex.is_locked]. *)
 let is_empty mvar =
   match mvar.mvar_contents with Some _ -> false | None -> true

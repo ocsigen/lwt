@@ -9,11 +9,28 @@
 module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
-type t = {mutable locked : bool; waiters : unit Lwt.u Lwt_sequence.t}
+(* A mutex belongs to the domain that created it. Locking a free mutex only
+   sets a flag, with no promise for the core to check, so a module-level mutex
+   used from another domain would be corrupted silently. Each operation checks
+   the domain recorded at creation. *)
+[@@@alert "-trespassing"]
 
-let create () = {locked = false; waiters = Lwt_sequence.create ()}
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
+type t =
+  { mutable locked : bool
+  ; waiters : unit Lwt.u Lwt_sequence.t
+  ; owner : Lwt_dls.token }
+
+let create () =
+  { locked = false
+  ; waiters = Lwt_sequence.create ()
+  ; owner = Lwt_dls.self_token () }
 
 let lock m =
+  Lwt_dls.check_owner "Lwt_mutex.lock" m.owner;
   if m.locked
   then (Lwt.add_task_r [@ocaml.warning "-3"]) m.waiters
   else begin
@@ -22,6 +39,7 @@ let lock m =
   end
 
 let unlock m =
+  Lwt_dls.check_owner "Lwt_mutex.unlock" m.owner;
   if m.locked
   then
     begin if Lwt_sequence.is_empty m.waiters
@@ -35,5 +53,6 @@ let unlock m =
 let with_lock m f =
   lock m >>= fun () -> Lwt.finalize f (fun () -> unlock m; Lwt.return_unit)
 
+(* Not checked: they only read the mutex, like [Lwt.state]. *)
 let is_locked m = m.locked
 let is_empty m = Lwt_sequence.is_empty m.waiters

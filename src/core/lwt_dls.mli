@@ -26,3 +26,7 @@ type token = private int
 
 val self_token : unit -> token
 (** The calling domain's identity. Always the same value on 4.14. *)
+
+val check_owner : string -> token -> unit
+(** [check_owner name owner] raises [Invalid_argument], mentioning [name],
+    unless [owner] is the calling domain's token. *)

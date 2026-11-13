@@ -24,7 +24,12 @@ let make_stream () =
   and flush () = push @@ Some Flush in
   let fmt = Format.make_formatter out_string flush in
   (* Not sure about that one *)
-  Gc.finalise (fun _ -> push None) fmt;
+  Gc.finalise
+    (fun _ ->
+       (* If the domain that created the stream has exited, another domain runs
+          this finaliser, and [push] refuses it. *)
+       try push None with Invalid_argument _ -> ())
+    fmt;
   let commit () = Lwt.return_unit in
   stream, make_formatter ~commit ~fmt ()
 
