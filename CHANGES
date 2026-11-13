@@ -13,6 +13,10 @@
     values belong to the domain that creates them: using one from another
     domain raises Invalid_argument, instead of corrupting it quietly.
 
+  * Lwt_per_domain: a top-level value with one instance per domain, for example
+    a library's module-level mutex or pool, which would otherwise belong to the
+    main domain.
+
 ====== Fixes ======
 
   * Lwt.cancel no longer crashes when canceling Lwt.protected p makes p resolve,

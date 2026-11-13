@@ -55,7 +55,12 @@
 *)
 
 type t
-(** Type of switches. *)
+(** Type of switches.
+
+    A switch belongs to the domain that creates it, and using it from another
+    domain raises [Invalid_argument]. One created when a module is initialized
+    therefore belongs to the main domain. To keep one at top level with an
+    instance per domain, use {!Lwt_per_domain}. *)
 
 val create : unit -> t
 (** [create ()] creates a new switch. *)
