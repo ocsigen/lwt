@@ -118,6 +118,14 @@ module Exit_hooks : Hooks with type 'return_value kind = 'return_value Lwt.t
 (** Promise-returning hooks, of type [unit -> unit Lwt.t], that are called at
     process exit. Exceptions raised by these hooks are ignored.
 
+    The hooks are per domain. Those registered on a domain other than the main
+    one run when that domain exits. At process exit, the hooks that run are
+    those of the domain that called [Stdlib.exit], or of the main domain when
+    the program returns. An [exit] called from another domain does not run the
+    main domain's hooks, so call [Stdlib.exit] from the main domain. The default
+    {!Lwt.async_exception_hook} calls [exit] on whichever domain the exception
+    occurs on, so replace it when running Lwt on several domains.
+
     @since 4.2.0 *)
 
 val at_exit : (unit -> unit Lwt.t) -> unit

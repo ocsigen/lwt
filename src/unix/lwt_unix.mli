@@ -103,7 +103,20 @@ type file_descr
 
     - {b opened}, in which case it is fully usable
     - {b closed} or {b aborted}, in which case it is no longer
-    usable *)
+    usable
+
+    A {b file descriptor} belongs to the domain that created it, and using it
+    from another domain raises [Invalid_argument]. {!stdin}, {!stdout} and
+    {!stderr} belong to the domain that initialized this module.
+
+    For now, jobs only run on the domain that initialized this module (see
+    {!make_notification}), and fail with [Failure] elsewhere. Another domain
+    can therefore only use descriptors that need none: those in non-blocking
+    mode that Lwt knows to be, such as the ones made by {!socket},
+    {!socketpair}, {!accept} and, except on Windows, {!pipe}, or by
+    {!of_unix_file_descr} with [~blocking:false]. A descriptor in blocking
+    mode, or whose mode Lwt has to guess, does its I/O through jobs, and
+    {!openfile} and {!close} are jobs themselves. *)
 
 (** State of a {b file descriptor} *)
 type state =
@@ -1381,6 +1394,20 @@ val wait_for_jobs : unit -> unit Lwt.t
 (** Lwt internally use a pipe to send notification to the main
     thread. The following functions allow to use this pipe. *)
 
+(** {3 Notifications and domains}
+
+    There is one notification descriptor per process, read by the domain that
+    initialized this module, so completions run on that domain. Asynchronous
+    jobs ({!run_job} and every operation built on it, with any method but
+    [Async_none], which runs the job on the calling thread), signal handlers
+    ({!on_signal}, {!on_signal_full}, {!disable_signal_handler},
+    {!reinstall_signal_handler}) and child waiting ({!waitpid}, {!wait4}) are
+    therefore only available there, and raise [Failure] elsewhere.
+
+    {!make_notification}, {!stop_notification}, {!set_notification} and
+    {!send_notification} may be called from any thread and any domain. The
+    handler runs on the domain that initialized this module. *)
+
 type notification
 
 val make_notification : ?once:bool -> (unit -> unit) -> notification
@@ -1521,4 +1548,19 @@ val write_bigarray :
 (** @deprecated This is for internal use only. *)
 
 val write_job_count_runtimte_event : unit -> unit
+
 val sigchld_handler_installer : unit Lazy.t
+[@@ocaml.deprecated
+  " Use Lwt_unix.install_sigchld_handler: forcing this value from two domains at once raises Lazy.Undefined."]
+(** @deprecated Do not force this directly; see {!install_sigchld_handler}. *)
+
+val install_sigchld_handler : unit -> unit
+(** Installs the process-wide SIGCHLD handler, once per process. Safe to call
+    concurrently, unlike forcing {!sigchld_handler_installer}. Does nothing on
+    a domain other than the one that initialized this module. For internal use:
+    [Lwt_main.run] and {!waitpid} call it. *)
+
+val check_notification_owner : string -> unit
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** [check_notification_owner name] fails, mentioning [name], unless called on
+    the domain that initialized this module. For {!Lwt_preemptive}. *)

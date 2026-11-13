@@ -36,7 +36,19 @@ exception Channel_closed of string
 (** {2 Types} *)
 
 type 'mode channel
-(** Type of buffered byte channels *)
+(** Type of buffered byte channels.
+
+    A channel belongs to the domain that created it, and using it from another
+    domain raises [Invalid_argument]. {!stdout}, {!stderr}, {!stdin}, {!null}
+    and {!zero} are created when this module is initialized, so they belong to
+    the domain that initialized it.
+
+    For now, another domain can only make channels over descriptors that need
+    no {!Lwt_unix} job, as {!Lwt_unix.file_descr} explains: in non-blocking
+    mode, and known to be, for example
+    [of_fd (Lwt_unix.of_unix_file_descr ~blocking:false fd)]. {!of_unix_fd} and
+    {!open_file} do not qualify, and closing a channel uses a job too, so
+    {!close} fails on such a domain. *)
 
 type input
 (** Input mode *)
@@ -187,7 +199,8 @@ val flush : output_channel -> unit Lwt.t
 (** [flush oc] performs all pending writes on [oc] *)
 
 val flush_all : unit -> unit Lwt.t
-(** [flush_all ()] flushes all open output channels *)
+(** [flush_all ()] flushes the output channels opened by the calling domain.
+    Each domain flushes its own channels when it exits. *)
 
 val buffer_size : 'a channel -> int
 (** Returns the size of the internal buffer. *)

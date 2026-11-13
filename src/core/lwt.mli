@@ -908,7 +908,16 @@ v}
     behavior should be determined by the application.
 
     It is shared by all domains: with several domains, set it before spawning
-    them. *)
+    them.
+
+    The default implementation calls [exit] on the domain where the exception
+    occurred. On a domain other than the main one, that does not run the main
+    domain's exit hooks ([Lwt_main.Exit_hooks], in [lwt.unix]), which flush
+    [Lwt_io.stdout] among others, so the main domain's buffered output can be
+    lost. A program that runs Lwt on several domains should set a hook that
+    hands the exception to the main domain instead, for example through an
+    [Atomic.t] and [Lwt_unix.send_notification], whose handler runs on the
+    domain that initialized [Lwt_unix], and let the main domain exit. *)
 
 (** {2:2_Concurrency Concurrency} *)
 
