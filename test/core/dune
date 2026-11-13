@@ -9,7 +9,9 @@
    test_storage_domains
    test_lwt_dls_domains
    test_sched_domains
-   test_ownership))
+   test_ownership
+   test_ownership_modules
+   test_per_domain))
  (libraries lwttester))
 
 ; Standalone tests:
@@ -28,19 +30,27 @@
 ; - test_lwt_dls_domains: the per-domain slot, two-domain half.
 ; - test_sched_domains: the core scheduler is per domain.
 ; - test_ownership: the always-on ownership check, and what it must not reject.
+; - test_ownership_modules: the ownership check of mutexes, condition
+;   variables, mvars, pools, streams and switches.
+; - test_per_domain: Lwt_per_domain, a top-level value with one instance per
+;   domain.
 
 (tests
  (names
   test_storage_domains
   test_lwt_dls_domains
   test_sched_domains
-  test_ownership)
+  test_ownership
+  test_ownership_modules
+  test_per_domain)
  (package lwt)
  (modules
   test_storage_domains
   test_lwt_dls_domains
   test_sched_domains
-  test_ownership)
+  test_ownership
+  test_ownership_modules
+  test_per_domain)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt))

@@ -9,6 +9,15 @@
 module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
+(* A pool belongs to the domain that created it: a pool shared across domains
+   would hand the same member to two loops at once, and [clear] would dispose
+   of another domain's members. *)
+[@@@alert "-trespassing"]
+
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
 type 'a t =
   { create : unit -> 'a Lwt.t (* Create a new pool member. *)
   ; check : 'a -> (bool -> unit) -> unit
@@ -22,7 +31,8 @@ type 'a t =
   ; mutable count : int (* Number of elements in the pool. *)
   ; list : 'a Queue.t (* Available pool members. *)
   ; waiters : 'a Lwt.u Lwt_sequence.t
-    (* Promise resolvers waiting for a free member. *) }
+    (* Promise resolvers waiting for a free member. *)
+  ; owner : Lwt_dls.token (* The domain that created the pool. *) }
 
 let create
       m
@@ -39,7 +49,8 @@ let create
   ; cleared = ref (ref false)
   ; count = 0
   ; list = Queue.create ()
-  ; waiters = Lwt_sequence.create () }
+  ; waiters = Lwt_sequence.create ()
+  ; owner = Lwt_dls.self_token () }
 
 (* Create a pool member. *)
 let create_member p =
@@ -131,6 +142,7 @@ let check_and_release p c cleared =
     Lwt.return_unit)
 
 let use p f =
+  Lwt_dls.check_owner "Lwt_pool.use" p.owner;
   acquire p >>= fun c ->
   (* Capture the current cleared state so we can see if it changes while this
      element is in use *)
@@ -148,6 +160,7 @@ let use p f =
   else (release p c; promise)
 
 let clear p =
+  Lwt_dls.check_owner "Lwt_pool.clear" p.owner;
   let elements = Queue.fold (fun l element -> element :: l) [] p.list in
   Queue.clear p.list;
   (* Indicate to any currently in-use elements that we cleared the pool *)
@@ -156,4 +169,5 @@ let clear p =
   p.cleared := ref false;
   Lwt_list.iter_s (dispose p) elements
 
+(* Not checked: it only reads the pool. *)
 let wait_queue_length p = Lwt_sequence.length p.waiters
