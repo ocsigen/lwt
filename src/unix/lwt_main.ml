@@ -127,8 +127,13 @@ let run p =
   | Some message -> failwith message
   | None -> ()
   end;
-  Lwt_unix.install_sigchld_handler ();
-  match run p with
+  (* If this raises, [finished ()] must still run, or the flag stays set and
+     every later [Lwt_main.run] reports a nested call. Hence the call inside
+     the [match]. *)
+  match
+    Lwt_unix.install_sigchld_handler ();
+    run p
+  with
   | result -> finished (); result
   | exception exn when Lwt.Exception_filter.run exn -> finished (); raise exn
 

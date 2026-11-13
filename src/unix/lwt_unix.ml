@@ -9,6 +9,33 @@
 module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
+(* +-----------------------------------------------------------------+
+   | The domain that owns the notification file descriptor            |
+   +-----------------------------------------------------------------+ *)
+
+(* Jobs, signal handlers and child waiting reach Lwt through one process-wide
+   notification descriptor, read on the engine of the domain that initialized
+   this module, so their completions run on that domain. The operations that
+   need the descriptor fail on any other domain. [is_owner_slot] is [true] on
+   that domain only: it is set when the module is initialized. *)
+[@@@alert "-trespassing"]
+
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
+let is_owner_slot : bool Lwt_dls.t = Lwt_dls.new_key (fun () -> false)
+let () = Lwt_dls.set is_owner_slot true
+let[@inline] is_notification_owner () = Lwt_dls.get is_owner_slot
+
+let[@inline never] not_the_owner name =
+  failwith (name ^ ": only available on the domain that initialized Lwt_unix")
+
+let[@inline] check_notification_owner name =
+  if not (is_notification_owner ()) then not_the_owner name
+
+(* Process-wide: the running jobs and their count. Only the domain that
+   initialized this module touches them, so they need no lock. *)
 let job_count = ref 0
 
 (* +-----------------------------------------------------------------+
@@ -62,7 +89,14 @@ module Notifiers = Hashtbl.Make (struct
     let hash (x : int) = x
   end)
 
+(* Process-wide. Creating and stopping a notification must be safe from any
+   thread or domain, like sending one, hence the mutex. It is not held while a
+   handler runs, since handlers may create notifications. It is locked and
+   unlocked explicitly, rather than through [Fun.protect], which would allocate
+   on every notification: nothing in between raises, except [Not_found], which
+   is caught. *)
 let notifiers = Notifiers.create 1024
+let notifiers_mutex = Mutex.create ()
 
 type notification = int (* a simple ID*)
 
@@ -74,22 +108,37 @@ let rec find_free_id id =
   if Notifiers.mem notifiers id then find_free_id (id + 1) else id
 
 let make_notification ?(once = false) f =
+  Mutex.lock notifiers_mutex;
   let id = find_free_id (!current_notification_id + 1) in
   current_notification_id := id;
   Notifiers.add notifiers id {notify_once = once; notify_handler = f};
+  Mutex.unlock notifiers_mutex;
   id
 
-let stop_notification id = Notifiers.remove notifiers id
+let stop_notification id =
+  Mutex.lock notifiers_mutex;
+  Notifiers.remove notifiers id;
+  Mutex.unlock notifiers_mutex
 
 let set_notification id f =
-  let notifier = Notifiers.find notifiers id in
-  Notifiers.replace notifiers id {notifier with notify_handler = f}
+  Mutex.lock notifiers_mutex;
+  match Notifiers.find notifiers id with
+  | exception Not_found ->
+      Mutex.unlock notifiers_mutex;
+      raise Not_found
+  | notifier ->
+      Notifiers.replace notifiers id {notifier with notify_handler = f};
+      Mutex.unlock notifiers_mutex
 
 let call_notification id =
+  (* The lookup and the [once] removal are atomic together; the handler runs
+     after the lock is released. *)
+  Mutex.lock notifiers_mutex;
   match Notifiers.find notifiers id with
-  | exception Not_found -> ()
+  | exception Not_found -> Mutex.unlock notifiers_mutex
   | notifier ->
-      if notifier.notify_once then stop_notification id;
+      if notifier.notify_once then Notifiers.remove notifiers id;
+      Mutex.unlock notifiers_mutex;
       notifier.notify_handler ()
 
 (* +-----------------------------------------------------------------+
@@ -153,17 +202,25 @@ external check_job : 'a job -> int -> bool = "lwt_unix_check_job" "noalloc"
 (* For all running job, a waiter and a function to abort it. *)
 let jobs = Lwt_sequence.create ()
 
-let rec abort_jobs exn =
+let rec abort_jobs_aux exn =
   match Lwt_sequence.take_opt_l jobs with
-  | Some (_, f) -> f exn; abort_jobs exn
+  | Some (_, f) -> f exn; abort_jobs_aux exn
   | None -> ()
 
-let cancel_jobs () = abort_jobs Lwt.Canceled
+let abort_jobs exn =
+  check_notification_owner "Lwt_unix.abort_jobs";
+  abort_jobs_aux exn
+
+let cancel_jobs () =
+  check_notification_owner "Lwt_unix.cancel_jobs";
+  abort_jobs_aux Lwt.Canceled
 
 let wait_for_jobs () =
+  check_notification_owner "Lwt_unix.wait_for_jobs";
   Lwt.join (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) jobs [])
 
 let run_job_aux async_method job result =
+  check_notification_owner "Lwt_unix.run_job";
   (* Starts the job. *)
   if start_job job async_method
   then
@@ -2208,6 +2265,7 @@ let signal_count () =
     !signals 0
 
 let on_signal_full signum handler =
+  check_notification_owner "Lwt_unix.on_signal";
   let id = ref None in
   let _, actions =
     try Signal_map.find signum !signals
@@ -2231,6 +2289,7 @@ let on_signal_full signum handler =
 let on_signal signum f = on_signal_full signum (fun _notification num -> f num)
 
 let disable_signal_handler id =
+  check_notification_owner "Lwt_unix.disable_signal_handler";
   match !id with
   | None -> ()
   | Some sh ->
@@ -2245,6 +2304,7 @@ let disable_signal_handler id =
       end
 
 let reinstall_signal_handler signum =
+  check_notification_owner "Lwt_unix.reinstall_signal_handler";
   match Signal_map.find signum !signals with
   | exception Not_found -> ()
   | notification, _ -> set_signal signum notification
@@ -2257,6 +2317,11 @@ external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
 
 (* TODO: replace fork with something thread+domain safe *)
 let fork () =
+  (* [fork] reinitializes the notification descriptor and empties the job
+     sequence, which belong to the domain that initialized this module. Also,
+     the runtime refuses [Unix.fork] once a domain has been spawned, even after
+     it is joined. *)
+  check_notification_owner "Lwt_unix.fork";
   match Unix.fork () with
   | 0 ->
       (* Let the engine handle the fork *)
@@ -2340,8 +2405,12 @@ let sigchld_handler_installer =
 let sigchld_installed = Atomic.make false
 let sigchld_install_mutex = Mutex.create ()
 
+(* Does nothing on a domain other than the one that initialized this module,
+   since [Lwt_main.run] calls it on every domain and only that domain can wait
+   for children. On another domain, [waitpid] and [wait4] fail when they would
+   block. *)
 let install_sigchld_handler () =
-  if not (Atomic.get sigchld_installed)
+  if is_notification_owner () && not (Atomic.get sigchld_installed)
   then begin
     Mutex.lock sigchld_install_mutex;
     Fun.protect
@@ -2371,6 +2440,7 @@ let waitpid =
         if pid' <> 0
         then Lwt.return res
         else begin
+          check_notification_owner "Lwt_unix.waitpid";
           let res, w = Lwt.task () in
           let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
           Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
@@ -2389,6 +2459,7 @@ let wait4 flags pid =
     if pid' <> 0
     then Lwt.return res
     else begin
+      check_notification_owner "Lwt_unix.wait4";
       let res, w = Lwt.task () in
       let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
       Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);

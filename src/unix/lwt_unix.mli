@@ -1381,6 +1381,20 @@ val wait_for_jobs : unit -> unit Lwt.t
 (** Lwt internally use a pipe to send notification to the main
     thread. The following functions allow to use this pipe. *)
 
+(** {3 Notifications and domains}
+
+    There is one notification descriptor per process, read by the domain that
+    initialized this module, so completions run on that domain. Asynchronous
+    jobs ({!run_job} and every operation built on it, with any method but
+    [Async_none], which runs the job on the calling thread), signal handlers
+    ({!on_signal}, {!on_signal_full}, {!disable_signal_handler},
+    {!reinstall_signal_handler}) and child waiting ({!waitpid}, {!wait4}) are
+    therefore only available there, and raise [Failure] elsewhere.
+
+    {!make_notification}, {!stop_notification}, {!set_notification} and
+    {!send_notification} may be called from any thread and any domain. The
+    handler runs on the domain that initialized this module. *)
+
 type notification
 
 val make_notification : ?once:bool -> (unit -> unit) -> notification
