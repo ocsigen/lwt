@@ -415,7 +415,11 @@ module Main_internal_types = struct
     { owner : sched
       (* The scheduler of the domain that created the promise. Only pending
          promises have one, so resolved ones, such as [Lwt.return_unit], can be
-         shared between domains. *)
+         shared between domains.
+
+         Morally, the owner belongs to the [Pending] constructor rather than to
+         its callbacks. It is a field of this record so that a pending state
+         needs no extra block. *)
     ; mutable regular_callbacks : 'a regular_callback_list
     ; mutable cancel_callbacks : 'a cancel_callback_list
     ; mutable how_to_cancel : how_to_cancel
@@ -772,17 +776,18 @@ module Scheduler = struct
   let self_sched () = Lwt_dls.get sched_slot
 
   (* The ownership check runs at every write to a pending promise: [resolve],
-     [add_implicitly_removed_callback], the explicitly removable callbacks and
-     their removal, [add_cancel_callback], [cancel] and [make_into_proxy] (on
-     both promises). [cancel] checks every promise it goes through before
-     running any callback.
+     [add_implicitly_removed_callback], the explicitly removable callbacks,
+     [add_cancel_callback], [cancel] and [make_into_proxy] (on both promises).
+     [cancel] checks every promise it goes through before running any
+     callback.
 
      These are not checked: the promises a function has just created
-     ([new_pending], [add_task_r], [add_task_l]), reads, and the path
-     compression in [underlying], which has no scheduler at hand. That
-     compression is a benign race. Two domains compressing a chain both write
-     its unique root, and a reader sees either link, which lead to the same
-     promise.
+     ([new_pending], [add_task_r], [add_task_l]), reads, the removal of an
+     explicitly removable callback, which cannot fail (see
+     [clear_explicitly_removable_callback_cell]), and the path compression in
+     [underlying], which has no scheduler at hand. That compression is a benign
+     race. Two domains compressing a chain both write its unique root, and a
+     reader sees either link, which lead to the same promise.
 
      [choose], [pick] and the [nchoose] family check all their promises before
      attaching anything, because their callback removes itself from the others.
@@ -941,11 +946,7 @@ end = struct
      to clean the callback list (right after clearing a cell). When the counter
      reaches [cleanup_throttle], the callback list is actually scanned and
      cleared callback cells are removed. *)
-  let clear_explicitly_removable_callback_cell
-        sched
-        cell
-        ~originally_added_to:ps
-    =
+  let clear_explicitly_removable_callback_cell cell ~originally_added_to:ps =
     cell := None;
     (* Go through the promises the cell had originally been added to, and either
        defer a cleanup, or actually clean up their callback lists. *)
@@ -957,28 +958,33 @@ end = struct
          function is called. *)
       | Fulfilled _ -> ()
       | Rejected _ -> ()
+      (* No ownership check: it could not fail. Adding the cell checked that
+         the calling domain owns every promise in [ps]. A promise's owner never
+         changes, and [make_into_proxy] only links promises with the same
+         owner, so that domain also owns [underlying p]. And the cell is only
+         cleared when one of its promises is resolved or canceled, which is
+         checked, so this runs on that domain. *)
       | Pending callbacks -> (
-          check_owner sched callbacks;
-          match callbacks.regular_callbacks with
-          (* If the promise has only one regular callback, and it is removable,
-             it must have been the cell cleared in this function, above. In
-             that case, just set its callback list to empty. *)
-          | Regular_callback_list_explicitly_removable_callback _ ->
-              callbacks.regular_callbacks <- Regular_callback_list_empty
-          (* Maintainer's note: I think this function shouldn't try to trigger
-             a cleanup in the first two cases, but I am preserving them for now,
-             as this is how the code was written in the past. *)
-          | Regular_callback_list_empty
-          | Regular_callback_list_implicitly_removed_callback _
-          | Regular_callback_list_concat _ ->
-              let cleanups_deferred = callbacks.cleanups_deferred + 1 in
-              if cleanups_deferred > cleanup_throttle
-              then begin
-                callbacks.cleanups_deferred <- 0;
-                callbacks.regular_callbacks <-
-                  clean_up_callback_cells callbacks.regular_callbacks
-              end
-              else callbacks.cleanups_deferred <- cleanups_deferred))
+        match callbacks.regular_callbacks with
+        (* If the promise has only one regular callback, and it is removable, it
+           must have been the cell cleared in this function, above. In that
+           case, just set its callback list to empty. *)
+        | Regular_callback_list_explicitly_removable_callback _ ->
+            callbacks.regular_callbacks <- Regular_callback_list_empty
+        (* Maintainer's note: I think this function shouldn't try to trigger a
+           cleanup in the first two cases, but I am preserving them for now, as
+           this is how the code was written in the past. *)
+        | Regular_callback_list_empty
+        | Regular_callback_list_implicitly_removed_callback _
+        | Regular_callback_list_concat _ ->
+            let cleanups_deferred = callbacks.cleanups_deferred + 1 in
+            if cleanups_deferred > cleanup_throttle
+            then begin
+              callbacks.cleanups_deferred <- 0;
+              callbacks.regular_callbacks <-
+                clean_up_callback_cells callbacks.regular_callbacks
+            end
+            else callbacks.cleanups_deferred <- cleanups_deferred))
 
   (* Concatenates both kinds of callbacks on [~from] to the corresponding lists
      of [~into]. The callback lists on [~from] are *not* then cleared, because
@@ -1041,8 +1047,7 @@ end = struct
   let add_explicitly_removable_callback_and_give_cell sched ps f =
     let rec cell = ref (Some self_removing_callback_wrapper)
     and self_removing_callback_wrapper result =
-      clear_explicitly_removable_callback_cell sched cell
-        ~originally_added_to:ps;
+      clear_explicitly_removable_callback_cell cell ~originally_added_to:ps;
       f result
     in
     (* All checked first: a check failing halfway would leave [f] on the
@@ -1066,8 +1071,7 @@ end = struct
   let add_explicitly_removable_callback_and_give_remove_function sched ps f =
     let cell = add_explicitly_removable_callback_and_give_cell sched ps f in
     fun () ->
-      clear_explicitly_removable_callback_cell sched cell
-        ~originally_added_to:ps
+      clear_explicitly_removable_callback_cell cell ~originally_added_to:ps
 
   let add_cancel_callback sched callbacks f =
     check_owner sched callbacks;
