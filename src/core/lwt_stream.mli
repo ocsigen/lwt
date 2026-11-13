@@ -6,6 +6,11 @@
 type 'a t
 (** A stream holding values of type ['a].
 
+    A stream belongs to the domain that creates it, and using it, or its push
+    function, from another domain raises [Invalid_argument]. One created when a
+    module is initialized therefore belongs to the main domain. To keep one at
+    top level with an instance per domain, use {!Lwt_per_domain}.
+
     Naming convention: in this module, all functions applying a function
     to each element of a stream are suffixed by:
 

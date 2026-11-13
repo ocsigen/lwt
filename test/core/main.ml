@@ -12,6 +12,7 @@ Test.run "core"
     ; Test_lwt_mvar.suite
     ; Test_lwt_condition.suite
     ; Test_lwt_pool.suite
+    ; Test_lwt_per_domain.suite
     ; Test_lwt_sequence.suite
     ; Test_lwt_seq.suite_base
     ; Test_lwt_seq.suite_fuzzing ])
