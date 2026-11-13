@@ -5,68 +5,42 @@
   (:standard
    \
    test_protected_cancel
-   test_storage_domains
    test_lwt_dls
+   test_storage_domains
    test_lwt_dls_domains
    test_sched_domains
-   test_storage_domains
    test_ownership))
  (libraries lwttester))
 
-; p resolving after Lwt.protected p has been canceled. This used to crash, so
-; it is not part of the main suite.
+; Standalone tests:
+; - test_protected_cancel: p resolving after Lwt.protected p has been canceled.
+;   This used to crash, so it is not part of the main suite.
+; - test_lwt_dls: the per-domain slot, single-domain half.
 
-(test
- (name test_protected_cancel)
+(tests
+ (names test_protected_cancel test_lwt_dls)
  (package lwt)
- (modules test_protected_cancel)
+ (modules test_protected_cancel test_lwt_dls)
  (libraries lwt))
 
-; Needs real parallelism, so it only builds on OCaml 5.
+; Tests that need a second domain, hence OCaml 5:
+; - test_storage_domains: the Lwt.key storage.
+; - test_lwt_dls_domains: the per-domain slot, two-domain half.
+; - test_sched_domains: the core scheduler is per domain.
+; - test_ownership: the always-on ownership check, and what it must not reject.
 
-(test
- (name test_storage_domains)
+(tests
+ (names
+  test_storage_domains
+  test_lwt_dls_domains
+  test_sched_domains
+  test_ownership)
  (package lwt)
- (modules test_storage_domains)
- (build_if
-  (>= %{ocaml_version} "5.0"))
- (libraries lwt))
-
-; The per-domain slot, single-domain half: builds everywhere, including 4.14.
-
-(test
- (name test_lwt_dls)
- (package lwt)
- (modules test_lwt_dls)
- (libraries lwt))
-
-; The half that needs two domains.
-
-(test
- (name test_lwt_dls_domains)
- (package lwt)
- (modules test_lwt_dls_domains)
- (build_if
-  (>= %{ocaml_version} "5.0"))
- (libraries lwt))
-
-; The core scheduler is per domain. Needs two domains, hence OCaml 5.
-
-(test
- (name test_sched_domains)
- (package lwt)
- (modules test_sched_domains)
- (build_if
-  (>= %{ocaml_version} "5.0"))
- (libraries lwt))
-
-; The always-on ownership check, and what it must not reject. Needs a second
-; domain, hence OCaml 5.
-
-(test
- (name test_ownership)
- (package lwt)
- (modules test_ownership)
+ (modules
+  test_storage_domains
+  test_lwt_dls_domains
+  test_sched_domains
+  test_ownership)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (libraries lwt))
