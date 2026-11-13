@@ -73,13 +73,22 @@ class virtual abstract =
     val timers = Lwt_sequence.create ()
     (* Sequence of timers. *)
 
+    val mutable destroyed = false
+    (* Destroying twice must be harmless: [set] destroys the engine it replaces,
+       and a domain's exit destroys whatever engine it has then. For libev the
+       second destruction would free the loop a second time. *)
+
     method destroy =
-      Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) readables;
-      Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) writables;
-      Lwt_sequence.iter_l
-        (fun (_delay, _repeat, _f, _g, ev) -> stop_event ev)
-        timers;
-      self#cleanup
+      if not destroyed
+      then begin
+        destroyed <- true;
+        Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) readables;
+        Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) writables;
+        Lwt_sequence.iter_l
+          (fun (_delay, _repeat, _f, _g, ev) -> stop_event ev)
+          timers;
+        self#cleanup
+      end
 
     method transfer (engine : abstract) =
       Lwt_sequence.iter_l
@@ -496,11 +505,35 @@ module Lwt_dls = Lwt_dls
 
 [@@@alert "+trespassing"]
 
+(* At a domain's exit, replaces the engine the domain has then, which [set] may
+   have changed, by a select engine, and destroys it. Filled in below, once
+   [set] is defined, since the slot initializer of [current] cannot refer to
+   [set]. *)
+let retire_current : (unit -> unit) ref = ref (fun () -> ())
+
 let current : t Lwt_dls.t =
   Lwt_dls.new_key (fun () ->
-    if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default
-    then (new libev () :> t)
-    else (new select :> t))
+    let engine =
+      if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default
+      then (new libev () :> t)
+      else (new select :> t)
+    in
+    (* Destroy it with the domain, or a libev loop leaks its epoll descriptor.
+       Not on the main domain, where [Lwt_main]'s exit hooks run after every
+       [Domain.at_exit] callback and need an engine. *)
+    if not (Lwt_dls.is_main_domain ())
+    then
+      Lwt_dls.at_domain_exit (fun () ->
+        (* Replace the engine rather than leave a destroyed one in place: a
+           [Domain.at_exit] callback registered before this one runs after it,
+           and may still use Lwt. A select engine holds no system resource, so
+           it leaks nothing, and [set] moves the pending events to it. *)
+        !retire_current ();
+        (* Also the initial engine, in case [set ~destroy:false] replaced it
+           without destroying it. Nothing on this domain can use it any more,
+           and destroying twice is harmless. *)
+        engine#destroy);
+    engine)
 
 let get () = Lwt_dls.get current
 
@@ -510,6 +543,7 @@ let set ?(transfer = true) ?(destroy = true) engine =
   if destroy then previous#destroy;
   Lwt_dls.set current (engine : #t :> t)
 
+let () = retire_current := fun () -> set (new select)
 let id () = (Lwt_dls.get current)#id
 let iter block = (Lwt_dls.get current)#iter block
 let on_readable fd f = (Lwt_dls.get current)#on_readable fd f
