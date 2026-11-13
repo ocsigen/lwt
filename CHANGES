@@ -9,6 +9,10 @@
     domain. With a single domain, nothing changes.
     (Vincent Balat, Jérôme Vouillon, #1141)
 
+  * Lwt_mutex, Lwt_condition, Lwt_mvar, Lwt_pool, Lwt_stream and Lwt_switch
+    values belong to the domain that creates them: using one from another
+    domain raises Invalid_argument, instead of corrupting it quietly.
+
 ====== Fixes ======
 
   * Lwt.cancel no longer crashes when canceling Lwt.protected p makes p resolve,
