@@ -636,6 +636,8 @@ If you are writing an application, you are welcome to reassign the reference, an
 
 If you are writing a library, you should leave this reference alone. Its behavior should be determined by the application.
 
+It is shared by all domains: with several domains, set it before spawning them.
+
 ### Concurrency
 
 #### Multiple wait
@@ -763,6 +765,20 @@ exception Canceled
 ```
 Canceled promises are those rejected with this exception, `Lwt.Canceled`. See [`Lwt.cancel`](./#val-cancel).
 
+```ocaml
+exception Domain_crossing
+```
+Raised when a *pending* promise is changed from a domain other than the one that created it:
+
+- resolving or rejecting it, including by canceling it,
+- attaching a callback to it, explicitly with the `on_*` functions or implicitly by binding on it.
+A pending promise belongs to the domain that created it. Its callbacks run on that domain.
+
+A *resolved* promise has no owner, and can be used from any domain.
+
+Reading a pending promise, with [`Lwt.state`](./#type-state) for example, is not checked.
+
+since 6\.2.0
 ```ocaml
 val task : unit -> 'a t * 'a u
 ```

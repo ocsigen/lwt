@@ -48,6 +48,7 @@
 - [Module `Lwt.Let_syntax`](lwt/Lwt-Let_syntax.md)
 - [Module `Lwt.Syntax`](lwt/Lwt-Syntax.md)
 - [Module `Lwt_config`](lwt/Lwt_config.md)
+- [Module `Lwt_dls`](lwt/Lwt_dls.md)
 - [Module `Lwt_engine.Ev_backend`](lwt/Lwt_engine-Ev_backend.md)
 - [Class `Versioned.libev_1`](lwt/Lwt_engine-Versioned-class-libev_1.md)
 - [Class `Versioned.libev_2`](lwt/Lwt_engine-Versioned-class-libev_2.md)

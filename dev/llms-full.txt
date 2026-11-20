@@ -1471,6 +1471,8 @@ If you are writing an application, you are welcome to reassign the reference, an
 
 If you are writing a library, you should leave this reference alone. Its behavior should be determined by the application.
 
+It is shared by all domains: with several domains, set it before spawning them.
+
 ### Concurrency
 
 #### Multiple wait
@@ -1598,6 +1600,20 @@ exception Canceled
 ```
 Canceled promises are those rejected with this exception, `Lwt.Canceled`. See [`Lwt.cancel`](./#val-cancel).
 
+```ocaml
+exception Domain_crossing
+```
+Raised when a *pending* promise is changed from a domain other than the one that created it:
+
+- resolving or rejecting it, including by canceling it,
+- attaching a callback to it, explicitly with the `on_*` functions or implicitly by binding on it.
+A pending promise belongs to the domain that created it. Its callbacks run on that domain.
+
+A *resolved* promise has no owner, and can be used from any domain.
+
+Reading a pending promise, with [`Lwt.state`](./#type-state) for example, is not checked.
+
+since 6\.2.0
 ```ocaml
 val task : unit -> 'a t * 'a u
 ```
@@ -7315,6 +7331,40 @@ val _HAVE_ACCEPT4 : bool
 ```ocaml
 val _HAVE_GET_CREDENTIALS : bool
 ```
+
+
+---
+
+# Module `Lwt_dls`
+
+A per-domain slot, and the identity of the current domain. This is the only module of the core that knows about domains. On OCaml 5, a slot is a `Domain.DLS` key; on 4\.14, a plain cell.
+
+Internal to the Lwt packages. The library is `wrapped false`, so only the alert keeps users away.
+
+alert trespassing Lwt\_dls is internal to the Lwt packages, keep away.
+```ocaml
+type 'a t
+```
+```ocaml
+val new_key : (unit -> 'a) -> 'a t
+```
+`new_key init` creates a slot. On OCaml 5, `init ()` runs on the first access from each domain. On 4\.14 it runs once, at creation. Callers must depend only on the value it produces, not on when it runs.
+
+```ocaml
+val get : 'a t -> 'a
+```
+```ocaml
+val set : 'a t -> 'a -> unit
+```
+```ocaml
+type token = private int
+```
+The identity of a domain: `Domain.self ()`, unique among all the domains of a program, unlike `Domain.self_index`, which is reused.
+
+```ocaml
+val self_token : unit -> token
+```
+The calling domain's identity. Always the same value on 4\.14.
 
 
 ---
