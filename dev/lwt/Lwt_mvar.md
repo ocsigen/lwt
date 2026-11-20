@@ -9,6 +9,8 @@ type 'a t
 ```
 The type of a mailbox variable. Mailbox variables are used to communicate values between threads in a synchronous way. The type parameter specifies the type of the value propagated from `put` to `take`.
 
+A mailbox variable belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+
 ```ocaml
 val create : 'a -> 'a t
 ```

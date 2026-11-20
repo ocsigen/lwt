@@ -5,7 +5,9 @@ Cooperative locks for mutual exclusion
 ```ocaml
 type t
 ```
-Type of Lwt mutexes
+Type of Lwt mutexes.
+
+A mutex belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : unit -> t

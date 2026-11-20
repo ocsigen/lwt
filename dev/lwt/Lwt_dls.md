@@ -28,3 +28,8 @@ The identity of a domain: `Domain.self ()`, unique among all the domains of a pr
 val self_token : unit -> token
 ```
 The calling domain's identity. Always the same value on 4\.14.
+
+```ocaml
+val check_owner : string -> token -> unit
+```
+`check_owner name owner` raises `Invalid_argument`, mentioning `name`, unless `owner` is the calling domain's token.

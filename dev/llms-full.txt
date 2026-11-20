@@ -2349,6 +2349,8 @@ type 'a t
 ```
 A stream holding values of type `'a`.
 
+A stream belongs to the domain that creates it, and using it, or its push function, from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+
 Naming convention: in this module, all functions applying a function to each element of a stream are suffixed by:
 
 - `_s` when the function returns a thread and calls are serialised
@@ -3028,7 +3030,9 @@ Cooperative locks for mutual exclusion
 ```ocaml
 type t
 ```
-Type of Lwt mutexes
+Type of Lwt mutexes.
+
+A mutex belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : unit -> t
@@ -3078,6 +3082,8 @@ type 'a t
 ```
 Condition variable type. The type parameter denotes the type of value propagated from notifier to waiter.
 
+A condition variable belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+
 ```ocaml
 val create : unit -> 'a t
 ```
@@ -3118,6 +3124,8 @@ Mailbox variables
 type 'a t
 ```
 The type of a mailbox variable. Mailbox variables are used to communicate values between threads in a synchronous way. The type parameter specifies the type of the value propagated from `put` to `take`.
+
+A mailbox variable belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : 'a -> 'a t
@@ -3204,6 +3212,8 @@ type t
 ```
 Type of switches.
 
+A switch belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+
 ```ocaml
 val create : unit -> t
 ```
@@ -3284,6 +3294,8 @@ Note that this is *not* intended to keep a pool of system threads. If you want t
 type 'a t
 ```
 A pool containing elements of type `'a`.
+
+A pool belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : 
@@ -7366,6 +7378,11 @@ val self_token : unit -> token
 ```
 The calling domain's identity. Always the same value on 4\.14.
 
+```ocaml
+val check_owner : string -> token -> unit
+```
+`check_owner name owner` raises `Invalid_argument`, mentioning `name`, unless `owner` is the calling domain's token.
+
 
 ---
 
@@ -8132,6 +8149,39 @@ Removes a hook added by [`add_first`](./#val-add_first) or [`add_last`](./#val-a
 val remove_all : unit -> unit
 ```
 Removes all hooks from the hook sequence underlying this module.
+
+
+---
+
+# Module `Lwt_per_domain`
+
+Values with one instance per domain.
+
+An `Lwt_mutex.t`, an `Lwt_pool.t` or any other value holding Lwt state belongs to the domain that created it, and using it from another domain raises `Invalid_argument`. A value created when a module is initialized therefore belongs to the main domain: a library that keeps a mutex or a pool at top level works with one domain and fails with several. This module is the way to keep such a value at top level and still have one per domain:
+
+```ocaml
+  let lock = Lwt_per_domain.make Lwt_mutex.create
+
+  let with_resource f = Lwt_mutex.with_lock (Lwt_per_domain.get lock) f
+```
+A domain that calls `Lwt_main.run` again later finds the instances it made before, in the state its last run left them. With a single domain, which is always the case on OCaml 4\.14 and under js\_of\_ocaml, there is a single instance.
+
+```ocaml
+type 'a t
+```
+A value with one instance per domain.
+
+```ocaml
+val make : (unit -> 'a) -> 'a t
+```
+`make init` is a value whose instance in each domain is made by `init ()`, on that domain, the first time it calls [`get`](./#val-get). `init` runs at most once per domain: if it raises an exception, every later `get` on that domain raises the same exception.
+
+Call `make` at top level only. Each call takes a slot in every domain, for the lifetime of the program, so a call per connection or per request would leak.
+
+```ocaml
+val get : 'a t -> 'a
+```
+`get t` is the calling domain's instance of `t`.
 
 
 ---

@@ -68,6 +68,7 @@
 - [Module `Lwt_main.Exit_hooks`](lwt/Lwt_main-Exit_hooks.md)
 - [Module `Lwt_main.Leave_iter_hooks`](lwt/Lwt_main-Leave_iter_hooks.md)
 - [Module type `Lwt_main.Hooks`](lwt/Lwt_main-module-type-Hooks.md)
+- [Module `Lwt_per_domain`](lwt/Lwt_per_domain.md)
 - [Parameter `Make.Ord`](lwt/Lwt_pqueue-Make-argument-1-Ord.md)
 - [Module `Lwt_pqueue.Make`](lwt/Lwt_pqueue-Make.md)
 - [Module type `Lwt_pqueue.OrderedType`](lwt/Lwt_pqueue-module-type-OrderedType.md)

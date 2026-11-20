@@ -9,6 +9,8 @@ type 'a t
 ```
 Condition variable type. The type parameter denotes the type of value propagated from notifier to waiter.
 
+A condition variable belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+
 ```ocaml
 val create : unit -> 'a t
 ```
