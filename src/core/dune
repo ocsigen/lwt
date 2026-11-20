@@ -5,6 +5,7 @@
  (preprocess
   (per_module
    ((pps ppx_devtools-optcomp)
+    lwt_dls
     lwt_storage)))
  (private_modules lwt_storage)
  (libraries
