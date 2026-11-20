@@ -1,4 +1,8 @@
-===== dev =====
+===== 6.1.3 =====
+
+====== Changes ======
+
+  * Lwt_process uses posix_spawnp (instead of fork) if possible (Simon Cruanes, #1128)
 
 ====== Fixes ======
 
@@ -11,6 +15,23 @@
 
   * Lwt.wrap_in_cancelable p no longer leaks when the returned promise is canceled
     while p stays pending. (Vincent Balat, #1140)
+
+  * Lwt_unix support O_NOFOLLOW to open flag (Jérôme Vouillon, Eduardo Souza,
+    Hugo Heuzard, #1129, #1131)
+
+  * Lwt_unix guard strings with caml_string_is_c_safe to catch null bytes
+    passed to C (Edwin Török, Cuihtlauac Alvarado, Raphaël Proust, #1124,
+    #1143) 
+
+  * Various C fixes (Antonin Décimo, #1108)
+
+  * Lwt_io.delete_recursively now consistently correct (Mark Elvers, #1132)
+
+  * Lwt_pool no longer starves when all uses raise exceptions (Koon Wen Lee, #1121)
+
+====== Misc ======
+
+  * Many docs, CI, build, dev improvments (Vincent Balat, Jérôme Vouillon)
 
 ===== 6.1.2 =====
 
