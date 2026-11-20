@@ -1,6 +1,6 @@
 # OCaml Package Documentation
 
-- [lwt](lwt/index.md) (version 6.1.1)
+- [lwt](lwt/index.md) (version 6.1.3)
 - [lwt_direct](lwt_direct/index.md) (version 6.0.0)
 - [lwt_ppx](lwt_ppx/index.md) (version 6.1.0)
 - [lwt_ppx__ppx_let_tests](lwt_ppx__ppx_let_tests/index.md)
