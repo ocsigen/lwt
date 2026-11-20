@@ -9,8 +9,51 @@
 module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
-let enter_iter_hooks = Lwt_sequence.create ()
-let leave_iter_hooks = Lwt_sequence.create ()
+(* Per domain, in one slot: iteration hooks run around an iteration of the
+   domain's engine, and exit hooks return promises that only the loop of their
+   domain can run.
+
+   On a spawned domain, the slot initializer arranges, with
+   [Lwt_dls.at_domain_exit], for the exit hooks to run when the domain exits,
+   even if it never calls [run]. The main domain keeps the [Stdlib.at_exit]
+   below, so that Lwt's hooks still run after a user's own [at_exit]:
+   [Domain.at_exit] callbacks run before them all. *)
+type hooks =
+  { enter_iter : (unit -> unit) Lwt_sequence.t
+  ; leave_iter : (unit -> unit) Lwt_sequence.t
+  ; exits : (unit -> unit Lwt.t) Lwt_sequence.t
+  ; mutable running : [`No | `From_somewhere | `From of string]
+    (* Per domain, so that several loops can run at once. The mutex guards
+       against two system threads of this domain. *)
+  ; running_mutex : Mutex.t }
+
+let drain_exit_hooks = ref (fun () -> ())
+
+[@@@alert "-trespassing"]
+
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
+let hooks : hooks Lwt_dls.t =
+  Lwt_dls.new_key (fun () ->
+    if not (Lwt_dls.is_main_domain ())
+    then begin
+      (* Build the engine first: it registers its own destruction with
+         [Domain.at_exit], whose callbacks run last-registered first, so the
+         exit hooks registered below run while the engine still exists. *)
+      ignore (Lwt_engine.get () : Lwt_engine.t);
+      Lwt_dls.at_domain_exit (fun () -> !drain_exit_hooks ())
+    end;
+    { enter_iter = Lwt_sequence.create ()
+    ; leave_iter = Lwt_sequence.create ()
+    ; exits = Lwt_sequence.create ()
+    ; running = `No
+    ; running_mutex = Mutex.create () })
+
+let enter_iter_hooks () = (Lwt_dls.get hooks).enter_iter
+let leave_iter_hooks () = (Lwt_dls.get hooks).leave_iter
+let exit_hooks () = (Lwt_dls.get hooks).exits
 let yield = Lwt.pause
 let abandon_yielded_and_paused () = Lwt.abandon_paused ()
 
@@ -23,14 +66,14 @@ let run p =
     | Some x -> x
     | None ->
         (* Call enter hooks. *)
-        Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
+        Lwt_sequence.iter_l (fun f -> f ()) (enter_iter_hooks ());
         (* Do the main loop call. *)
         let should_block_waiting_for_io = Lwt.paused_count () = 0 in
         Lwt_engine.iter should_block_waiting_for_io;
         (* Fulfill paused promises. *)
         Lwt.wakeup_paused ();
         (* Call leave hooks. *)
-        Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
+        Lwt_sequence.iter_l (fun f -> f ()) (leave_iter_hooks ());
         (* Repeat. *)
         run_loop ()
   in
@@ -39,20 +82,20 @@ let run p =
     ~finally:(fun () -> Lwt_rte.emit_sch_call_end ())
     (fun () -> run_loop ())
 
-let run_already_called = ref `No
-let run_already_called_mutex = Mutex.create ()
-
 let finished () =
-  Mutex.lock run_already_called_mutex;
-  run_already_called := `No;
-  Mutex.unlock run_already_called_mutex
+  let h = Lwt_dls.get hooks in
+  Mutex.lock h.running_mutex;
+  h.running <- `No;
+  Mutex.unlock h.running_mutex
 
 let run p =
   (* Fail in case a call to Lwt_main.run is nested under another invocation of
-     Lwt_main.run. *)
-  Mutex.lock run_already_called_mutex;
+     Lwt_main.run on this domain. Another domain running its own loop is not a
+     nested call. *)
+  let h = Lwt_dls.get hooks in
+  Mutex.lock h.running_mutex;
   let error_message_if_call_is_nested =
-    match !run_already_called with
+    match h.running with
     (* `From is effectively disabled for the time being, because there is a bug,
        present in all versions of OCaml supported by Lwt, where, with the
        bytecode runtime, if one changes the working directory and then attempts
@@ -82,38 +125,46 @@ let run p =
           else *)
           `From_somewhere
         in
-        run_already_called := called_from;
+        h.running <- called_from;
         None
   in
-  Mutex.unlock run_already_called_mutex;
+  Mutex.unlock h.running_mutex;
   begin match error_message_if_call_is_nested with
   | Some message -> failwith message
   | None -> ()
   end;
-  Lazy.force Lwt_unix.sigchld_handler_installer;
-  match run p with
+  (* If this raises, [finished ()] must still run, or the flag stays set and
+     every later [Lwt_main.run] reports a nested call. Hence the call inside
+     the [match]. *)
+  match
+    Lwt_unix.install_sigchld_handler ();
+    run p
+  with
   | result -> finished (); result
   | exception exn when Lwt.Exception_filter.run exn -> finished (); raise exn
 
-let exit_hooks = Lwt_sequence.create ()
-
 let rec call_hooks () =
-  match Lwt_sequence.take_opt_l exit_hooks with
+  match Lwt_sequence.take_opt_l (exit_hooks ()) with
   | None -> Lwt.return_unit
   | Some f ->
       Lwt.catch (fun () -> f ()) (fun _ -> Lwt.return_unit) >>= fun () ->
       call_hooks ()
 
-let () =
-  at_exit (fun () ->
-    if not (Lwt_sequence.is_empty exit_hooks)
-    then begin
-      Lwt.abandon_wakeups ();
-      finished ();
-      run (call_hooks ())
-    end)
+(* Runs this domain's exit hooks: at process exit on the main domain, through
+   the [Stdlib.at_exit] below, and when the domain exits on the others, through
+   the [Lwt_dls.at_domain_exit] registered by the [hooks] slot. The
+   [finished ()] it calls clears only this domain's flag. *)
+let drain () =
+  if not (Lwt_sequence.is_empty (exit_hooks ()))
+  then begin
+    Lwt.abandon_wakeups ();
+    finished ();
+    run (call_hooks ())
+  end
 
-let at_exit f = ignore (Lwt_sequence.add_l f exit_hooks)
+let () = drain_exit_hooks := drain
+let () = at_exit drain
+let at_exit f = ignore (Lwt_sequence.add_l f (exit_hooks ()))
 
 module type Hooks = sig
   type 'return_value kind
@@ -128,7 +179,9 @@ end
 module type Hook_sequence = sig
   type 'return_value kind
 
-  val sequence : (unit -> unit kind) Lwt_sequence.t
+  (* The sequence is per domain, so it is looked up each time a hook is added or
+     removed, rather than once when the functor is applied. *)
+  val sequence : unit -> (unit -> unit kind) Lwt_sequence.t
 end
 
 module Wrap_hooks (Sequence : Hook_sequence) = struct
@@ -136,17 +189,17 @@ module Wrap_hooks (Sequence : Hook_sequence) = struct
   type hook = (unit -> unit Sequence.kind) Lwt_sequence.node
 
   let add_first hook_fn =
-    let hook_node = Lwt_sequence.add_l hook_fn Sequence.sequence in
+    let hook_node = Lwt_sequence.add_l hook_fn (Sequence.sequence ()) in
     hook_node
 
   let add_last hook_fn =
-    let hook_node = Lwt_sequence.add_r hook_fn Sequence.sequence in
+    let hook_node = Lwt_sequence.add_r hook_fn (Sequence.sequence ()) in
     hook_node
 
   let remove hook_node = Lwt_sequence.remove hook_node
 
   let remove_all () =
-    Lwt_sequence.iter_node_l Lwt_sequence.remove Sequence.sequence
+    Lwt_sequence.iter_node_l Lwt_sequence.remove (Sequence.sequence ())
 end
 
 module Enter_iter_hooks = Wrap_hooks (struct

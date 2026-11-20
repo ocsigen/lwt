@@ -12,7 +12,17 @@
    ocaml_runtime_exc_4
    ocaml_runtime_exc_5
    ocaml_runtime_exc_6
-   set_engine)))
+   set_engine
+   domain_shared_lazies
+   domain_exit_hooks
+   domain_engines
+   domain_channels
+   domain_unix_policy
+   domain_timeouts
+   domain_io_affinity
+   domain_two_loops
+   domain_upstream_scenarios
+   domain_shared_resolved)))
 
 (executable
  (name dummy)
@@ -67,3 +77,112 @@
  (name set_engine)
  (libraries lwt lwt.unix)
  (modules set_engine))
+
+; The SIGCHLD handler installed, and temporary names drawn, from several
+; domains at once. OCaml 5 only.
+
+(test
+ (package lwt)
+ (name domain_shared_lazies)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt lwt.unix)
+ (modules domain_shared_lazies))
+
+; Exit hooks run on the domain that registered them. Needs a second domain,
+; hence OCaml 5.
+
+(test
+ (name domain_exit_hooks)
+ (package lwt)
+ (modules domain_exit_hooks)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Each domain has its own engine. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_engines)
+ (package lwt)
+ (modules domain_engines)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Each domain flushes its own output channels. Needs a second domain, hence
+; OCaml 5.
+
+(test
+ (name domain_channels)
+ (package lwt)
+ (modules domain_channels)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Jobs, signals and child waiting belong to the domain that initialized
+; Lwt_unix. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_unix_policy)
+ (package lwt)
+ (modules domain_unix_policy)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; A timer wheel per domain, and detach only on the domain that initialized
+; Lwt_unix. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_timeouts)
+ (package lwt)
+ (modules domain_timeouts)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Descriptors and channels belong to the domain that created them. Needs a
+; second domain, hence OCaml 5.
+
+(test
+ (name domain_io_affinity)
+ (package lwt)
+ (modules domain_io_affinity)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Two Lwt loops at once, each with real I/O and timers. Needs a second domain,
+; hence OCaml 5.
+
+(test
+ (name domain_two_loops)
+ (package lwt)
+ (modules domain_two_loops)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; The five multidomain scenarios of 6.0.0-beta00, adapted to values bound to
+; their domain. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_upstream_scenarios)
+ (package lwt)
+ (modules domain_upstream_scenarios)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Which values a resolved promise can share across domains. Needs a second
+; domain, hence OCaml 5.
+
+(test
+ (name domain_shared_resolved)
+ (package lwt)
+ (modules domain_shared_resolved)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))

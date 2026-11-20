@@ -9,6 +9,13 @@
 module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
+(* Lwt_dls is internal; Lwt_io may use it. *)
+[@@@alert "-trespassing"]
+
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
 exception Channel_closed of string
 
 (* Minimum size for buffers: *)
@@ -60,7 +67,11 @@ and 'mode channel =
     (* Queued operations *) }
 
 and 'mode _channel =
-  { mutable buffer : Lwt_bytes.t
+  { owner : Lwt_dls.token
+    (* The domain that created the channel. Kept here rather than in the
+       wrappers that [atomic] builds, which share this record. Checked in
+       [primitive], [atomic], [abort] and the single-character fast paths. *)
+  ; mutable buffer : Lwt_bytes.t
   ; mutable length : int
   ; mutable ptr : int (* Current position *)
   ; mutable max : int
@@ -111,12 +122,13 @@ let mode wrapper = wrapper.channel.mode
    suitable, because then all channels will end up in the same hash bucket.
 
    A weak hash set is used instead of a weak array to avoid having to include
-   resizing and compaction code in Lwt_io. *)
+   resizing and compaction code in Lwt_io.
+
+   The counter is shared by all domains, and atomic. Bucket spread only
+   matters inside one table, so a per-domain counter would not help. *)
 let hash_output_channel =
-  let index = ref 0 in
-  fun () ->
-    index := !index + 1;
-    !index
+  let index = Atomic.make 0 in
+  fun () -> Atomic.fetch_and_add index 1
 
 module Outputs = Weak.Make (struct
     type t = output_channel
@@ -124,10 +136,6 @@ module Outputs = Weak.Make (struct
     let hash _ = hash_output_channel ()
     let equal = ( == )
   end)
-
-(* Table of all opened output channels. On exit they are all
-   flushed: *)
-let outputs = Outputs.create 32
 
 let position : type mode. mode channel -> int64 =
  fun wrapper ->
@@ -296,6 +304,7 @@ let unlock : type m. m channel -> unit =
 
 (* Wrap primitives into atomic io operations: *)
 let primitive f wrapper =
+  Lwt_dls.check_owner "Lwt_io channel" wrapper.channel.owner;
   match wrapper.state with
   | Idle ->
       wrapper.state <- Busy_primitive;
@@ -322,6 +331,7 @@ let primitive f wrapper =
 
 (* Wrap a sequence of io operations into an atomic operation: *)
 let atomic f wrapper =
+  Lwt_dls.check_owner "Lwt_io channel" wrapper.channel.owner;
   match wrapper.state with
   | Idle ->
       let tmp_wrapper =
@@ -364,6 +374,7 @@ let atomic f wrapper =
   | Invalid -> Lwt.fail (invalid_channel wrapper.channel)
 
 let rec abort wrapper =
+  Lwt_dls.check_owner "Lwt_io.abort" wrapper.channel.owner;
   match wrapper.state with
   | Busy_atomic tmp_wrapper ->
       (* Close the depest opened wrapper: *)
@@ -407,8 +418,8 @@ let is_closed wrapper =
   | Closed -> true
   | Busy_primitive | Busy_atomic _ | Waiting_for_busy | Idle | Invalid -> false
 
-let flush_all () =
-  let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
+let flush_registry registry =
+  let wrappers = Outputs.fold (fun x l -> x :: l) registry [] in
   Lwt_list.iter_p
     (fun wrapper ->
        Lwt.catch
@@ -416,9 +427,28 @@ let flush_all () =
          (fun _ -> Lwt.return_unit))
     wrappers
 
+(* Per domain: the table of open output channels, flushed on exit. On a spawned
+   domain, the slot initializer adds the flush as the last exit hook, so that
+   it runs after the domain's other exit hooks, whether they were registered
+   before or after its first channel. The main domain keeps the registration
+   below, made at module initialization, so that it runs after every exit hook
+   a user adds later. *)
+
+let outputs : Outputs.t Lwt_dls.t =
+  Lwt_dls.new_key (fun () ->
+    let registry = Outputs.create 32 in
+    if not (Lwt_dls.is_main_domain ())
+    then
+      ignore
+        (Lwt_main.Exit_hooks.add_last (fun () -> flush_registry registry)
+         : Lwt_main.Exit_hooks.hook);
+    registry)
+
+let flush_all () = flush_registry (Lwt_dls.get outputs)
+
 let () =
-  (* Flush all opened output channels on exit: *)
-  Lwt_main.at_exit flush_all
+  (* Flush all output channels opened by the main domain on exit: *)
+  if Lwt_dls.is_main_domain () then Lwt_main.at_exit flush_all
 
 let no_seek _pos _cmd =
   Lwt.fail (Failure "Lwt_io.seek: seek not supported on this channel")
@@ -443,7 +473,8 @@ let make : type m.
   in
   let abort_waiter, abort_wakener = Lwt.wait () in
   let rec ch =
-    { buffer
+    { owner = Lwt_dls.self_token ()
+    ; buffer
     ; length = size
     ; ptr = 0
     ; max = (match mode with Input -> 0 | Output -> size)
@@ -461,14 +492,17 @@ let make : type m.
               try seek pos cmd
               with e when Lwt.Exception_filter.run e -> Lwt.reraise e ) }
   and wrapper = {state = Idle; channel = ch; queued = Lwt_sequence.create ()} in
-  (match mode with Input -> () | Output -> Outputs.add outputs wrapper);
+  (match mode with
+  | Input -> ()
+  | Output -> Outputs.add (Lwt_dls.get outputs) wrapper);
   wrapper
 
 let of_bytes (type m) ~(mode : m mode) bytes =
   let length = Lwt_bytes.length bytes in
   let abort_waiter, abort_wakener = Lwt.wait () in
   let rec ch =
-    { buffer = bytes
+    { owner = Lwt_dls.self_token ()
+    ; buffer = bytes
     ; length
     ; ptr = 0
     ; max = length
@@ -1049,6 +1083,10 @@ end
 
 let read_char wrapper =
   let channel = wrapper.channel in
+  (* The owner check is written out rather than a call to
+     [Lwt_dls.check_owner], which would cost more than the check here. *)
+  if channel.owner <> Lwt_dls.self_token ()
+  then Lwt_dls.foreign "Lwt_io channel";
   let ptr = channel.ptr in
   (* Speed-up in case a character is available in the buffer. It
      increases performances by 10x. *)
@@ -1061,6 +1099,9 @@ let read_char wrapper =
 
 let read_char_opt wrapper =
   let channel = wrapper.channel in
+  (* The owner check, written out as in [read_char]. *)
+  if channel.owner <> Lwt_dls.self_token ()
+  then Lwt_dls.foreign "Lwt_io channel";
   let ptr = channel.ptr in
   if wrapper.state = Idle && ptr < channel.max
   then begin
@@ -1092,6 +1133,9 @@ let flush oc = primitive Primitives.flush oc
 
 let write_char wrapper x =
   let channel = wrapper.channel in
+  (* The owner check, written out as in [read_char]. *)
+  if channel.owner <> Lwt_dls.self_token ()
+  then Lwt_dls.foreign "Lwt_io channel";
   let ptr = channel.ptr in
   if wrapper.state = Idle && ptr < channel.max
   then begin
@@ -1268,10 +1312,13 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
   open_file ?buffer ?flags ?perm ~mode filename >>= fun ic ->
   Lwt.finalize (fun () -> f ic) (fun () -> close ic)
 
-let prng = lazy (Random.State.make_self_init ())
+(* One generator per domain: forcing a shared [lazy] from two domains at once
+   raises [Lazy.Undefined], and a [Random.State.t] must not be shared. *)
+let prng : Random.State.t Lwt_dls.t =
+  Lwt_dls.new_key (fun () -> Random.State.make_self_init ())
 
 let temp_file_name temp_dir prefix suffix =
-  let rnd = Random.State.int (Lazy.force prng) 0x1000000 in
+  let rnd = Random.State.int (Lwt_dls.get prng) 0x1000000 in
   Filename.concat temp_dir (Printf.sprintf "%s%06x%s" prefix rnd suffix)
 
 let open_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix ?(suffix = "") () =
