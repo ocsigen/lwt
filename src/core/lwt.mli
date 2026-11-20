@@ -2080,9 +2080,7 @@ module Private : sig
     val modify_storage : 'a key -> 'a option -> storage -> storage
     val empty_storage : storage
     val get_current_storage : unit -> storage
-
     val set_current_storage : storage -> unit
-    (** The current storage of the calling domain. *)
   end
 
   val tracing_context : string key

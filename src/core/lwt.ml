@@ -3044,7 +3044,6 @@ end = struct
   (* [sched.paused] holds the paused promises, the most recent first. A paused
      promise that is canceled stays there until the next [wakeup_paused],
      which skips it. *)
-
   let pause () =
     let sched = self_sched () in
     let p =
