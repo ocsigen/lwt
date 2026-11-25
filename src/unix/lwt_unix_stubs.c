@@ -507,6 +507,21 @@ static long notification_count = 0;
 /* The index to the next available cell in the notification buffer. */
 static long notification_index = 0;
 
+#ifndef NSIG
+#define NSIG 64
+#endif
+
+/* Notifications id for each monitored signal. */
+static intnat signal_notifications[NSIG];
+
+/* Signals delivered while the buffer was full, which the signal handler may not
+   grow, with the notification id each was sent to: recv_notifications adds
+   these notifications. The id is the one of the signal's arrival, so that a
+   handler installed meanwhile does not receive it. Under
+   [notification_mutex]. */
+static int signal_overflow[NSIG];
+static intnat signal_overflow_id[NSIG];
+
 /* The mode currently used for notifications. */
 enum notification_mode {
   /* Not yet initialized. */
@@ -556,22 +571,39 @@ static void resize_notifications(void) {
   free(old_notifications);
 }
 
-void lwt_unix_send_notification(intnat id) {
+/* Sends [id]. Returns 0, or the error of the write that wakes the main thread,
+   for the caller to report once the lock is released and the signal mask
+   restored.
+
+   [signum] is the signal being handled, or -1 for an ordinary send. The
+   Windows Ctrl+C handler passes SIGINT too: it runs on a console thread,
+   without the runtime lock, so it may not raise either. A signal handler may
+   neither allocate nor raise. So with a full buffer it marks the
+   signal pending instead of growing the buffer, and recv_notifications adds
+   the signal's notification. No wake-up is needed then, as a notification is
+   already pending. Several deliveries of one signal merge into one, as POSIX
+   does with pending signals. */
+static int send_notification(intnat id, int signum) {
   int ret;
+  int error = 0;
 #if !defined(LWT_ON_WINDOWS)
   sigset_t new_mask;
   sigset_t old_mask;
-  int error;
   sigfillset(&new_mask);
   pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
-#else
-  DWORD error;
 #endif
   lwt_unix_mutex_lock(&notification_mutex);
   if (notification_index > 0) {
     /* There is already a pending notification in the buffer, no
        need to signal the main thread. */
-    if (notification_index == notification_count) resize_notifications();
+    if (notification_index == notification_count) {
+      if (signum >= 0) {
+        signal_overflow[signum] = 1;
+        signal_overflow_id[signum] = id;
+        goto done;
+      }
+      resize_notifications();
+    }
     notifications[notification_index++] = id;
   } else {
     /* There is none, notify the main thread. */
@@ -580,25 +612,31 @@ void lwt_unix_send_notification(intnat id) {
 #if defined(LWT_ON_WINDOWS)
     if (ret == SOCKET_ERROR) {
       error = WSAGetLastError();
-      if (error != WSANOTINITIALISED) {
-        lwt_unix_mutex_unlock(&notification_mutex);
-        win32_maperr(error);
-        uerror("send_notification", Nothing);
-      } /* else we're probably shutting down, so ignore the error */
+      /* Not initialized: we are probably shutting down, so ignore it. */
+      if (error == WSANOTINITIALISED) error = 0;
     }
 #else
-    if (ret < 0) {
-      error = errno;
-      lwt_unix_mutex_unlock(&notification_mutex);
-      pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
-      unix_error(error, "send_notification", Nothing);
-    }
+    if (ret < 0) error = errno;
 #endif
   }
+done:
   lwt_unix_mutex_unlock(&notification_mutex);
 #if !defined(LWT_ON_WINDOWS)
   pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 #endif
+  return error;
+}
+
+void lwt_unix_send_notification(intnat id) {
+  int error = send_notification(id, -1);
+  if (error != 0) {
+#if defined(LWT_ON_WINDOWS)
+    win32_maperr(error);
+    uerror("send_notification", Nothing);
+#else
+    unix_error(error, "send_notification", Nothing);
+#endif
+  }
 }
 
 value lwt_unix_send_notification_stub(value id) {
@@ -606,8 +644,27 @@ value lwt_unix_send_notification_stub(value id) {
   return Val_unit;
 }
 
+/* The size of the buffer that notification [id] goes to, for the tests:
+   signal_full_buffer checks with it that the signal handler does not grow the
+   buffer. There is one buffer, so [id] only says which notification the test
+   has. Read without the mutex, which is enough for a test: a sender may change
+   the size meanwhile, and the test then reads the old size or the new one. */
+value lwt_unix_notification_buffer_size(value id) {
+  (void)id;
+  return Val_long(notification_count);
+}
+
+/* How many signals the handler marked pending instead of buffering them. Under
+   [notification_mutex]. */
+static int signal_overflow_count(void) {
+  int signum, n = 0;
+  for (signum = 0; signum < NSIG; signum++)
+    if (signal_overflow[signum]) n++;
+  return n;
+}
+
 value lwt_unix_recv_notifications(void) {
-  int ret, i, current_index;
+  int ret, i, signum, current_index;
   value result;
 #if !defined(LWT_ON_WINDOWS)
   sigset_t new_mask;
@@ -644,16 +701,22 @@ value lwt_unix_recv_notifications(void) {
      resulting in a classical deadlock,
      when thread in question tries another send
     */
-    current_index = notification_index;
+    current_index = notification_index + signal_overflow_count();
     lwt_unix_mutex_unlock(&notification_mutex);
     result = caml_alloc_tuple(current_index);
     lwt_unix_mutex_lock(&notification_mutex);
     /* check that no new notifications appeared meanwhile (rare) */
-  } while (current_index != notification_index);
+  } while (current_index != notification_index + signal_overflow_count());
 
   /* Read all pending notifications. */
   for (i = 0; i < notification_index; i++)
     Field(result, i) = Val_long(notifications[i]);
+  /* Then the signals the handler could not buffer. */
+  for (signum = 0; signum < NSIG; signum++)
+    if (signal_overflow[signum]) {
+      signal_overflow[signum] = 0;
+      Field(result, i++) = Val_long(signal_overflow_id[signum]);
+    }
   /* Reset the index. */
   notification_index = 0;
   lwt_unix_mutex_unlock(&notification_mutex);
@@ -795,9 +858,10 @@ value lwt_unix_init_notification(void) {
 
   /* After a fork, the child keeps the parent's buffer. The notifications still
      pending in it are the parent's: a signal was sent to the parent, and the
-     child cancels the parent's jobs. So they are dropped. Their wake-up went to
-     the parent's descriptor, and later senders would see the buffer non-empty
-     and write none: the child's loop would never wake up again.
+     child cancels the parent's jobs. So they are dropped, and so are the
+     signals the handler could not buffer. Their wake-up went to the parent's
+     descriptor, and later senders would see the buffer non-empty and write
+     none: the child's loop would never wake up again.
 
      The switch is made with every signal blocked, as senders do around the
      buffer: a signal handler running in the middle would write to a
@@ -825,6 +889,7 @@ value lwt_unix_init_notification(void) {
   notification_recv = new_recv;
   notification_mode = new_mode;
   notification_index = 0;
+  memset(signal_overflow, 0, sizeof signal_overflow);
   pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 
   /* Nothing writes to the old descriptors any more. */
@@ -839,12 +904,7 @@ value lwt_unix_init_notification(void) {
    | Signals                                                         |
    +-----------------------------------------------------------------+ */
 
-#ifndef NSIG
-#define NSIG 64
-#endif
-
-/* Notifications id for each monitored signal. */
-static intnat signal_notifications[NSIG];
+/* [signal_notifications] is declared with the notification buffer, above. */
 
 CAMLextern int caml_convert_signal_number(int);
 
@@ -862,14 +922,21 @@ static void handle_signal(int signum) {
          function. */
       signal(signum, handle_signal);
 #endif
-      lwt_unix_send_notification(id);
+      (void)send_notification(id, signum);
     }
   }
   errno = saved_errno;
 }
 
+/* For an engine that forwards signals ([Lwt_engine.forwards_signal]). Called
+   from OCaml, not from a signal handler, so the notification takes the
+   ordinary path: the buffer may grow, and an error is raised. */
 CAMLprim value lwt_unix_handle_signal(value val_signum) {
-  handle_signal(caml_convert_signal_number(Int_val(val_signum)));
+  int signum = caml_convert_signal_number(Int_val(val_signum));
+  if (signum >= 0 && signum < NSIG) {
+    intnat id = signal_notifications[signum];
+    if (id != -1) lwt_unix_send_notification(id);
+  }
   return Val_unit;
 }
 
@@ -879,7 +946,7 @@ static BOOL WINAPI handle_break(DWORD event) {
   intnat id = signal_notifications[SIGINT];
   if (id == -1 || (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT))
     return FALSE;
-  lwt_unix_send_notification(id);
+  (void)send_notification(id, SIGINT);
   return TRUE;
 }
 #endif
