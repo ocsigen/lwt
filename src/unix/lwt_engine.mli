@@ -223,7 +223,9 @@ end
 
 val get : unit -> t
 (** [get ()] returns the engine currently in use by the calling domain.
-    Each domain has its own engine, built on first use. *)
+    Each domain has its own engine.
+
+    Domains initialize their engine upon first use. *)
 
 val set : ?transfer:bool -> ?destroy:bool -> #t -> unit
 (** [set ?transfer ?destroy engine] replaces the current engine of the
