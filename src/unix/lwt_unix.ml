@@ -361,15 +361,12 @@ let mk_ch ?blocking ?(set_flags = true) fd =
   ; hooks_writable = Lwt_sequence.create ()
   ; owner = Lwt_dls.self_token () }
 
-(* Written out rather than a call to [Lwt_dls.check_owner]: this runs on every
-   operation, and the call would cost more than the check. The operations that
-   force [ch.blocking] before reaching [check_descriptor] call this first: on
-   another domain, forcing [ch.blocking] could run [guess_blocking] there, and
-   the lazy value would keep the result for the domain that owns the
-   descriptor. *)
+(* The operations that force [ch.blocking] before reaching [check_descriptor]
+   call this first: on another domain, forcing [ch.blocking] could run
+   [guess_blocking] there, and the lazy value would keep the result for the
+   domain that owns the descriptor. *)
 let[@inline] check_descriptor_owner ch =
-  if ch.owner <> Lwt_dls.self_token ()
-  then Lwt_dls.foreign "Lwt_unix file descriptor"
+  Lwt_dls.check_owner "Lwt_unix file descriptor" ch.owner
 
 let check_descriptor ch =
   check_descriptor_owner ch;
