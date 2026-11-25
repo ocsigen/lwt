@@ -9,9 +9,8 @@
 module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
-(* Per domain, in one slot: iteration hooks run around an iteration of the
-   domain's engine, and exit hooks return promises that only the loop of their
-   domain can run.
+(* Per domain: iteration hooks run around an iteration of the domain's engine,
+   and exit hooks return promises that only the loop of their domain can run.
 
    On a spawned domain, the slot initializer arranges, with
    [Lwt_dls.at_domain_exit], for the exit hooks to run when the domain exits,
@@ -21,11 +20,7 @@ open Lwt.Infix
 type hooks =
   { enter_iter : (unit -> unit) Lwt_sequence.t
   ; leave_iter : (unit -> unit) Lwt_sequence.t
-  ; exits : (unit -> unit Lwt.t) Lwt_sequence.t
-  ; mutable running : [`No | `From_somewhere | `From of string]
-    (* Per domain, so that several loops can run at once. The mutex guards
-       against two system threads of this domain. *)
-  ; running_mutex : Mutex.t }
+  ; exits : (unit -> unit Lwt.t) Lwt_sequence.t }
 
 let drain_exit_hooks = ref (fun () -> ())
 
@@ -47,9 +42,16 @@ let hooks : hooks Lwt_dls.t =
     end;
     { enter_iter = Lwt_sequence.create ()
     ; leave_iter = Lwt_sequence.create ()
-    ; exits = Lwt_sequence.create ()
-    ; running = `No
-    ; running_mutex = Mutex.create () })
+    ; exits = Lwt_sequence.create () })
+
+(* Whether [run] is running on this domain. Per domain, so that several loops
+   can run at once. The mutex guards against two system threads of this
+   domain. *)
+type running =
+  {mutable state : [`No | `From_somewhere | `From of string]; mutex : Mutex.t}
+
+let running : running Lwt_dls.t =
+  Lwt_dls.new_key (fun () -> {state = `No; mutex = Mutex.create ()})
 
 let enter_iter_hooks () = (Lwt_dls.get hooks).enter_iter
 let leave_iter_hooks () = (Lwt_dls.get hooks).leave_iter
@@ -83,19 +85,19 @@ let run p =
     (fun () -> run_loop ())
 
 let finished () =
-  let h = Lwt_dls.get hooks in
-  Mutex.lock h.running_mutex;
-  h.running <- `No;
-  Mutex.unlock h.running_mutex
+  let r = Lwt_dls.get running in
+  Mutex.lock r.mutex;
+  r.state <- `No;
+  Mutex.unlock r.mutex
 
 let run p =
   (* Fail in case a call to Lwt_main.run is nested under another invocation of
      Lwt_main.run on this domain. Another domain running its own loop is not a
      nested call. *)
-  let h = Lwt_dls.get hooks in
-  Mutex.lock h.running_mutex;
+  let r = Lwt_dls.get running in
+  Mutex.lock r.mutex;
   let error_message_if_call_is_nested =
-    match h.running with
+    match r.state with
     (* `From is effectively disabled for the time being, because there is a bug,
        present in all versions of OCaml supported by Lwt, where, with the
        bytecode runtime, if one changes the working directory and then attempts
@@ -125,10 +127,10 @@ let run p =
           else *)
           `From_somewhere
         in
-        h.running <- called_from;
+        r.state <- called_from;
         None
   in
-  Mutex.unlock h.running_mutex;
+  Mutex.unlock r.mutex;
   begin match error_message_if_call_is_nested with
   | Some message -> failwith message
   | None -> ()
