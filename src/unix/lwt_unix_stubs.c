@@ -758,6 +758,12 @@ value lwt_unix_init_notification(void) {
     case NOTIFICATION_MODE_EVENTFD:
 #endif
     case NOTIFICATION_MODE_PIPE:
+      /* The child of a fork. A thread of the parent, such as a worker sending
+         a job completion, may have held the mutex at fork time. That thread
+         does not exist in the child, so the mutex would stay locked, and the
+         first send or receive of the child would block forever. */
+      lwt_unix_mutex_init(&notification_mutex);
+      break;
     case NOTIFICATION_MODE_NONE:
       break;
     default:
