@@ -2324,7 +2324,14 @@ let on_signal_full signum handler =
       let actions = Lwt_sequence.create () in
       let notification =
         make_notification (fun () ->
-          Lwt_sequence.iter_l (fun f -> f id signum) actions)
+          (* A handler that raises must not keep the next ones from running.
+             Its exception goes to the hook, as for [Lwt.on_success]. *)
+          Lwt_sequence.iter_l
+            (fun f ->
+               try f id signum
+               with exn when Lwt.Exception_filter.run exn ->
+                 !Lwt.async_exception_hook exn)
+            actions)
       in
       (try set_signal signum notification
        with exn when Lwt.Exception_filter.run exn ->
