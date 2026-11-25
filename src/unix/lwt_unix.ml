@@ -2260,8 +2260,21 @@ external send_notification : int -> unit = "lwt_unix_send_notification_stub"
 external recv_notifications : unit -> int array = "lwt_unix_recv_notifications"
 
 let handle_notifications _ =
-  (* Process available notifications. *)
-  Array.iter call_notification (recv_notifications ())
+  (* Process available notifications. [recv_notifications] empties the buffer,
+     so if a handler raises, the notifications not handled yet are sent again
+     before the exception is re-raised. Otherwise a job completion or a
+     signal would be lost. *)
+  let ids = recv_notifications () in
+  Array.iteri
+    (fun i id ->
+       try call_notification id
+       with exn when Lwt.Exception_filter.run exn ->
+         let bt = Printexc.get_raw_backtrace () in
+         for j = i + 1 to Array.length ids - 1 do
+           send_notification ids.(j)
+         done;
+         Printexc.raise_with_backtrace exn bt)
+    ids
 
 let event_notifications =
   ref (Lwt_engine.on_readable (init_notification ()) handle_notifications)

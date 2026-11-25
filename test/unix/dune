@@ -26,7 +26,8 @@
    notification_reentry
    fork_pending_notification
    signal_full_buffer
-   notification_growth)))
+   notification_growth
+   notification_batch)))
 
 (executable
  (name dummy)
@@ -235,4 +236,12 @@
  (modules notification_growth)
  (enabled_if
   (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; A notification handler that raises does not lose the rest of its batch.
+
+(test
+ (name notification_batch)
+ (package lwt)
+ (modules notification_batch)
  (libraries lwt.unix))

@@ -63,6 +63,10 @@
     the worker thread no longer raises an OCaml exception. It does not hold
     the runtime lock, so raising there was not allowed.
 
+  * Lwt_unix: when a notification handler (a signal handler, for example)
+    raises, the other notifications received at the same time are no longer
+    lost. They are handled the next time the loop runs. (Vincent Balat)
+
 ===== 6.1.3 =====
 
 ====== Changes ======
