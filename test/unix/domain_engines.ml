@@ -43,12 +43,18 @@ let () =
   (* A spawned domain that installs its own engine, then exits. The exit must
      destroy the engine the domain has then (otherwise its epoll descriptor
      leaks), and not destroy again the one that [set] already destroyed. With
-     [~destroy:false], the exit destroys both. Counted on /proc where there is
-     one; elsewhere the test only checks that nothing crashes. *)
+     [~destroy:false], the exit destroys both. The open descriptors are
+     counted in /proc/self/fd on Linux and in /dev/fd on macOS. Where neither
+     exists, as on Windows, the domains still run, and the test says that it
+     did not count. *)
+  let fd_directory =
+    List.find_opt
+      (fun d ->
+         match Sys.readdir d with _ -> true | exception Sys_error _ -> false)
+      ["/proc/self/fd"; "/dev/fd"]
+  in
   let open_descriptors () =
-    match Sys.readdir "/proc/self/fd" with
-    | entries -> Some (Array.length entries)
-    | exception Sys_error _ -> None
+    Option.map (fun d -> Array.length (Sys.readdir d)) fd_directory
   in
   let engines =
     (fun () -> (new Lwt_engine.select :> Lwt_engine.t))
@@ -95,4 +101,8 @@ let () =
          (Atomic.get late_run))
     engines;
   if !failures > 0 then exit 1;
-  print_endline "per-domain engines: ok"
+  if fd_directory = None
+  then
+    print_endline
+      "per-domain engines: ok (descriptor leaks not checked: no /proc/self/fd or /dev/fd)"
+  else print_endline "per-domain engines: ok"
