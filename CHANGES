@@ -26,8 +26,9 @@
     Lwt.Domain_crossing elsewhere. Jobs include opening and closing files,
     and I/O on a descriptor in blocking mode, so another domain can only use
     descriptors in non-blocking mode, such as sockets.
-    Lwt_unix.install_sigchld_handler replaces the lazy value
-    Lwt_unix.sigchld_handler_installer, now deprecated.
+    The lazy value Lwt_unix.sigchld_handler_installer is removed: forcing it
+    from two domains at once raised Lazy.Undefined, and no package outside Lwt
+    used it.
 
   * Lwt_per_domain: a top-level value with one instance per domain, for example
     a library's module-level mutex or pool, which would otherwise belong to the

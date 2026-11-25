@@ -2,8 +2,8 @@
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
 (* Every Lwt_main.run installs the SIGCHLD handler, so several loops install
-   it at the same time; a shared [lazy] forced from two domains at once would
-   raise [Lazy.Undefined]. *)
+   it at the same time. It used to be a shared [lazy], and forcing one from
+   two domains at once raises [Lazy.Undefined]. *)
 
 let check name b =
   if not b

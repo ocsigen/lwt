@@ -2402,14 +2402,11 @@ let do_wait4 flags pid =
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
 
-(* The lazy value is forced by [install_sigchld_handler] below, which
-   [Lwt_main.run] calls. This is to avoid installing the sigchld_handler in
-   cases where the user is not really using Lwt (just linking against it for
-   some reason). Do not force it directly: forcing a [lazy] from two domains at
-   once raises [Lazy.Undefined]. The value stays, deprecated, as part of the
-   interface. *)
-let sigchld_handler_installer =
-  lazy begin if not Sys.win32
+(* Called by [install_sigchld_handler] below, which [Lwt_main.run] calls. This
+   is to avoid installing the sigchld_handler in cases where the user is not
+   really using Lwt (just linking against it for some reason). *)
+let really_install_sigchld_handler () =
+  if not Sys.win32
   then
     ignore
       begin
@@ -2428,12 +2425,11 @@ let sigchld_handler_installer =
             end
             wait_children)
       end
-  end
 
 (* The SIGCHLD handler is process-wide, so it is installed once per process.
    Once it is installed, checking the atomic flag is all a call costs. The
-   mutex serializes the installation itself, and is released even if forcing
-   the lazy value raises. *)
+   mutex serializes the installation itself, and is released even if it
+   raises. *)
 let sigchld_installed = Atomic.make false
 let sigchld_install_mutex = Mutex.create ()
 
@@ -2450,7 +2446,7 @@ let install_sigchld_handler () =
       (fun () ->
          if not (Atomic.get sigchld_installed)
          then begin
-           Lazy.force sigchld_handler_installer;
+           really_install_sigchld_handler ();
            Atomic.set sigchld_installed true
          end)
   end
