@@ -1075,19 +1075,29 @@ exception Canceled
     See {!Lwt.cancel}. *)
 
 exception Domain_crossing
-(** Raised when a {e pending} promise is changed from a domain other than the
-    one that created it:
+(** Raised when a value that belongs to one domain is used from another
+    domain.
+
+    A {e pending} promise belongs to the domain that created it. Its callbacks
+    run on that domain. Changing it from another domain raises
+    [Domain_crossing]. Changing it means:
 
     - resolving or rejecting it, including by canceling it,
     - attaching a callback to it, explicitly with the [on_*] functions or
       implicitly by binding on it.
 
-    A pending promise belongs to the domain that created it. Its callbacks run
-    on that domain.
-
-    A {e resolved} promise has no owner, and can be used from any domain.
-
     Reading a pending promise, with {!Lwt.state} for example, is not checked.
+
+    A {e resolved} promise has no owner. It can be used from any domain.
+
+    Other values belong to the domain that created them too. Among them are
+    the values of {!Lwt_mutex}, {!Lwt_condition}, {!Lwt_mvar}, {!Lwt_pool},
+    {!Lwt_stream} and {!Lwt_switch}. In [lwt.unix], file descriptors, channels
+    and timeouts also belong to their domain.
+
+    Some features of [lwt.unix] only work on the domain that initialized
+    [Lwt_unix]. These features include jobs, signal handlers and waiting for
+    child processes. They also raise [Domain_crossing] on other domains.
 
     @since 6.2.0 *)
 
@@ -2093,5 +2103,12 @@ module Private : sig
   end
 
   val tracing_context : string key
+
+  [@@@alert "-trespassing"]
+
+  val check_owner : Lwt_dls.token -> unit
+  (** [check_owner owner] raises {!Domain_crossing} unless [owner] is the
+      calling domain. For the values that belong to the domain that created
+      them, such as a mutex or a file descriptor. *)
 end
 [@@alert trespassing "for internal use only, keep away"]

@@ -20,7 +20,6 @@ let on_other_domain f = Domain.join (Domain.spawn f)
 let refused f =
   match f () with
   | _ -> false
-  | exception Invalid_argument _ -> true
   | exception Lwt.Domain_crossing -> true
   | exception _ -> false
 

@@ -39,9 +39,9 @@ type 'mode channel
 (** Type of buffered byte channels.
 
     A channel belongs to the domain that created it, and using it from another
-    domain raises [Invalid_argument]. {!stdout}, {!stderr}, {!stdin}, {!null}
-    and {!zero} are created when this module is initialized, so they belong to
-    the domain that initialized it.
+    domain raises {!Lwt.Domain_crossing}. {!stdout}, {!stderr}, {!stdin},
+    {!null} and {!zero} are created when this module is initialized, so they
+    belong to the domain that initialized it.
 
     For now, another domain can only make channels over descriptors that need
     no {!Lwt_unix} job, as {!Lwt_unix.file_descr} explains: in non-blocking

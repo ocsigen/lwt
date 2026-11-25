@@ -22,17 +22,16 @@ open Lwt.Infix
 
 module Lwt_dls = Lwt_dls
 
+let check_owner = Lwt.Private.check_owner
+
 [@@@alert "+trespassing"]
 
 let is_owner_slot : bool Lwt_dls.t = Lwt_dls.new_key (fun () -> false)
 let () = Lwt_dls.set is_owner_slot true
 let[@inline] is_notification_owner () = Lwt_dls.get is_owner_slot
 
-let[@inline never] not_the_owner name =
-  failwith (name ^ ": only available on the domain that initialized Lwt_unix")
-
-let[@inline] check_notification_owner name =
-  if not (is_notification_owner ()) then not_the_owner name
+let[@inline] check_notification_owner () =
+  if not (is_notification_owner ()) then raise Lwt.Domain_crossing
 
 (* Process-wide: the running jobs and their count. Only the domain that
    initialized this module touches them, so they need no lock. *)
@@ -208,19 +207,19 @@ let rec abort_jobs_aux exn =
   | None -> ()
 
 let abort_jobs exn =
-  check_notification_owner "Lwt_unix.abort_jobs";
+  check_notification_owner ();
   abort_jobs_aux exn
 
 let cancel_jobs () =
-  check_notification_owner "Lwt_unix.cancel_jobs";
+  check_notification_owner ();
   abort_jobs_aux Lwt.Canceled
 
 let wait_for_jobs () =
-  check_notification_owner "Lwt_unix.wait_for_jobs";
+  check_notification_owner ();
   Lwt.join (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) jobs [])
 
 let run_job_aux async_method job result =
-  check_notification_owner "Lwt_unix.run_job";
+  check_notification_owner ();
   (* Starts the job. *)
   if start_job job async_method
   then
@@ -365,8 +364,7 @@ let mk_ch ?blocking ?(set_flags = true) fd =
    call this first: on another domain, forcing [ch.blocking] could run
    [guess_blocking] there, and the lazy value would keep the result for the
    domain that owns the descriptor. *)
-let[@inline] check_descriptor_owner ch =
-  Lwt_dls.check_owner "Lwt_unix file descriptor" ch.owner
+let[@inline] check_descriptor_owner ch = check_owner ch.owner
 
 let check_descriptor ch =
   check_descriptor_owner ch;
@@ -425,7 +423,7 @@ let clear_events ch =
   end
 
 let abort ch e =
-  Lwt_dls.check_owner "Lwt_unix.abort" ch.owner;
+  check_owner ch.owner;
   if ch.state <> Closed
   then begin
     set_state ch (Aborted e); clear_events ch
@@ -611,7 +609,7 @@ let openfile name flags perms =
 external close_job : Unix.file_descr -> unit job = "lwt_unix_close_job"
 
 let close ch =
-  Lwt_dls.check_owner "Lwt_unix.close" ch.owner;
+  check_owner ch.owner;
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
   clear_events ch;
@@ -2299,7 +2297,7 @@ let signal_count () =
     !signals 0
 
 let on_signal_full signum handler =
-  check_notification_owner "Lwt_unix.on_signal";
+  check_notification_owner ();
   let id = ref None in
   let _, actions =
     try Signal_map.find signum !signals
@@ -2323,7 +2321,7 @@ let on_signal_full signum handler =
 let on_signal signum f = on_signal_full signum (fun _notification num -> f num)
 
 let disable_signal_handler id =
-  check_notification_owner "Lwt_unix.disable_signal_handler";
+  check_notification_owner ();
   match !id with
   | None -> ()
   | Some sh ->
@@ -2338,7 +2336,7 @@ let disable_signal_handler id =
       end
 
 let reinstall_signal_handler signum =
-  check_notification_owner "Lwt_unix.reinstall_signal_handler";
+  check_notification_owner ();
   match Signal_map.find signum !signals with
   | exception Not_found -> ()
   | notification, _ -> set_signal signum notification
@@ -2355,7 +2353,7 @@ let fork () =
      sequence, which belong to the domain that initialized this module. Also,
      the runtime refuses [Unix.fork] once a domain has been spawned, even after
      it is joined. *)
-  check_notification_owner "Lwt_unix.fork";
+  check_notification_owner ();
   match Unix.fork () with
   | 0 ->
       (* Let the engine handle the fork *)
@@ -2474,7 +2472,7 @@ let waitpid =
         if pid' <> 0
         then Lwt.return res
         else begin
-          check_notification_owner "Lwt_unix.waitpid";
+          check_notification_owner ();
           let res, w = Lwt.task () in
           let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
           Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
@@ -2493,7 +2491,7 @@ let wait4 flags pid =
     if pid' <> 0
     then Lwt.return res
     else begin
-      check_notification_owner "Lwt_unix.wait4";
+      check_notification_owner ();
       let res, w = Lwt.task () in
       let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
       Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);

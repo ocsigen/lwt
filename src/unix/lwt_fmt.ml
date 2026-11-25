@@ -28,7 +28,7 @@ let make_stream () =
     (fun _ ->
        (* If the domain that created the stream has exited, another domain runs
           this finaliser, and [push] refuses it. *)
-       try push None with Invalid_argument _ -> ())
+       try push None with Lwt.Domain_crossing -> ())
     fmt;
   let commit () = Lwt.return_unit in
   stream, make_formatter ~commit ~fmt ()

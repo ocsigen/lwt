@@ -7,6 +7,8 @@ exception Off
 
 module Lwt_dls = Lwt_dls
 
+let check_owner = Lwt.Private.check_owner
+
 [@@@alert "+trespassing"]
 
 type on_switch = {mutable hooks : (unit -> unit Lwt.t) list}
@@ -26,7 +28,7 @@ let check = function
 let add_hook switch hook =
   match switch with
   | Some ({state = St_on os; _} as sw) ->
-      Lwt_dls.check_owner "Lwt_switch.add_hook" sw.owner;
+      check_owner sw.owner;
       os.hooks <- hook :: os.hooks
   | Some {state = St_off; _} -> raise Off
   | None -> ()
@@ -36,7 +38,7 @@ let add_hook_or_exec switch hook =
   | Some sw -> (
       (* Checked even when the switch is off, so that another domain is refused
          whatever the state of the switch. *)
-      Lwt_dls.check_owner "Lwt_switch.add_hook_or_exec" sw.owner;
+      check_owner sw.owner;
       match sw.state with
       | St_on os ->
           os.hooks <- hook :: os.hooks;
@@ -45,7 +47,7 @@ let add_hook_or_exec switch hook =
   | None -> Lwt.return_unit
 
 let turn_off switch =
-  Lwt_dls.check_owner "Lwt_switch.turn_off" switch.owner;
+  check_owner switch.owner;
   match switch.state with
   | St_on {hooks} ->
       switch.state <- St_off;

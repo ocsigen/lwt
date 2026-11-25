@@ -14,16 +14,10 @@ let check name b =
     Printf.eprintf "FAILED: %s\n" name;
     incr failures)
 
-let refused_with_failure f =
+let refused f =
   match f () with
   | _ -> false
-  | exception Failure _ -> true
-  | exception _ -> false
-
-let refused_with_invalid_arg f =
-  match f () with
-  | _ -> false
-  | exception Invalid_argument _ -> true
+  | exception Lwt.Domain_crossing -> true
   | exception _ -> false
 
 let () =
@@ -53,26 +47,23 @@ let () =
   let ours = Lwt_timeout.create 1 (fun () -> ()) in
   check "starting our timeout on another domain is refused"
     (Domain.join
-       (Domain.spawn (fun () ->
-          refused_with_invalid_arg (fun () -> Lwt_timeout.start ours))));
+       (Domain.spawn (fun () -> refused (fun () -> Lwt_timeout.start ours))));
   check "stopping our timeout on another domain is refused"
     (Domain.join
-       (Domain.spawn (fun () ->
-          refused_with_invalid_arg (fun () -> Lwt_timeout.stop ours))));
+       (Domain.spawn (fun () -> refused (fun () -> Lwt_timeout.stop ours))));
   check "changing our timeout on another domain is refused"
     (Domain.join
-       (Domain.spawn (fun () ->
-          refused_with_invalid_arg (fun () -> Lwt_timeout.change ours 2))));
+       (Domain.spawn (fun () -> refused (fun () -> Lwt_timeout.change ours 2))));
   (* Only the domain that initialized Lwt_unix may detach. *)
   check "detaching from another domain is refused"
     (Domain.join
        (Domain.spawn (fun () ->
-          refused_with_failure (fun () ->
+          refused (fun () ->
             Lwt_main.run (Lwt_preemptive.detach (fun () -> 1) ())))));
   check "initializing the pool from another domain is refused"
     (Domain.join
        (Domain.spawn (fun () ->
-          refused_with_failure (fun () -> Lwt_preemptive.init 1 4 ignore))));
+          refused (fun () -> Lwt_preemptive.init 1 4 ignore))));
   (* A refused [init] must not leave the pool looking initialized, with no
      worker: [detach] would then wait forever, hence the time limit. *)
   check "the main domain still detaches"

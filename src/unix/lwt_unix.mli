@@ -106,17 +106,17 @@ type file_descr
     usable
 
     A {b file descriptor} belongs to the domain that created it, and using it
-    from another domain raises [Invalid_argument]. {!stdin}, {!stdout} and
+    from another domain raises {!Lwt.Domain_crossing}. {!stdin}, {!stdout} and
     {!stderr} belong to the domain that initialized this module.
 
     For now, jobs only run on the domain that initialized this module (see
-    {!make_notification}), and fail with [Failure] elsewhere. Another domain
-    can therefore only use descriptors that need none: those in non-blocking
-    mode that Lwt knows to be, such as the ones made by {!socket},
+    {!make_notification}), and raise {!Lwt.Domain_crossing} elsewhere. Another
+    domain can therefore only use descriptors that need none: those in
+    non-blocking mode that Lwt knows to be, such as the ones made by {!socket},
     {!socketpair}, {!accept} and, except on Windows, {!pipe}, or by
-    {!of_unix_file_descr} with [~blocking:false]. A descriptor in blocking
-    mode, or whose mode Lwt has to guess, does its I/O through jobs, and
-    {!openfile} and {!close} are jobs themselves. *)
+    {!of_unix_file_descr} with [~blocking:false]. A descriptor in blocking mode,
+    or whose mode Lwt has to guess, does its I/O through jobs, and {!openfile}
+    and {!close} are jobs themselves. *)
 
 (** State of a {b file descriptor} *)
 type state =
@@ -1403,7 +1403,8 @@ val wait_for_jobs : unit -> unit Lwt.t
     [Async_none], which runs the job on the calling thread), signal handlers
     ({!on_signal}, {!on_signal_full}, {!disable_signal_handler},
     {!reinstall_signal_handler}) and child waiting ({!waitpid}, {!wait4}) are
-    therefore only available there, and raise [Failure] elsewhere.
+    therefore only available there, and raise {!Lwt.Domain_crossing}
+    elsewhere.
 
     {!make_notification}, {!stop_notification}, {!set_notification} and
     {!send_notification} may be called from any thread and any domain. The
@@ -1561,7 +1562,7 @@ val install_sigchld_handler : unit -> unit
     a domain other than the one that initialized this module. For internal use:
     [Lwt_main.run] and {!waitpid} call it. *)
 
-val check_notification_owner : string -> unit
+val check_notification_owner : unit -> unit
 [@@alert trespassing "Internal to the Lwt packages, keep away."]
-(** [check_notification_owner name] fails, mentioning [name], unless called on
-    the domain that initialized this module. For {!Lwt_preemptive}. *)
+(** [check_notification_owner ()] raises {!Lwt.Domain_crossing} unless it is
+    called on the domain that initialized this module. For {!Lwt_preemptive}. *)

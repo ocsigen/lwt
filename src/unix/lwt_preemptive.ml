@@ -125,8 +125,7 @@ let get_worker () =
 let get_bounds () = !min_threads, !max_threads
 
 let set_bounds (min, max) =
-  (Lwt_unix.check_notification_owner [@alert "-trespassing"])
-    "Lwt_preemptive.set_bounds";
+  (Lwt_unix.check_notification_owner [@alert "-trespassing"]) ();
   if min < 0 || max < min then invalid_arg "Lwt_preemptive.set_bounds";
   let diff = min - !threads_count in
   min_threads := min;
@@ -141,8 +140,7 @@ let initialized = ref false
 let init min max _errlog =
   (* Before setting [initialized]: a refused call must leave it unset, or the
      next [detach] would skip [simple_init] and find no worker. *)
-  (Lwt_unix.check_notification_owner [@alert "-trespassing"])
-    "Lwt_preemptive.init";
+  (Lwt_unix.check_notification_owner [@alert "-trespassing"]) ();
   initialized := true;
   set_bounds (min, max)
 
@@ -164,8 +162,7 @@ let nbthreadsbusy () = !threads_count - Queue.length workers
 let init_result = Result.Error (Failure "Lwt_preemptive.detach")
 
 let detach f args =
-  (Lwt_unix.check_notification_owner [@alert "-trespassing"])
-    "Lwt_preemptive.detach";
+  (Lwt_unix.check_notification_owner [@alert "-trespassing"]) ();
   simple_init ();
   let result = ref init_result in
   (* The task for the worker thread: *)

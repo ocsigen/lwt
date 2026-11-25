@@ -16,17 +16,10 @@ let check name b =
     Printf.eprintf "FAILED: %s\n" name;
     incr failures)
 
-let contains needle m =
-  let n = String.length needle in
-  let rec go i =
-    i + n <= String.length m && (String.sub m i n = needle || go (i + 1))
-  in
-  go 0
-
 let refused f =
   match f () with
   | _ -> false
-  | exception Invalid_argument m -> contains "belongs to another domain" m
+  | exception Lwt.Domain_crossing -> true
   | exception _ -> false
 
 let on_other_domain f = Domain.join (Domain.spawn f)

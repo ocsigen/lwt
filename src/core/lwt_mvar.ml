@@ -43,6 +43,8 @@ module Lwt_sequence = Lwt_sequence
 
 module Lwt_dls = Lwt_dls
 
+let check_owner = Lwt.Private.check_owner
+
 [@@@alert "+trespassing"]
 
 type 'a t =
@@ -65,7 +67,7 @@ let create v =
   ; owner = Lwt_dls.self_token () }
 
 let put mvar v =
-  Lwt_dls.check_owner "Lwt_mvar.put" mvar.owner;
+  check_owner mvar.owner;
   match mvar.mvar_contents with
   | None ->
       begin match Lwt_sequence.take_opt_l mvar.readers with
@@ -92,11 +94,11 @@ let take_available_unchecked mvar =
   | None -> None
 
 let take_available mvar =
-  Lwt_dls.check_owner "Lwt_mvar.take_available" mvar.owner;
+  check_owner mvar.owner;
   take_available_unchecked mvar
 
 let take mvar =
-  Lwt_dls.check_owner "Lwt_mvar.take" mvar.owner;
+  check_owner mvar.owner;
   match take_available_unchecked mvar with
   | Some v -> Lwt.return v
   | None -> (Lwt.add_task_r [@ocaml.warning "-3"]) mvar.readers

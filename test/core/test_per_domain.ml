@@ -34,7 +34,7 @@ let () =
       (Domain.spawn (fun () -> Lwt_per_domain.get lock != mine, use ()))
   in
   check "another domain has an instance of its own" theirs_differ;
-  check "which it can use: no Invalid_argument" (theirs_used = "done");
+  check "which it can use: no Domain_crossing" (theirs_used = "done");
   check "one instance made per domain that asked" (Atomic.get made = 2);
   if !failures > 0 then exit 1;
   print_endline "a top-level value with one instance per domain: ok"

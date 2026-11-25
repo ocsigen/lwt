@@ -16,25 +16,13 @@ let check name b =
     Printf.eprintf "FAILED: %s\n" name;
     incr failures)
 
-let contains needle m =
-  let n = String.length needle in
-  let rec go i =
-    i + n <= String.length m && (String.sub m i n = needle || go (i + 1))
-  in
-  go 0
-
 let on_other_domain f = Domain.join (Domain.spawn f)
 
-(* Refused because the value belongs to another domain, whichever mechanism
-   says so: the core's own check on promises, the containers', or
-   Lwt_unix's for what goes through its notification descriptor. *)
+(* Refused because the value belongs to another domain. *)
 let refused f =
   match f () with
   | _ -> false
   | exception Lwt.Domain_crossing -> true
-  | exception Invalid_argument m -> contains "belongs to another domain" m
-  | exception Failure m ->
-      contains "only available on the domain that initialized Lwt_unix" m
   | exception _ -> false
 
 let () =

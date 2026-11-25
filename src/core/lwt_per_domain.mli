@@ -5,7 +5,7 @@
 
     An [Lwt_mutex.t], an [Lwt_pool.t] or any other value holding Lwt state
     belongs to the domain that created it, and using it from another domain
-    raises [Invalid_argument]. A value created when a module is initialized
+    raises {!Lwt.Domain_crossing}. A value created when a module is initialized
     therefore belongs to the main domain: a library that keeps a mutex or a pool
     at top level works with one domain and fails with several. This module is
     the way to keep such a value at top level and still have one per domain:

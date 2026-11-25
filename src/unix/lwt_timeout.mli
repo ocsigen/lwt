@@ -7,7 +7,7 @@
     [Lwt_main.run] runs its action. Each domain has its own timer wheel, so
     several domains can use this module at the same time. Starting a timeout
     on a domain other than the one that created it raises
-    [Invalid_argument]. *)
+    {!Lwt.Domain_crossing}. *)
 
 type t
 

@@ -3,9 +3,9 @@
 
 (* Jobs, signal handlers and child waiting go through the notification
    descriptor of the domain that initialized [Lwt_unix], so they belong to it,
-   and raise [Failure] elsewhere. What does not depend on the descriptor works
-   on any domain: a loop with timers, and creating and sending a notification,
-   the way to wake Lwt from another thread or domain. *)
+   and raise [Lwt.Domain_crossing] elsewhere. What does not depend on the
+   descriptor works on any domain: a loop with timers, and creating and sending
+   a notification, the way to wake Lwt from another thread or domain. *)
 
 let failures = ref 0
 
@@ -20,14 +20,7 @@ let check name b =
 let refused f =
   match f () with
   | _ -> false
-  | exception Failure m ->
-      let expected = "only available on the domain that initialized Lwt_unix" in
-      let rec contains i =
-        i + String.length expected <= String.length m
-        && (String.sub m i (String.length expected) = expected
-           || contains (i + 1))
-      in
-      contains 0
+  | exception Lwt.Domain_crossing -> true
   | exception _ -> false
 
 let () =

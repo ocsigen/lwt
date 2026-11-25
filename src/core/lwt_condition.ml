@@ -40,6 +40,8 @@ module Lwt_sequence = Lwt_sequence
 
 module Lwt_dls = Lwt_dls
 
+let check_owner = Lwt.Private.check_owner
+
 [@@@alert "+trespassing"]
 
 type 'a t = {waiters : 'a Lwt.u Lwt_sequence.t; owner : Lwt_dls.token}
@@ -47,16 +49,16 @@ type 'a t = {waiters : 'a Lwt.u Lwt_sequence.t; owner : Lwt_dls.token}
 let create () = {waiters = Lwt_sequence.create (); owner = Lwt_dls.self_token ()}
 
 let wait ?mutex cvar =
-  Lwt_dls.check_owner "Lwt_condition.wait" cvar.owner;
+  check_owner cvar.owner;
   let waiter = (Lwt.add_task_r [@ocaml.warning "-3"]) cvar.waiters in
   let () =
     match mutex with
     | Some m -> (
-      (* With another domain's mutex, [unlock] raises [Invalid_argument]. Cancel
-         the waiter just queued, which removes it, or it would swallow the next
-         signal. *)
+      (* With another domain's mutex, [unlock] raises [Lwt.Domain_crossing].
+         Cancel the waiter just queued, which removes it, or it would swallow
+         the next signal. *)
       try Lwt_mutex.unlock m
-      with Invalid_argument _ as exn -> Lwt.cancel waiter; Lwt.reraise exn)
+      with Lwt.Domain_crossing as exn -> Lwt.cancel waiter; Lwt.reraise exn)
     | None -> ()
   in
   Lwt.finalize
@@ -65,7 +67,7 @@ let wait ?mutex cvar =
        match mutex with Some m -> Lwt_mutex.lock m | None -> Lwt.return_unit)
 
 let signal cvar arg =
-  Lwt_dls.check_owner "Lwt_condition.signal" cvar.owner;
+  check_owner cvar.owner;
   try Lwt.wakeup_later (Lwt_sequence.take_l cvar.waiters) arg
   with Lwt_sequence.Empty -> ()
 
@@ -75,9 +77,9 @@ let take_all cvar =
   wakeners
 
 let broadcast cvar arg =
-  Lwt_dls.check_owner "Lwt_condition.broadcast" cvar.owner;
+  check_owner cvar.owner;
   List.iter (fun wakener -> Lwt.wakeup_later wakener arg) (take_all cvar)
 
 let broadcast_exn cvar exn =
-  Lwt_dls.check_owner "Lwt_condition.broadcast_exn" cvar.owner;
+  check_owner cvar.owner;
   List.iter (fun wakener -> Lwt.wakeup_later_exn wakener exn) (take_all cvar)

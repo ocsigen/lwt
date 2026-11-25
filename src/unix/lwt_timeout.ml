@@ -62,11 +62,7 @@ let wheel : wheel Lwt_dls.t =
     {count = 0; buckets = [||]; curr = 0; stopped = true})
 
 let[@inline] self_wheel () = Lwt_dls.get wheel
-
-let[@inline never] not_our_wheel name =
-  invalid_arg (name ^ ": this timeout belongs to another domain")
-
-let[@inline] check_owner name w x = if x.owner != w then not_our_wheel name
+let[@inline] check_owner w x = if x.owner != w then raise Lwt.Domain_crossing
 
 let size w l =
   let len = Array.length w.buckets in
@@ -107,7 +103,7 @@ let rec loop w =
 
 let start x =
   let w = self_wheel () in
-  check_owner "Lwt_timeout.start" w x;
+  check_owner w x;
   let in_list = lst_in_list x in
   let slot = (w.curr + x.delay) mod Array.length w.buckets in
   lst_remove x;
@@ -125,7 +121,7 @@ let create delay action =
   size w delay; x
 
 let stop x =
-  check_owner "Lwt_timeout.stop" (self_wheel ()) x;
+  check_owner (self_wheel ()) x;
   if lst_in_list x
   then begin
     lst_remove x;
@@ -135,7 +131,7 @@ let stop x =
 let change x delay =
   if delay < 1 then invalid_arg "Lwt_timeout.change";
   let w = self_wheel () in
-  check_owner "Lwt_timeout.change" w x;
+  check_owner w x;
   x.delay <- delay;
   size w delay;
   if lst_in_list x then start x

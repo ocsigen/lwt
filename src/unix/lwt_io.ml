@@ -14,6 +14,8 @@ open Lwt.Infix
 
 module Lwt_dls = Lwt_dls
 
+let check_owner = Lwt.Private.check_owner
+
 [@@@alert "+trespassing"]
 
 exception Channel_closed of string
@@ -304,7 +306,7 @@ let unlock : type m. m channel -> unit =
 
 (* Wrap primitives into atomic io operations: *)
 let primitive f wrapper =
-  Lwt_dls.check_owner "Lwt_io channel" wrapper.channel.owner;
+  check_owner wrapper.channel.owner;
   match wrapper.state with
   | Idle ->
       wrapper.state <- Busy_primitive;
@@ -331,7 +333,7 @@ let primitive f wrapper =
 
 (* Wrap a sequence of io operations into an atomic operation: *)
 let atomic f wrapper =
-  Lwt_dls.check_owner "Lwt_io channel" wrapper.channel.owner;
+  check_owner wrapper.channel.owner;
   match wrapper.state with
   | Idle ->
       let tmp_wrapper =
@@ -374,7 +376,7 @@ let atomic f wrapper =
   | Invalid -> Lwt.fail (invalid_channel wrapper.channel)
 
 let rec abort wrapper =
-  Lwt_dls.check_owner "Lwt_io.abort" wrapper.channel.owner;
+  check_owner wrapper.channel.owner;
   match wrapper.state with
   | Busy_atomic tmp_wrapper ->
       (* Close the depest opened wrapper: *)
@@ -1083,7 +1085,7 @@ end
 
 let read_char wrapper =
   let channel = wrapper.channel in
-  Lwt_dls.check_owner "Lwt_io channel" channel.owner;
+  check_owner channel.owner;
   let ptr = channel.ptr in
   (* Speed-up in case a character is available in the buffer. It
      increases performances by 10x. *)
@@ -1096,7 +1098,7 @@ let read_char wrapper =
 
 let read_char_opt wrapper =
   let channel = wrapper.channel in
-  Lwt_dls.check_owner "Lwt_io channel" channel.owner;
+  check_owner channel.owner;
   let ptr = channel.ptr in
   if wrapper.state = Idle && ptr < channel.max
   then begin
@@ -1128,7 +1130,7 @@ let flush oc = primitive Primitives.flush oc
 
 let write_char wrapper x =
   let channel = wrapper.channel in
-  Lwt_dls.check_owner "Lwt_io channel" channel.owner;
+  check_owner channel.owner;
   let ptr = channel.ptr in
   if wrapper.state = Idle && ptr < channel.max
   then begin

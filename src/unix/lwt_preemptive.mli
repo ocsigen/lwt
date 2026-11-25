@@ -10,7 +10,8 @@
 
     {!detach} hands its result back through Lwt's notification descriptor,
     read by the domain that initialized {!Lwt_unix}. So {!detach}, {!init} and
-    {!set_bounds} belong to that domain, and raise [Failure] elsewhere.
+    {!set_bounds} belong to that domain, and raise {!Lwt.Domain_crossing}
+    elsewhere.
     {!run_in_main} and {!run_in_main_dont_wait} may be called from any thread
     and any domain: the function runs on the domain that initialized
     {!Lwt_unix}, and {!run_in_main} blocks its caller until the loop of that
