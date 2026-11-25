@@ -557,18 +557,36 @@ static void init_notifications(void) {
       (intnat *)lwt_unix_malloc(notification_count * sizeof(intnat));
 }
 
-static void resize_notifications(void) {
-  long new_notification_count = notification_count * 2;
-  intnat *new_notifications =
-      (intnat *)lwt_unix_malloc(new_notification_count * sizeof(intnat));
-  intnat *old_notifications = notifications;
-  memcpy((void *)new_notifications, (void *)old_notifications,
-         notification_count * sizeof(intnat));
-  /* The new buffer is in place before the old one is freed: a fork in between
-     must not leave the child a freed buffer. */
-  notifications = new_notifications;
-  notification_count = new_notification_count;
-  free(old_notifications);
+/* Grows the full buffer. Called with [notification_mutex] held, and returns
+   with it held and room in the buffer. The mutex is released around malloc
+   and free, and is never held across them: a signal handler may wait for the
+   mutex on a thread that it interrupted inside malloc, and that thread holds
+   the allocator's lock.
+
+   While the mutex is released, another sender may grow the buffer, and the
+   loop may empty it. So the state is checked again each time the mutex is
+   taken back. Returns the buffer that the caller must free once it has
+   released the mutex, or NULL. */
+static intnat *grow_notifications(void) {
+  intnat *spare = NULL;
+  while (notification_index == notification_count) {
+    long count = notification_count;
+    intnat *bigger;
+    lwt_unix_mutex_unlock(&notification_mutex);
+    free(spare);
+    bigger = (intnat *)lwt_unix_malloc(count * 2 * sizeof(intnat));
+    lwt_unix_mutex_lock(&notification_mutex);
+    if (notification_count == count && notification_index == count) {
+      memcpy((void *)bigger, (void *)notifications, count * sizeof(intnat));
+      spare = notifications;
+      notifications = bigger;
+      notification_count = count * 2;
+    } else {
+      /* Another sender grew the buffer, or the loop emptied it. */
+      spare = bigger;
+    }
+  }
+  return spare;
 }
 
 /* Sends [id]. Returns 0, or the error of the write that wakes the main thread,
@@ -586,6 +604,7 @@ static void resize_notifications(void) {
 static int send_notification(intnat id, int signum) {
   int ret;
   int error = 0;
+  intnat *spare = NULL;
 #if !defined(LWT_ON_WINDOWS)
   sigset_t new_mask;
   sigset_t old_mask;
@@ -593,17 +612,19 @@ static int send_notification(intnat id, int signum) {
   pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
 #endif
   lwt_unix_mutex_lock(&notification_mutex);
+  if (notification_index > 0 && notification_index == notification_count) {
+    /* The buffer is full, and so a notification is already pending. */
+    if (signum >= 0) {
+      signal_overflow[signum] = 1;
+      signal_overflow_id[signum] = id;
+      goto done;
+    }
+    /* This may release the mutex, so decide about the wake-up only after. */
+    spare = grow_notifications();
+  }
   if (notification_index > 0) {
     /* There is already a pending notification in the buffer, no
        need to signal the main thread. */
-    if (notification_index == notification_count) {
-      if (signum >= 0) {
-        signal_overflow[signum] = 1;
-        signal_overflow_id[signum] = id;
-        goto done;
-      }
-      resize_notifications();
-    }
     notifications[notification_index++] = id;
   } else {
     /* There is none, notify the main thread. */
@@ -624,6 +645,8 @@ done:
 #if !defined(LWT_ON_WINDOWS)
   pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 #endif
+  /* Not even free(NULL) on the signal handler's path. */
+  if (spare != NULL) free(spare);
   return error;
 }
 

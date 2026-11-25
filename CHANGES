@@ -55,7 +55,9 @@
     loop delivers it the next time it reads its notifications. A failed
     wake-up write raised an OCaml exception from the handler. It is now ignored
     there. Several deliveries of one signal while the buffer is full now merge
-    into one, as pending signals do.
+    into one, as pending signals do. The buffer now grows with its lock
+    released, so that the handler, which takes that lock, no longer waits for
+    a thread that is itself waiting for malloc.
 
 ===== 6.1.3 =====
 

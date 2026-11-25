@@ -25,7 +25,8 @@
    domain_shared_resolved
    notification_reentry
    fork_pending_notification
-   signal_full_buffer)))
+   signal_full_buffer
+   notification_growth)))
 
 (executable
  (name dummy)
@@ -221,6 +222,17 @@
  (name signal_full_buffer)
  (package lwt)
  (modules signal_full_buffer)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; Job completions on many worker threads at once while the notification buffer
+; is full. Uses a FIFO, hence not on Windows.
+
+(test
+ (name notification_growth)
+ (package lwt)
+ (modules notification_growth)
  (enabled_if
   (<> %{os_type} "Win32"))
  (libraries lwt.unix))
