@@ -137,7 +137,7 @@ let run p =
      every later [Lwt_main.run] reports a nested call. Hence the call inside
      the [match]. *)
   match
-    Lwt_unix.install_sigchld_handler ();
+    (Lwt_unix.install_sigchld_handler [@alert "-trespassing"]) ();
     run p
   with
   | result -> finished (); result

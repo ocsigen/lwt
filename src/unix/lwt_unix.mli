@@ -1552,6 +1552,7 @@ val write_bigarray :
 val write_job_count_runtimte_event : unit -> unit
 
 val install_sigchld_handler : unit -> unit
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
 (** Installs the process-wide SIGCHLD handler, once per process. Safe to call
     concurrently. Does nothing on a domain other than the one that initialized
     this module. For internal use: [Lwt_main.run] and {!waitpid} call it. *)

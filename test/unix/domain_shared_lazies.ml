@@ -33,7 +33,7 @@ let at_once f =
 let () =
   let installed =
     at_once (fun () ->
-      match Lwt_unix.install_sigchld_handler () with
+      match (Lwt_unix.install_sigchld_handler [@alert "-trespassing"]) () with
       | () -> true
       | exception e ->
           Printf.eprintf "install_sigchld_handler raised %s\n"
