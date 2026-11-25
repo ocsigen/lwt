@@ -27,7 +27,8 @@
    fork_pending_notification
    signal_full_buffer
    notification_growth
-   notification_batch)))
+   notification_batch
+   signal_action_raises)))
 
 (executable
  (name dummy)
@@ -244,4 +245,15 @@
  (name notification_batch)
  (package lwt)
  (modules notification_batch)
+ (libraries lwt.unix))
+
+; A signal handler that raises does not keep the next ones from running. Uses
+; SIGUSR1, hence not on Windows.
+
+(test
+ (name signal_action_raises)
+ (package lwt)
+ (modules signal_action_raises)
+ (enabled_if
+  (<> %{os_type} "Win32"))
  (libraries lwt.unix))
