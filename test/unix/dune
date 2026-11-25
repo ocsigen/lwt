@@ -23,7 +23,8 @@
    domain_two_loops
    domain_upstream_scenarios
    domain_shared_resolved
-   notification_reentry)))
+   notification_reentry
+   notification_batch)))
 
 (executable
  (name dummy)
@@ -199,3 +200,11 @@
  (name notification_reentry)
  (libraries lwt lwt.unix threads)
  (modules notification_reentry))
+
+; A notification handler that raises does not lose the rest of its batch.
+
+(test
+ (name notification_batch)
+ (package lwt)
+ (modules notification_batch)
+ (libraries lwt.unix))
