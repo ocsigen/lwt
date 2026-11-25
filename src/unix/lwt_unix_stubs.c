@@ -1084,7 +1084,10 @@ static void execute_job(lwt_unix_job job) {
   if (job->fast == 0) {
     lwt_unix_mutex_unlock(&job->mutex);
     DEBUG("notifying the main thread");
-    lwt_unix_send_notification(job->notification_id);
+    /* Not lwt_unix_send_notification, which raises on error: this thread
+       does not hold the runtime lock, and raising here is not allowed. A
+       failed wake-up write is ignored, as in the signal handler. */
+    (void)send_notification(job->notification_id, -1);
   } else {
     lwt_unix_mutex_unlock(&job->mutex);
     DEBUG("not notifying the main thread");

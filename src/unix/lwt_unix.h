@@ -95,7 +95,9 @@ void lwt_unix_not_available(char const *feature) Noreturn;
    | Notifications                                                   |
    +-----------------------------------------------------------------+ */
 
-/* Sends a notification for the given id. */
+/* Sends a notification for the given id. Raises an OCaml exception if the
+   write that wakes the loop fails, so the caller must hold the runtime lock.
+   In particular, a thread that does not run OCaml code may not call it. */
 void lwt_unix_send_notification(intnat id);
 
 /* +-----------------------------------------------------------------+
