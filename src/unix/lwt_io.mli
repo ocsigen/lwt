@@ -38,17 +38,21 @@ exception Channel_closed of string
 type 'mode channel
 (** Type of buffered byte channels.
 
-    A channel belongs to the domain that created it, and using it from another
-    domain raises {!Lwt.Domain_crossing}. {!stdout}, {!stderr}, {!stdin},
-    {!null} and {!zero} are created when this module is initialized, so they
-    belong to the domain that initialized it.
+    A channel belongs to the domain that created it. Therefore using it from
+    another domain raises {!Lwt.Domain_crossing}.
+
+    The channels {!stdout}, {!stderr}, {!stdin}, {!null} and {!zero} are
+    created when this module is initialized. Therefore they belong to the
+    domain that initialized it.
 
     For now, another domain can only make channels over descriptors that need
-    no {!Lwt_unix} job, as {!Lwt_unix.file_descr} explains: in non-blocking
-    mode, and known to be, for example
-    [of_fd (Lwt_unix.of_unix_file_descr ~blocking:false fd)]. {!of_unix_fd} and
-    {!open_file} do not qualify, and closing a channel uses a job too, so
-    {!close} fails on such a domain. *)
+    no {!Lwt_unix} job. {!Lwt_unix.file_descr} explains which descriptors
+    these are. For example, this makes such a channel:
+    [of_fd (Lwt_unix.of_unix_file_descr ~blocking:false fd)].
+
+    {!of_unix_fd} and {!open_file} make channels that need jobs. Except on
+    Windows, closing a channel also uses a job, so {!close} fails on another
+    domain. *)
 
 type input
 (** Input mode *)
