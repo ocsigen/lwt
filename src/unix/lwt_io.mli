@@ -204,6 +204,11 @@ val flush : output_channel -> unit Lwt.t
 
 val flush_all : unit -> unit Lwt.t
 (** [flush_all ()] flushes the output channels opened by the calling domain.
+
+    Unlike [Stdlib.flush_all], it does not flush the channels of other
+    domains. Those channels belong to their domains, and only their own domain
+    can flush them.
+
     Each domain flushes its own channels when it exits. *)
 
 val buffer_size : 'a channel -> int
