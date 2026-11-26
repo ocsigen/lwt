@@ -33,6 +33,7 @@
    domain_notifications
    domain_signals
    domain_signal_forwarding
+   domain_gc
    domain_exit_main
    domain_emfile)))
 
@@ -43,6 +44,17 @@
  (name domain_exit_main)
  (package lwt)
  (modules domain_exit_main)
+ (libraries lwt.unix threads))
+
+; Lwt_gc's deferred function runs on the loop that registered it, and one whose
+; domain has gone is dropped. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_gc)
+ (package lwt)
+ (modules domain_gc)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix threads))
 
 ; A signal reaches every loop that subscribed to it, each on its own channel.
