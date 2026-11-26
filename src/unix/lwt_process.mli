@@ -7,7 +7,11 @@
 
     On Unix, processes are spawned with [posix_spawnp] when available
     (and when [?cwd] is [None]); otherwise they use {!Lwt_unix.fork}.
-    Windows uses [CreateProcess]. *)
+    They also use it for a script without a [#!] line, which
+    [posix_spawnp] cannot run. Windows uses [CreateProcess].
+
+    {!Lwt_unix.fork} fails once any domain has been spawned. Spawning
+    without it, and waiting for a process, work on any domain. *)
 
 type command = string * string array
 (** A command. The first field is the name of the executable and
