@@ -4,9 +4,10 @@
 (* [Lwt_unix.file_descr] and [Lwt_io.channel] belong to the domain that
    created them. The check is where every operation already passes:
    [check_descriptor] for descriptors, [primitive] and [atomic] for channels,
-   plus the single-character fast paths, which bypass [primitive]. Also
-   checks that another domain can do buffered I/O on a non-blocking descriptor
-   of its own. *)
+   plus the single-character fast paths, which bypass [primitive]. The
+   standard channels stand for one channel per domain
+   (test/unix/domain_std_channels.ml), so they work everywhere. Needs a second
+   domain, hence OCaml 5. *)
 
 let failures = ref 0
 
@@ -77,13 +78,12 @@ let () =
     (on_other_domain (fun () -> refused (fun () -> Lwt_io.write_char oc 'x')));
   check "read_char on a foreign channel is refused"
     (on_other_domain (fun () -> refused (fun () -> Lwt_io.read_char ic)));
-  (* The consequence for the standard channels. *)
-  check "Lwt_io.stdout belongs to the domain that initialized Lwt_io"
+  (* The standard channels are the exception: one per domain. *)
+  check "Lwt_io.stdout is usable from another domain"
     (on_other_domain (fun () ->
-       refused (fun () -> Lwt_io.write Lwt_io.stdout "")));
-  (* The other domain makes its own channel, on a descriptor of its own in
-     non-blocking mode: a blocking descriptor needs jobs, which only run on the
-     domain that initialized Lwt_unix. *)
+       not (refused (fun () -> Lwt_io.write Lwt_io.stdout ""))));
+  (* The other domain makes its own channel, on its own descriptor over the
+     same file. *)
   check "another domain does its own buffered I/O"
     (on_other_domain (fun () ->
        let path' = Filename.temp_file "lwt-io-affinity-theirs" ".txt" in

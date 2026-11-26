@@ -32,6 +32,7 @@
    signal_handler_id
    domain_notifications
    domain_signals
+   domain_std_channels
    domain_signal_forwarding
    domain_gc
    domain_soak
@@ -262,6 +263,20 @@
  (name domain_emfile)
  (package lwt)
  (modules domain_emfile)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; The standard channels of Lwt_io and Lwt_fmt from every loop: one per domain,
+; over the shared standard descriptors. Needs other domains, hence OCaml 5.
+; Uses Unix.alarm, hence not on Windows.
+
+(test
+ (name domain_std_channels)
+ (package lwt)
+ (modules domain_std_channels)
  (build_if
   (>= %{ocaml_version} "5.0"))
  (enabled_if

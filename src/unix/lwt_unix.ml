@@ -523,6 +523,12 @@ type file_descr =
        be readable or writable adds an event to the engine of that domain, and
        its hooks run there. Checked in [check_descriptor], which every
        operation calls. *)
+  ; shared : bool
+    (* Set for [stdin], [stdout] and [stderr], which every loop needs. They are
+       blocking, so another domain does not wait for them to be ready: reads
+       and writes are jobs of that domain, and the other operations run at
+       once, as they would without Lwt. Only the domain that initialized
+       Lwt_unix closes or aborts them. *)
   }
 
 external is_socket : Unix.file_descr -> bool = "lwt_unix_is_socket" "noalloc"
@@ -573,13 +579,17 @@ let mk_ch ?blocking ?(set_flags = true) fd =
   ; event_writable = None
   ; hooks_readable = Lwt_sequence.create ()
   ; hooks_writable = Lwt_sequence.create ()
+  ; shared = false
   ; owner = Lwt_dls.self_token () }
 
 (* The operations that force [ch.blocking] before reaching [check_descriptor]
    call this first: on another domain, forcing [ch.blocking] could run
    [guess_blocking] there, and the lazy value would keep the result for the
-   domain that owns the descriptor. *)
-let[@inline] check_descriptor_owner ch = check_owner ch.owner
+   domain that owns the descriptor. A shared standard descriptor passes: its
+   mode is blocking, and known from the start. *)
+let[@inline] check_descriptor_owner ch =
+  if (ch.owner :> int) <> (Lwt_dls.self_token () :> int) && not ch.shared
+  then raise Lwt.Domain_crossing
 
 let check_descriptor ch =
   check_descriptor_owner ch;
@@ -592,9 +602,18 @@ let state ch = ch.state
 let blocking ch = check_descriptor ch; Lazy.force ch.blocking
 
 let set_blocking ?(set_flags = true) ch blocking =
+  (* Strictly the owner: the mode of a shared standard descriptor applies to
+     the whole process, so only the domain that initialized Lwt_unix may change
+     it. *)
+  check_owner ch.owner;
   check_descriptor ch;
   ch.set_flags <- set_flags;
-  ch.blocking <- is_blocking ~blocking ~set_flags ch.fd
+  let blocking = is_blocking ~blocking ~set_flags ch.fd in
+  (* On a shared descriptor, forced before it is stored: another domain may
+     read [ch.blocking] at any time, and a lazy value forced by two domains at
+     once fails. *)
+  if ch.shared then ignore (Lazy.force blocking);
+  ch.blocking <- blocking
 
 external unix_stub_readable : Unix.file_descr -> bool = "lwt_unix_readable"
 external unix_stub_writable : Unix.file_descr -> bool = "lwt_unix_writable"
@@ -646,9 +665,18 @@ let abort ch e =
 
 let unix_file_descr ch = ch.fd
 let of_unix_file_descr = mk_ch
-let stdin = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stdin
-let stdout = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stdout
-let stderr = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stderr
+
+(* Shared by every domain (see [shared]). Their blocking mode is settled here,
+   once, by forcing it, since a lazy value forced by two domains at once
+   fails. *)
+let standard fd =
+  let ch = {(mk_ch ~set_flags:false ~blocking:true fd) with shared = true} in
+  ignore (Lazy.force ch.blocking);
+  ch
+
+let stdin = standard Unix.stdin
+let stdout = standard Unix.stdout
+let stderr = standard Unix.stderr
 
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |
@@ -743,6 +771,13 @@ let rec retry_syscall node event ch wakener action =
 let dummy = Lwt_sequence.add_r ignore (Lwt_sequence.create ())
 
 let register_action event ch action =
+  (* Another domain gets here only with a shared standard descriptor, since
+     any other descriptor fails [check_descriptor]. This happens when the
+     domain that initialized Lwt_unix made the descriptor non-blocking, or when
+     a call has to be retried, such as an [accept] with no connection yet.
+     Waiting would change the shared record and register an event that the
+     owner's loop runs. Only the owner can wait for it. *)
+  if ch.owner <> Lwt_dls.self_token () then raise Lwt.Domain_crossing;
   let waiter, wakener = Lwt.task () in
   match event with
   | Read ->
@@ -765,17 +800,25 @@ let register_action event ch action =
       waiter
 
 (* Wraps a system call *)
-let wrap_syscall event ch action =
+let rec wrap_syscall event ch action =
   check_descriptor ch;
   Lazy.force ch.blocking >>= fun blocking ->
   try
+    (* On a domain other than its owner, a shared standard descriptor is not
+       waited for: that would register an event in the owner's engine. *)
     if
       (not blocking)
       || (event = Read && unix_readable ch.fd)
       || (event = Write && unix_writable ch.fd)
+      || ch.owner <> Lwt_dls.self_token ()
     then Lwt.return (action ())
     else register_action event ch action
   with
+  | Unix.Unix_error (Unix.EINTR, _, _) when ch.owner <> Lwt_dls.self_token () ->
+      (* Interrupted by a signal, on a domain other than the owner, which
+         cannot wait for the descriptor (see [register_action]): nothing
+         happened, so try again. *)
+      wrap_syscall event ch action
   | Retry
   | Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
   | Sys_blocked_io ->
@@ -836,7 +879,12 @@ type bigarray =
 let wait_read ch =
   Lwt.catch
     (fun () ->
-       if readable ch then Lwt.return_unit else register_action Read ch ignore)
+       (* A shared standard descriptor on a domain other than its owner: no
+          event in the owner's engine. The job that follows waits in its worker
+          thread. *)
+       if readable ch || ch.owner <> Lwt_dls.self_token ()
+       then Lwt.return_unit
+       else register_action Read ch ignore)
     Lwt.reraise
 
 external stub_read :
@@ -928,7 +976,10 @@ let read_bigarray function_name fd buf pos len =
 let wait_write ch =
   Lwt.catch
     (fun () ->
-       if writable ch then Lwt.return_unit else register_action Write ch ignore)
+       (* As in [wait_read]. *)
+       if writable ch || ch.owner <> Lwt_dls.self_token ()
+       then Lwt.return_unit
+       else register_action Write ch ignore)
     Lwt.reraise
 
 external stub_write :
@@ -1504,22 +1555,43 @@ let dup ?cloexec ch =
   ; event_writable = None
   ; hooks_readable = Lwt_sequence.create ()
   ; hooks_writable = Lwt_sequence.create ()
-  ; (* [check_descriptor] above checked that [ch] belongs to this domain, and
-       so does its duplicate. *)
-    owner = ch.owner }
+  ; (* We own [ch], or it is a shared standard descriptor: the duplicate is
+       ours. *)
+    owner = Lwt_dls.self_token ()
+  ; shared = false }
 
 let dup2 ?cloexec ch1 ch2 =
   check_descriptor ch1;
-  check_descriptor_owner ch2;
+  (* Strictly the owner of [ch2], as for [set_blocking]: redirecting a shared
+     standard descriptor changes it for every domain. *)
+  check_owner ch2.owner;
   Unix.dup2 ?cloexec ch1.fd ch2.fd;
   ch2.set_flags <- ch1.set_flags;
-  ch2.blocking <-
-    (if ch2.set_flags
-     then
-       lazy
-         ( Lazy.force ch1.blocking >>= function
-           | blocking -> Lazy.force (is_blocking ~blocking ch2.fd) )
-     else ch1.blocking)
+  let blocking =
+    if ch2.set_flags
+    then
+      lazy
+        ( Lazy.force ch1.blocking >>= function
+          | blocking -> Lazy.force (is_blocking ~blocking ch2.fd) )
+    else ch1.blocking
+  in
+  (* The mode of a shared standard descriptor is settled at once, on this
+     domain, before it is stored: another domain may read [ch2.blocking] at any
+     time, and a lazy value forced by two domains at once fails. [is_blocking]
+     guesses the mode with a job, which would still be pending, so the guess
+     runs here, synchronously. *)
+  let blocking =
+    if not ch2.shared
+    then blocking
+    else if Sys.win32
+    then (
+      ignore (Lazy.force blocking);
+      blocking)
+    else
+      Lazy.from_val
+        (run_job ~async_method:Async_none (guess_blocking_job ch2.fd))
+  in
+  ch2.blocking <- blocking
 
 let set_close_on_exec ch =
   check_descriptor ch;

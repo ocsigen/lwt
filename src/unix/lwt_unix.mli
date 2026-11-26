@@ -108,8 +108,12 @@ type file_descr
     A {b file descriptor} belongs to the domain that created it. Using it from
     another domain raises {!Lwt.Domain_crossing}.
 
-    {!stdin}, {!stdout} and {!stderr} are created when this module is
-    initialized. They belong to the domain that initialized this module. *)
+    {!stdin}, {!stdout} and {!stderr} can be used from any domain. Only the
+    domain that initialized this module may change their mode ({!set_blocking})
+    or what they name ({!dup2}), since that changes them for every domain.
+
+    If that domain makes one of them non-blocking, another domain that would
+    have to wait for it raises {!Lwt.Domain_crossing}. *)
 
 (** State of a {b file descriptor} *)
 type state =
@@ -277,7 +281,16 @@ val system : string -> process_status Lwt.t
 (** {2 Basic file input/output} *)
 
 val stdin : file_descr
-(** The {b file descriptor} for standard input. *)
+(** The {b file descriptor} for standard input.
+
+    Unlike other descriptors, the three standard ones can be used from any
+    domain. They are blocking, so a read or a write from another domain is a
+    job of that domain. Other operations run at once, as they would without
+    Lwt: one that blocks, such as {!recv} on a socket with no data, blocks the
+    loop of the calling domain. On another domain, {!wait_read} and
+    {!wait_write} return at once.
+
+    Only the domain that initialized this module may close or abort them. *)
 
 val stdout : file_descr
 (** The {b file descriptor} for standard output. *)
