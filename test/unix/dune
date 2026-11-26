@@ -34,6 +34,7 @@
    domain_signals
    domain_signal_forwarding
    domain_gc
+   domain_soak
    domain_exit_main
    domain_emfile)))
 
@@ -45,6 +46,20 @@
  (package lwt)
  (modules domain_exit_main)
  (libraries lwt.unix threads))
+
+; Domains spawned and let die in a loop, checking that descriptors and threads
+; do not accumulate. Short by default, LWT_SOAK_SECONDS to lengthen.
+; Uses signals and a Unix socket, hence not on Windows.
+
+(test
+ (name domain_soak)
+ (package lwt)
+ (modules domain_soak)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
 
 ; Lwt_gc's deferred function runs on the loop that registered it, and one whose
 ; domain has gone is dropped. Needs a second domain, hence OCaml 5.
