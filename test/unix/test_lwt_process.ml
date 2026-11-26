@@ -100,21 +100,30 @@ let process_suite cwd =
       (fun () ->
          Lwt_process.exec ?cwd ("./does-not-exist.exe", [|"does-not-exist.exe"|])
          >>= check_status ~status:(( = ) 127))
-  ; test "failed spawn closes moved fds"
+  ; (* Sequential: a child forked meanwhile by a concurrent test holds a copy of
+       the pipe's write end until it calls exec, and the read below would not
+       see the end of file. *)
+    test "failed spawn closes moved fds" ~sequential:true
       ~only_if:(fun () -> not Sys.win32)
       (fun () ->
          let r, w = Unix.pipe ~cloexec:true () in
-         Unix.set_nonblock r;
          Lwt_process.exec ?cwd ~stdout:(`FD_move w)
            ("./does-not-exist.exe", [|"does-not-exist.exe"|])
          >>= fun status ->
-         (* End of file only once every write end is closed; EAGAIN otherwise. *)
-         let closed =
-           try Unix.read r (Bytes.create 1) 0 1 = 0
-           with Unix.Unix_error (Unix.EAGAIN, _, _) -> false
-         in
-         Unix.close r;
-         Lwt.return (status = Unix.WEXITED 127 && closed)) ]
+         (* End of file once every write end is closed. On macOS and the BSDs,
+            the child that posix_spawnp created before exec failed may still
+            hold a copy for a moment after posix_spawnp returns, since it is
+            not waited for. So the test waits for the end of file. If the
+            parent kept its copy, it never comes, and the timeout fails the
+            test. *)
+         let r = Lwt_unix.of_unix_file_descr ~blocking:false r in
+         Lwt.pick
+           [ (Lwt_unix.read r (Bytes.create 1) 0 1 >|= fun n -> n = 0)
+           ; (Lwt_unix.sleep 5. >|= fun () -> false) ]
+         >>= fun closed ->
+         Lwt_unix.close r >>= fun () ->
+         if not closed then prerr_string "the write end stayed open; ";
+         check_status ~status:(( = ) 127) status >|= fun ok -> ok && closed) ]
 
 let suite_cwd = suite "lwt_process(cwd)" (process_suite (Some "."))
 let suite = suite "lwt_process" (process_suite None)

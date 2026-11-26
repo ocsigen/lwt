@@ -71,7 +71,11 @@ let test_mincore buff_len offset n_states =
   let size = buff_len in
   let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
   let states = Array.make n_states false in
-  let () = Lwt_bytes.mincore buffer offset states in
+  (* Lwt_sys.have `mincore is true on OpenBSD, which has no mincore. *)
+  let () =
+    try Lwt_bytes.mincore buffer offset states
+    with Lwt_sys.Not_available _ -> raise Skip
+  in
   Lwt.return_unit
 
 let test_wait_mincore buff_len offset =
@@ -84,7 +88,8 @@ let test_wait_mincore buff_len offset =
   let shared = false in
   let size = buff_len in
   let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
-  Lwt_bytes.wait_mincore buffer offset
+  try Lwt_bytes.wait_mincore buffer offset
+  with Lwt_sys.Not_available _ -> raise Skip
 
 let suite =
   suite "lwt_bytes"
