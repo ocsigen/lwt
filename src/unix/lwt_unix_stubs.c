@@ -495,17 +495,41 @@ CAMLprim value lwt_unix_socketpair_stub(value cloexec, value domain, value type,
    | Notifications                                                   |
    +-----------------------------------------------------------------+ */
 
-/* The mutex used to send and receive notifications. */
-static lwt_unix_mutex notification_mutex;
+/* +-----------------------------------------------------------------+
+   | Notification channels                                           |
+   +-----------------------------------------------------------------+ */
 
-/* All pending notifications. */
-static intnat *notifications = NULL;
+/* One channel per Lwt loop, holding the mode, the descriptors, the send and
+   receive functions, the mutex and the buffer.
 
-/* The size of the notification buffer. */
-static long notification_count = 0;
+   The notification id encodes the channel's index, since notifications are
+   sent from pool threads without the runtime lock and from signal handlers,
+   which cannot tell which domain they are on. The table has a fixed size: a
+   new loop takes the first free slot, so the slots of retired channels are
+   reused. A generation goes with the index, so that an id of a loop that has
+   gone is dropped. */
 
-/* The index to the next available cell in the notification buffer. */
-static long notification_index = 0;
+/* Must fit in LWT_NOTIFICATION_INDEX_BITS below. */
+#define LWT_NOTIFICATION_CHANNELS 256
+
+/* The layout of an id, derived from the word size. An OCaml int has one bit
+   fewer than the word. Index and generation have 8 bits each, and the local
+   counter takes the rest: 47 bits on a 64-bit platform, 15 on a 32-bit one,
+   which still allows 32768 notifications alive at once on each loop. Beyond
+   that, make_notification fails. */
+#define LWT_NOTIFICATION_ID_BITS ((int)(sizeof(intnat) * 8 - 1))
+#define LWT_NOTIFICATION_INDEX_BITS 8
+#define LWT_NOTIFICATION_GEN_BITS 8
+#define LWT_NOTIFICATION_LOCAL_BITS                                     \
+  (LWT_NOTIFICATION_ID_BITS - LWT_NOTIFICATION_INDEX_BITS -             \
+   LWT_NOTIFICATION_GEN_BITS)
+#define LWT_NOTIFICATION_LOCAL_MASK ((((intnat)1) << LWT_NOTIFICATION_LOCAL_BITS) - 1)
+#define LWT_NOTIFICATION_GEN_MASK ((((intnat)1) << LWT_NOTIFICATION_GEN_BITS) - 1)
+#define LWT_NOTIFICATION_INDEX(id) \
+  ((int)(((id) >> (LWT_NOTIFICATION_LOCAL_BITS + LWT_NOTIFICATION_GEN_BITS)) & \
+         (LWT_NOTIFICATION_CHANNELS - 1)))
+#define LWT_NOTIFICATION_GEN(id) \
+  ((unsigned)(((id) >> LWT_NOTIFICATION_LOCAL_BITS) & LWT_NOTIFICATION_GEN_MASK))
 
 #ifndef NSIG
 #define NSIG 64
@@ -514,19 +538,8 @@ static long notification_index = 0;
 /* Notifications id for each monitored signal. */
 static intnat signal_notifications[NSIG];
 
-/* Signals delivered while the buffer was full, which the signal handler may not
-   grow, with the notification id each was sent to: recv_notifications adds
-   these notifications. The id is the one of the signal's arrival, so that a
-   handler installed meanwhile does not receive it. Under
-   [notification_mutex]. */
-static int signal_overflow[NSIG];
-static intnat signal_overflow_id[NSIG];
-
 /* The mode currently used for notifications. */
 enum notification_mode {
-  /* Not yet initialized. */
-  NOTIFICATION_MODE_NOT_INITIALIZED,
-
   /* Initialized but no mode defined. */
   NOTIFICATION_MODE_NONE,
 
@@ -540,47 +553,129 @@ enum notification_mode {
   NOTIFICATION_MODE_WINDOWS
 };
 
-/* The current notification mode. */
-static enum notification_mode notification_mode =
-    NOTIFICATION_MODE_NOT_INITIALIZED;
+struct notification_channel {
+  /* Protects the buffer and its index. Taken by senders, including a signal
+     handler, which is why every sender masks signals around it. */
+  lwt_unix_mutex mutex;
 
-/* Send one notification. */
-static int (*notification_send)(void);
+  /* Pending notification ids, and the next free cell. */
+  intnat *notifications;
+  long count;
+  long index;
 
-/* Read one notification. */
-static int (*notification_recv)(void);
+  enum notification_mode mode;
+  int (*send)(struct notification_channel *chan);
+  int (*recv)(struct notification_channel *chan);
 
-static void init_notifications(void) {
-  lwt_unix_mutex_init(&notification_mutex);
-  notification_count = 4096;
-  notifications =
-      (intnat *)lwt_unix_malloc(notification_count * sizeof(intnat));
+#if defined(LWT_ON_WINDOWS)
+  SOCKET socket_r, socket_w;
+#else
+  int fd;      /* eventfd */
+  int fds[2];  /* pipe */
+#endif
+
+  /* Bumped each time this slot is reused, so a stale id is recognizable. */
+  unsigned generation;
+
+  /* 0 when the slot is free. */
+  int in_use;
+
+  /* Signals that arrived while the buffer was full, each with the id it was
+     sent to. The handler may not grow the buffer, so it marks the signal here,
+     and recv_notifications adds its notification. The id is the one in force
+     when the signal arrived, so that a handler installed meanwhile does not
+     receive it. Protected by the mutex. */
+  int signal_overflow[NSIG];
+  intnat signal_overflow_id[NSIG];
+};
+
+static struct notification_channel
+    *notification_channels[LWT_NOTIFICATION_CHANNELS];
+
+/* Guards allocation and release of slots, never the send path. Initialized
+   statically where the platform allows it, so that two domains creating their
+   loop at once cannot find it half built. */
+#if defined(HAVE_PTHREAD)
+#define LWT_NOTIFICATION_MUTEX_IS_STATIC 1
+static lwt_unix_mutex notification_channels_mutex = PTHREAD_MUTEX_INITIALIZER;
+#else
+static lwt_unix_mutex notification_channels_mutex;
+#endif
+
+/* Builds the mutex where it has no static initializer (Windows). OCaml calls
+   this once, at module initialization, before any other domain exists. */
+CAMLprim value lwt_unix_init_notifications(value unit) {
+#if !defined(LWT_NOTIFICATION_MUTEX_IS_STATIC)
+  lwt_unix_mutex_init(&notification_channels_mutex);
+#endif
+  return Val_unit;
 }
 
-/* Grows the full buffer. Called with [notification_mutex] held, and returns
-   with it held and room in the buffer. The mutex is released around malloc
-   and free, and is never held across them: a signal handler may wait for the
-   mutex on a thread that it interrupted inside malloc, and that thread holds
-   the allocator's lock.
+/* The channel an id names, or NULL if it names none any more: an index out of
+   range, a freed slot, or a generation that has moved on. It runs in signal
+   handlers, so it reads the slot without the mutex, and the loop that owns the
+   channel may write the slot meanwhile. So the slot pointer, [in_use] and
+   [generation] are published with release stores and read with acquire
+   loads. */
+#if defined(__GNUC__) || defined(__clang__)
+#define LWT_LOAD_ACQUIRE(p) __atomic_load_n((p), __ATOMIC_ACQUIRE)
+#define LWT_STORE_RELEASE(p, v) __atomic_store_n((p), (v), __ATOMIC_RELEASE)
+#else
+/* Other compilers (MSVC) get plain accesses. Their targets, x86 and x64,
+   order these as acquire and release. */
+#define LWT_LOAD_ACQUIRE(p) (*(p))
+#define LWT_STORE_RELEASE(p, v) (*(p) = (v))
+#endif
 
-   While the mutex is released, another sender may grow the buffer, and the
-   loop may empty it. So the state is checked again each time the mutex is
-   taken back. Returns the buffer that the caller must free once it has
+static struct notification_channel *channel_of_id(intnat id) {
+  int i = LWT_NOTIFICATION_INDEX(id);
+  struct notification_channel *chan = LWT_LOAD_ACQUIRE(&notification_channels[i]);
+  if (chan == NULL || LWT_LOAD_ACQUIRE(&chan->in_use) == 0) return NULL;
+  if (LWT_LOAD_ACQUIRE(&chan->generation) != LWT_NOTIFICATION_GEN(id)) return NULL;
+  return chan;
+}
+
+/* Whether [chan] still is the channel that [id] names. Called with the
+   channel's mutex held: while the mutex was released, the loop may have
+   retired the channel, and another loop may have taken its slot. */
+static int channel_names(struct notification_channel *chan, intnat id) {
+  return LWT_LOAD_ACQUIRE(&chan->in_use) != 0 &&
+         LWT_LOAD_ACQUIRE(&chan->generation) == LWT_NOTIFICATION_GEN(id);
+}
+
+/* Grows the full buffer of [chan], for a notification of [id]. Called with
+   the channel's mutex held, and returns with it held. The mutex is released
+   around malloc and free, and is never held across them: a signal handler may
+   wait for the mutex on a thread that it interrupted inside malloc, and that
+   thread holds the allocator's lock.
+
+   While the mutex is released, another sender may grow the buffer, the loop
+   may empty it, and the loop may retire the channel. So the state is checked
+   again each time the mutex is taken back. Sets [*gone] if [chan] no longer
+   names [id], and the caller then drops the notification. Otherwise there is
+   room in the buffer. Returns the buffer that the caller must free once it has
    released the mutex, or NULL. */
-static intnat *grow_notifications(void) {
+static intnat *grow_notifications(struct notification_channel *chan, intnat id,
+                                  int *gone) {
   intnat *spare = NULL;
-  while (notification_index == notification_count) {
-    long count = notification_count;
+  *gone = 0;
+  while (chan->index == chan->count) {
+    long count = chan->count;
     intnat *bigger;
-    lwt_unix_mutex_unlock(&notification_mutex);
+    lwt_unix_mutex_unlock(&chan->mutex);
     free(spare);
     bigger = (intnat *)lwt_unix_malloc(count * 2 * sizeof(intnat));
-    lwt_unix_mutex_lock(&notification_mutex);
-    if (notification_count == count && notification_index == count) {
-      memcpy((void *)bigger, (void *)notifications, count * sizeof(intnat));
-      spare = notifications;
-      notifications = bigger;
-      notification_count = count * 2;
+    lwt_unix_mutex_lock(&chan->mutex);
+    if (!channel_names(chan, id)) {
+      *gone = 1;
+      return bigger;
+    }
+    if (chan->count == count && chan->index == count) {
+      memcpy((void *)bigger, (void *)chan->notifications,
+             count * sizeof(intnat));
+      spare = chan->notifications;
+      chan->notifications = bigger;
+      chan->count = count * 2;
     } else {
       /* Another sender grew the buffer, or the loop emptied it. */
       spare = bigger;
@@ -604,6 +699,7 @@ static intnat *grow_notifications(void) {
 static int send_notification(intnat id, int signum) {
   int ret;
   int error = 0;
+  struct notification_channel *chan;
   intnat *spare = NULL;
 #if !defined(LWT_ON_WINDOWS)
   sigset_t new_mask;
@@ -611,25 +707,46 @@ static int send_notification(intnat id, int signum) {
   sigfillset(&new_mask);
   pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
 #endif
-  lwt_unix_mutex_lock(&notification_mutex);
-  if (notification_index > 0 && notification_index == notification_count) {
+  chan = channel_of_id(id);
+  if (chan == NULL) {
+    /* The loop this id belonged to is gone: drop the notification. */
+#if !defined(LWT_ON_WINDOWS)
+    pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+#endif
+    return 0;
+  }
+  lwt_unix_mutex_lock(&chan->mutex);
+  /* Checked again under the mutex: the loop may have retired its channel since
+     the lookup. Retiring takes this mutex, so the transport stays open until we
+     release it. */
+  if (LWT_LOAD_ACQUIRE(&chan->in_use) == 0 ||
+      LWT_LOAD_ACQUIRE(&chan->generation) != LWT_NOTIFICATION_GEN(id)) {
+    lwt_unix_mutex_unlock(&chan->mutex);
+#if !defined(LWT_ON_WINDOWS)
+    pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+#endif
+    return 0;
+  }
+  if (chan->index > 0 && chan->index == chan->count) {
+    int gone;
     /* The buffer is full, and so a notification is already pending. */
     if (signum >= 0) {
-      signal_overflow[signum] = 1;
-      signal_overflow_id[signum] = id;
+      chan->signal_overflow[signum] = 1;
+      chan->signal_overflow_id[signum] = id;
       goto done;
     }
     /* This may release the mutex, so decide about the wake-up only after. */
-    spare = grow_notifications();
+    spare = grow_notifications(chan, id, &gone);
+    if (gone) goto done;
   }
-  if (notification_index > 0) {
+  if (chan->index > 0) {
     /* There is already a pending notification in the buffer, no
        need to signal the main thread. */
-    notifications[notification_index++] = id;
+    chan->notifications[chan->index++] = id;
   } else {
     /* There is none, notify the main thread. */
-    notifications[notification_index++] = id;
-    ret = notification_send();
+    chan->notifications[chan->index++] = id;
+    ret = chan->send(chan);
 #if defined(LWT_ON_WINDOWS)
     if (ret == SOCKET_ERROR) {
       error = WSAGetLastError();
@@ -641,7 +758,7 @@ static int send_notification(intnat id, int signum) {
 #endif
   }
 done:
-  lwt_unix_mutex_unlock(&notification_mutex);
+  lwt_unix_mutex_unlock(&chan->mutex);
 #if !defined(LWT_ON_WINDOWS)
   pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 #endif
@@ -669,26 +786,40 @@ value lwt_unix_send_notification_stub(value id) {
 
 /* The size of the buffer that notification [id] goes to, for the tests:
    signal_full_buffer checks with it that the signal handler does not grow the
-   buffer. There is one buffer, so [id] only says which notification the test
-   has. Read without the mutex, which is enough for a test: a sender may change
-   the size meanwhile, and the test then reads the old size or the new one. */
+   buffer. The id names the buffer's channel. 0 if it names none any more.
+   Read without the mutex, which is enough for a test: a sender may change the
+   size meanwhile, and the test then reads the old size or the new one. */
 value lwt_unix_notification_buffer_size(value id) {
-  (void)id;
-  return Val_long(notification_count);
+  struct notification_channel *chan = channel_of_id(Long_val(id));
+  return Val_long(chan == NULL ? 0 : chan->count);
 }
 
-/* How many signals the handler marked pending instead of buffering them. Under
-   [notification_mutex]. */
-static int signal_overflow_count(void) {
+/* How many notifications wait in the channel at the index of [id], whatever
+   the generation of [id], or -1 if that slot is free. For the tests:
+   domain_notifications checks with it that an id of a departed loop is not
+   queued for the next owner of its slot. Read without the mutex, as above. */
+value lwt_unix_notification_pending(value id) {
+  struct notification_channel *chan = LWT_LOAD_ACQUIRE(
+      &notification_channels[LWT_NOTIFICATION_INDEX(Long_val(id))]);
+  if (chan == NULL || LWT_LOAD_ACQUIRE(&chan->in_use) == 0) return Val_long(-1);
+  return Val_long(chan->index);
+}
+
+/* How many signals the handler marked pending on [chan] instead of buffering
+   them. Under the mutex. */
+static int signal_overflow_count(struct notification_channel *chan) {
   int signum, n = 0;
   for (signum = 0; signum < NSIG; signum++)
-    if (signal_overflow[signum]) n++;
+    if (chan->signal_overflow[signum]) n++;
   return n;
 }
 
-value lwt_unix_recv_notifications(void) {
+/* Drains one channel, the caller's. Takes the index rather than reading any
+   global: the domain doing the draining is the one whose loop woke up. */
+value lwt_unix_recv_notifications(value val_index) {
   int ret, i, signum, current_index;
   value result;
+  struct notification_channel *chan;
 #if !defined(LWT_ON_WINDOWS)
   sigset_t new_mask;
   sigset_t old_mask;
@@ -698,20 +829,27 @@ value lwt_unix_recv_notifications(void) {
 #else
   DWORD error;
 #endif
-  lwt_unix_mutex_lock(&notification_mutex);
+  chan = notification_channels[Int_val(val_index)];
+  if (chan == NULL || chan->in_use == 0) {
+#if !defined(LWT_ON_WINDOWS)
+    pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+#endif
+    caml_failwith("Lwt_unix: draining a notification channel that is gone");
+  }
+  lwt_unix_mutex_lock(&chan->mutex);
   /* Receive the signal. */
-  ret = notification_recv();
+  ret = chan->recv(chan);
 #if defined(LWT_ON_WINDOWS)
   if (ret == SOCKET_ERROR) {
     error = WSAGetLastError();
-    lwt_unix_mutex_unlock(&notification_mutex);
+    lwt_unix_mutex_unlock(&chan->mutex);
     win32_maperr(error);
     uerror("recv_notifications", Nothing);
   }
 #else
   if (ret < 0) {
     error = errno;
-    lwt_unix_mutex_unlock(&notification_mutex);
+    lwt_unix_mutex_unlock(&chan->mutex);
     pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
     unix_error(error, "recv_notifications", Nothing);
   }
@@ -724,74 +862,89 @@ value lwt_unix_recv_notifications(void) {
      resulting in a classical deadlock,
      when thread in question tries another send
     */
-    current_index = notification_index + signal_overflow_count();
-    lwt_unix_mutex_unlock(&notification_mutex);
+    current_index = chan->index + signal_overflow_count(chan);
+    lwt_unix_mutex_unlock(&chan->mutex);
     result = caml_alloc_tuple(current_index);
-    lwt_unix_mutex_lock(&notification_mutex);
+    lwt_unix_mutex_lock(&chan->mutex);
     /* check that no new notifications appeared meanwhile (rare) */
-  } while (current_index != notification_index + signal_overflow_count());
+  } while (current_index != chan->index + signal_overflow_count(chan));
 
   /* Read all pending notifications. */
-  for (i = 0; i < notification_index; i++)
-    Field(result, i) = Val_long(notifications[i]);
+  for (i = 0; i < chan->index; i++)
+    Field(result, i) = Val_long(chan->notifications[i]);
   /* Then the signals the handler could not buffer. */
   for (signum = 0; signum < NSIG; signum++)
-    if (signal_overflow[signum]) {
-      signal_overflow[signum] = 0;
-      Field(result, i++) = Val_long(signal_overflow_id[signum]);
+    if (chan->signal_overflow[signum]) {
+      chan->signal_overflow[signum] = 0;
+      Field(result, i++) = Val_long(chan->signal_overflow_id[signum]);
     }
   /* Reset the index. */
-  notification_index = 0;
-  lwt_unix_mutex_unlock(&notification_mutex);
+  chan->index = 0;
+  lwt_unix_mutex_unlock(&chan->mutex);
 #if !defined(LWT_ON_WINDOWS)
   pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 #endif
   return result;
 }
 
+/* Builds the id a loop hands out: the channel's index and generation, plus the
+   local counter OCaml manages. Done here so that the layout lives in one place,
+   next to the code that decodes it. */
+CAMLprim value lwt_unix_encode_notification(value val_index, value val_local) {
+  struct notification_channel *chan = notification_channels[Int_val(val_index)];
+  intnat gen = (chan == NULL) ? 0 : (intnat)(chan->generation);
+  intnat local = Long_val(val_local) & LWT_NOTIFICATION_LOCAL_MASK;
+  return Val_long((((intnat)Int_val(val_index))
+                   << (LWT_NOTIFICATION_LOCAL_BITS + LWT_NOTIFICATION_GEN_BITS)) |
+                  ((gen & LWT_NOTIFICATION_GEN_MASK)
+                   << LWT_NOTIFICATION_LOCAL_BITS) |
+                  local);
+}
+
+/* The index of the channel an id names. The OCaml side uses it to purge a
+   retired channel's entries from its table. */
+CAMLprim value lwt_unix_notification_channel_index(value val_id) {
+  return Val_int(LWT_NOTIFICATION_INDEX(Long_val(val_id)));
+}
+
+/* How many local parts an id can have, so that make_notification knows when
+   a loop has used them all. */
+CAMLprim value lwt_unix_notification_local_count(value unit) {
+  return Val_long(LWT_NOTIFICATION_LOCAL_MASK + 1);
+}
+
 #if defined(LWT_ON_WINDOWS)
 
-static SOCKET socket_r, socket_w;
-
-static int windows_notification_send(void) {
+static int windows_notification_send(struct notification_channel *chan) {
   char buf = '!';
-  return send(socket_w, &buf, 1, 0);
+  return send(chan->socket_w, &buf, 1, 0);
 }
 
-static int windows_notification_recv(void) {
+static int windows_notification_recv(struct notification_channel *chan) {
   char buf;
-  return recv(socket_r, &buf, 1, 0);
+  return recv(chan->socket_r, &buf, 1, 0);
 }
 
-value lwt_unix_init_notification(void) {
+/* Gives the channel its transport, and returns the descriptor to watch. */
+static value channel_open_transport(struct notification_channel *chan) {
   SOCKET sockets[2];
-
-  switch (notification_mode) {
-    case NOTIFICATION_MODE_NOT_INITIALIZED:
-      notification_mode = NOTIFICATION_MODE_NONE;
-      init_notifications();
-      break;
-    case NOTIFICATION_MODE_WINDOWS:
-      notification_mode = NOTIFICATION_MODE_NONE;
-      closesocket(socket_r);
-      closesocket(socket_w);
-      break;
-    case NOTIFICATION_MODE_NONE:
-      break;
-    default:
-      caml_failwith("notification system in unknown state");
-  }
-
   /* Since pipes do not works with select, we need to use a pair of
      sockets. */
   lwt_unix_socketpair(AF_INET, SOCK_STREAM, IPPROTO_TCP, sockets, FALSE);
+  chan->socket_r = sockets[0];
+  chan->socket_w = sockets[1];
+  chan->mode = NOTIFICATION_MODE_WINDOWS;
+  chan->send = windows_notification_send;
+  chan->recv = windows_notification_recv;
+  return win_alloc_socket(chan->socket_r);
+}
 
-  socket_r = sockets[0];
-  socket_w = sockets[1];
-  notification_mode = NOTIFICATION_MODE_WINDOWS;
-  notification_send = windows_notification_send;
-  notification_recv = windows_notification_recv;
-  return win_alloc_socket(socket_r);
+static void channel_close_transport(struct notification_channel *chan) {
+  if (chan->mode == NOTIFICATION_MODE_WINDOWS) {
+    closesocket(chan->socket_r);
+    closesocket(chan->socket_w);
+  }
+  chan->mode = NOTIFICATION_MODE_NONE;
 }
 
 #else /* defined(LWT_ON_WINDOWS) */
@@ -804,124 +957,239 @@ static void set_close_on_exec(int fd) {
 
 #if defined(HAVE_EVENTFD)
 
-static int notification_fd;
-
-static int eventfd_notification_send(void) {
+static int eventfd_notification_send(struct notification_channel *chan) {
   uint64_t buf = 1;
-  return write(notification_fd, (char *)&buf, 8);
+  return write(chan->fd, (char *)&buf, 8);
 }
 
-static int eventfd_notification_recv(void) {
+static int eventfd_notification_recv(struct notification_channel *chan) {
   uint64_t buf;
-  return read(notification_fd, (char *)&buf, 8);
+  return read(chan->fd, (char *)&buf, 8);
 }
 
 #endif /* defined(HAVE_EVENTFD) */
 
-static int notification_fds[2];
-
-static int pipe_notification_send(void) {
+static int pipe_notification_send(struct notification_channel *chan) {
   char buf = 0;
-  return write(notification_fds[1], &buf, 1);
+  return write(chan->fds[1], &buf, 1);
 }
 
-static int pipe_notification_recv(void) {
+static int pipe_notification_recv(struct notification_channel *chan) {
   char buf;
-  return read(notification_fds[0], &buf, 1);
+  return read(chan->fds[0], &buf, 1);
 }
 
-value lwt_unix_init_notification(void) {
-  enum notification_mode old_mode, new_mode;
-  int (*new_send)(void);
-  int (*new_recv)(void);
-  int new_fds[2] = {-1, -1};
-  int old_fds[2] = {-1, -1};
-  sigset_t new_mask, old_mask;
+/* Gives the channel its transport, and returns the descriptor a loop watches.
+   An eventfd when the platform has one, a pipe otherwise. The choice is made
+   per channel, since two loops need not agree on it. */
+static value channel_open_transport(struct notification_channel *chan) {
+#if defined(HAVE_EVENTFD)
+  chan->fd = eventfd(0, 0);
+  if (chan->fd != -1) {
+    chan->mode = NOTIFICATION_MODE_EVENTFD;
+    chan->send = eventfd_notification_send;
+    chan->recv = eventfd_notification_recv;
+    set_close_on_exec(chan->fd);
+    return Val_int(chan->fd);
+  }
+#endif
+  if (pipe(chan->fds) == -1) uerror("pipe", Nothing);
+  set_close_on_exec(chan->fds[0]);
+  set_close_on_exec(chan->fds[1]);
+  chan->mode = NOTIFICATION_MODE_PIPE;
+  chan->send = pipe_notification_send;
+  chan->recv = pipe_notification_recv;
+  return Val_int(chan->fds[0]);
+}
 
-  switch (notification_mode) {
-    case NOTIFICATION_MODE_NOT_INITIALIZED:
-      notification_mode = NOTIFICATION_MODE_NONE;
-      init_notifications();
-      break;
+static void channel_close_transport(struct notification_channel *chan) {
+  switch (chan->mode) {
 #if defined(HAVE_EVENTFD)
     case NOTIFICATION_MODE_EVENTFD:
+      close(chan->fd);
+      break;
 #endif
     case NOTIFICATION_MODE_PIPE:
-      /* The child of a fork. A thread of the parent, such as a worker sending
-         a job completion, may have held the mutex at fork time. That thread
-         does not exist in the child, so the mutex would stay locked, and the
-         first send or receive of the child would block forever. */
-      lwt_unix_mutex_init(&notification_mutex);
-      break;
-    case NOTIFICATION_MODE_NONE:
+      close(chan->fds[0]);
+      close(chan->fds[1]);
       break;
     default:
-      caml_failwith("notification system in unknown state");
+      break;
   }
-
-  /* The new descriptor is opened first, while the old one is still in use, so
-     that an error leaves the notification system as it was. */
-#if defined(HAVE_EVENTFD)
-  new_fds[0] = eventfd(0, 0);
-  if (new_fds[0] != -1) {
-    new_mode = NOTIFICATION_MODE_EVENTFD;
-    new_send = eventfd_notification_send;
-    new_recv = eventfd_notification_recv;
-    set_close_on_exec(new_fds[0]);
-  } else
-#endif
-  {
-    if (pipe(new_fds) == -1) uerror("pipe", Nothing);
-    set_close_on_exec(new_fds[0]);
-    set_close_on_exec(new_fds[1]);
-    new_mode = NOTIFICATION_MODE_PIPE;
-    new_send = pipe_notification_send;
-    new_recv = pipe_notification_recv;
-  }
-
-  /* After a fork, the child keeps the parent's buffer. The notifications still
-     pending in it are the parent's: a signal was sent to the parent, and the
-     child cancels the parent's jobs. So they are dropped, and so are the
-     signals the handler could not buffer. Their wake-up went to the parent's
-     descriptor, and later senders would see the buffer non-empty and write
-     none: the child's loop would never wake up again.
-
-     The switch is made with every signal blocked, as senders do around the
-     buffer: a signal handler running in the middle would write to a
-     descriptor about to be closed, and leave an id in the buffer with no
-     wake-up. No mutex: the child has a single thread here, and a thread of the
-     parent may have held it at the fork. */
-  sigfillset(&new_mask);
-  pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
-  old_mode = notification_mode;
-#if defined(HAVE_EVENTFD)
-  if (old_mode == NOTIFICATION_MODE_EVENTFD) old_fds[0] = notification_fd;
-#endif
-  if (old_mode == NOTIFICATION_MODE_PIPE) {
-    old_fds[0] = notification_fds[0];
-    old_fds[1] = notification_fds[1];
-  }
-#if defined(HAVE_EVENTFD)
-  if (new_mode == NOTIFICATION_MODE_EVENTFD) notification_fd = new_fds[0];
-#endif
-  if (new_mode == NOTIFICATION_MODE_PIPE) {
-    notification_fds[0] = new_fds[0];
-    notification_fds[1] = new_fds[1];
-  }
-  notification_send = new_send;
-  notification_recv = new_recv;
-  notification_mode = new_mode;
-  notification_index = 0;
-  memset(signal_overflow, 0, sizeof signal_overflow);
-  pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
-
-  /* Nothing writes to the old descriptors any more. */
-  if (old_fds[0] != -1 && close(old_fds[0]) == -1) uerror("close", Nothing);
-  if (old_fds[1] != -1 && close(old_fds[1]) == -1) uerror("close", Nothing);
-  return Val_int(new_fds[0]);
+  chan->mode = NOTIFICATION_MODE_NONE;
 }
 
 #endif /* defined(LWT_ON_WINDOWS) */
+
+/* Moves a transport opened on the stack into a channel. */
+static void channel_adopt_transport(struct notification_channel *chan,
+                                    const struct notification_channel *t) {
+  chan->mode = t->mode;
+  chan->send = t->send;
+  chan->recv = t->recv;
+#if defined(LWT_ON_WINDOWS)
+  chan->socket_r = t->socket_r;
+  chan->socket_w = t->socket_w;
+#else
+  chan->fd = t->fd;
+  chan->fds[0] = t->fds[0];
+  chan->fds[1] = t->fds[1];
+#endif
+}
+
+/* Creates a channel for the calling loop and returns (descriptor, index).
+   The index is the caller's handle on it, and all that OCaml needs to keep. */
+CAMLprim value lwt_unix_new_notification_channel(value unit) {
+  CAMLparam1(unit);
+  CAMLlocal2(result, fd);
+  int i, found = -1;
+  struct notification_channel *chan;
+  struct notification_channel transport;
+
+  /* The transport is opened before the table is locked, into a channel on the
+     stack: opening can fail (EMFILE) and raise, and raising with the mutex held
+     would hang every later loop. */
+  memset((void *)&transport, 0, sizeof(struct notification_channel));
+  fd = channel_open_transport(&transport);
+
+  lwt_unix_mutex_lock(&notification_channels_mutex);
+  for (i = 0; i < LWT_NOTIFICATION_CHANNELS; i++) {
+    if (notification_channels[i] == NULL ||
+        notification_channels[i]->in_use == 0) {
+      found = i;
+      break;
+    }
+  }
+  if (found == -1) {
+    lwt_unix_mutex_unlock(&notification_channels_mutex);
+    channel_close_transport(&transport);
+    caml_failwith(
+        "Lwt_unix: too many notification channels (one per Lwt loop; raise "
+        "LWT_NOTIFICATION_CHANNELS)");
+  }
+
+  chan = notification_channels[found];
+  if (chan == NULL) {
+    /* A slot used for the first time: allocate, and let the buffer live as long
+       as the process. Reusing the slot later reuses the buffer too. */
+    chan = (struct notification_channel *)lwt_unix_malloc(
+        sizeof(struct notification_channel));
+    memset((void *)chan, 0, sizeof(struct notification_channel));
+    lwt_unix_mutex_init(&chan->mutex);
+    chan->count = 4096;
+    chan->notifications =
+        (intnat *)lwt_unix_malloc(chan->count * sizeof(intnat));
+    chan->generation = 0;
+    chan->index = 0;
+    channel_adopt_transport(chan, &transport);
+    /* The slot pointer is published last: [channel_of_id] reads this slot
+       without the mutex, so nothing may name the channel before it is
+       complete. */
+    LWT_STORE_RELEASE(&chan->in_use, 1);
+    LWT_STORE_RELEASE(&notification_channels[found], chan);
+  } else {
+    /* A slot used before: a new generation, so that the ids of its
+       previous owner stop naming it. Under the channel's mutex, with signals
+       masked, so that a late sender sees the old state or the new one. */
+#if !defined(LWT_ON_WINDOWS)
+    sigset_t new_mask, old_mask;
+    sigfillset(&new_mask);
+    pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
+#endif
+    lwt_unix_mutex_lock(&chan->mutex);
+    LWT_STORE_RELEASE(&chan->generation,
+        (chan->generation + 1) & (unsigned)LWT_NOTIFICATION_GEN_MASK);
+    chan->index = 0;
+    memset(chan->signal_overflow, 0, sizeof chan->signal_overflow);
+    channel_adopt_transport(chan, &transport);
+    LWT_STORE_RELEASE(&chan->in_use, 1);
+    lwt_unix_mutex_unlock(&chan->mutex);
+#if !defined(LWT_ON_WINDOWS)
+    pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+#endif
+  }
+  lwt_unix_mutex_unlock(&notification_channels_mutex);
+
+  result = caml_alloc_tuple(2);
+  Store_field(result, 0, fd);
+  Store_field(result, 1, Val_int(found));
+  CAMLreturn(result);
+}
+
+/* Retires the calling loop's channel: its descriptors are closed and its slot
+   becomes free. Ids that named it are dropped from then on. */
+CAMLprim value lwt_unix_free_notification_channel(value val_index) {
+  int i = Int_val(val_index);
+  struct notification_channel *chan;
+#if !defined(LWT_ON_WINDOWS)
+  sigset_t new_mask;
+  sigset_t old_mask;
+#endif
+  lwt_unix_mutex_lock(&notification_channels_mutex);
+  chan = notification_channels[i];
+  if (chan != NULL && chan->in_use) {
+    /* Under the channel's mutex, with signals masked: a sender that found the
+       channel in use waits here, and then sees it retired. */
+#if !defined(LWT_ON_WINDOWS)
+    sigfillset(&new_mask);
+    pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
+#endif
+    lwt_unix_mutex_lock(&chan->mutex);
+    LWT_STORE_RELEASE(&chan->in_use, 0);
+    chan->index = 0;
+    channel_close_transport(chan);
+    lwt_unix_mutex_unlock(&chan->mutex);
+#if !defined(LWT_ON_WINDOWS)
+    pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+#endif
+  }
+  lwt_unix_mutex_unlock(&notification_channels_mutex);
+  return Val_unit;
+}
+
+/* For the child of a fork: the inherited transport is the parent's, so it is
+   replaced. The channel keeps its slot and generation, so that every id made
+   before the fork still names it. The notifications still pending in its
+   buffer are the parent's, and are dropped, as are the signals the handler
+   could not buffer: a signal was sent to the parent, and the child cancels the
+   parent's jobs.
+
+   The mutex is not taken, since the child has a single thread. It is rebuilt
+   instead: a thread of the parent may have held it at the fork, and that
+   thread does not exist in the child.
+
+   The new transport is opened first, and the switch is made with every signal
+   blocked, as senders do around the buffer: a signal handler running in the
+   middle would write to a descriptor about to be closed, and leave an id in
+   the buffer with no wake-up. The old transport is closed afterwards. */
+CAMLprim value lwt_unix_reset_notification_channel(value val_index) {
+  CAMLparam1(val_index);
+  CAMLlocal1(fd);
+  struct notification_channel transport, old;
+  struct notification_channel *chan = notification_channels[Int_val(val_index)];
+#if !defined(LWT_ON_WINDOWS)
+  sigset_t new_mask, old_mask;
+#endif
+  if (chan == NULL || chan->in_use == 0)
+    caml_failwith("Lwt_unix: resetting a notification channel that is gone");
+  memset((void *)&transport, 0, sizeof(struct notification_channel));
+  memset((void *)&old, 0, sizeof(struct notification_channel));
+  fd = channel_open_transport(&transport);
+  lwt_unix_mutex_init(&chan->mutex);
+#if !defined(LWT_ON_WINDOWS)
+  sigfillset(&new_mask);
+  pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
+#endif
+  channel_adopt_transport(&old, chan);
+  channel_adopt_transport(chan, &transport);
+  chan->index = 0;
+  memset(chan->signal_overflow, 0, sizeof chan->signal_overflow);
+#if !defined(LWT_ON_WINDOWS)
+  pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+#endif
+  channel_close_transport(&old);
+  CAMLreturn(fd);
+}
 
 /* +-----------------------------------------------------------------+
    | Signals                                                         |

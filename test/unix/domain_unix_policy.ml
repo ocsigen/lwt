@@ -54,15 +54,23 @@ let () =
   Lwt_main.run (Lwt_unix.sleep 0.05);
   check "a notification sent from another domain fires on the main domain"
     !fired;
+  (* The other direction: a notification created on another domain fires there,
+     not here, so that domain has to run its own loop to see it. *)
+  let fired_here = ref false in
   let fired_there = ref false in
-  let n2 =
-    on_other_domain (fun () ->
-      Lwt_unix.make_notification ~once:true (fun () -> fired_there := true))
-  in
-  Lwt_unix.send_notification n2;
-  Lwt_main.run (Lwt_unix.sleep 0.05);
-  check "a notification created on another domain fires on the main domain"
-    !fired_there;
+  check "a notification fires on the domain that created it"
+    (on_other_domain (fun () ->
+       let n =
+         Lwt_unix.make_notification ~once:true (fun () -> fired_there := true)
+       in
+       let mine =
+         Lwt_unix.make_notification ~once:true (fun () -> fired_here := true)
+       in
+       ignore mine;
+       Lwt_unix.send_notification n;
+       Lwt_main.run (Lwt_unix.sleep 0.05);
+       !fired_there));
+  check "and it did not fire here" (not !fired_here);
   (* The main domain is unaffected. *)
   check "the main domain still runs jobs"
     (match Lwt_main.run (Lwt_unix.stat "/") with

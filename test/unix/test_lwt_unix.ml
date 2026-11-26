@@ -1026,9 +1026,53 @@ let dup_tests ~blocking =
       assert (read = file_contents);
       Lwt.return_true) ]
 
+let fork_tests =
+  [ (* The child of a fork keeps the notifications made before it: a signal
+     handler, the notification of Lwt_preemptive.run_in_main, and the SIGCHLD
+     subscription.
+     The child ends with _exit, so that the suite's exit hooks run only in the
+     parent. *)
+    test "fork: the child keeps its notifications" ~sequential:true
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let got, resolve_got = Lwt.wait () in
+      let id =
+        Lwt_unix.on_signal Sys.sigurg (fun _ ->
+          if Lwt.is_sleeping got then Lwt.wakeup resolve_got ())
+      in
+      match Lwt_unix.fork () with
+      | 0 ->
+          let outcome =
+            Lwt.catch
+              (fun () ->
+                 Unix.kill (Unix.getpid ()) Sys.sigurg;
+                 let timeout = Lwt_unix.sleep 2. >|= fun () -> false in
+                 Lwt.pick [(got >|= fun () -> true); timeout]
+                 >>= fun signalled ->
+                 let in_main =
+                   Lwt_preemptive.detach
+                     (fun () ->
+                        Lwt_preemptive.run_in_main (fun () -> Lwt.return_true))
+                     ()
+                 in
+                 Lwt.pick [in_main; (Lwt_unix.sleep 2. >|= fun () -> false)]
+                 >>= fun ran_in_main ->
+                 let reaped =
+                   Lwt_process.exec ("", [|"true"|]) >|= fun _ -> true
+                 in
+                 Lwt.pick [reaped; (Lwt_unix.sleep 2. >|= fun () -> false)]
+                 >|= fun reaped -> signalled && ran_in_main && reaped)
+              (fun _ -> Lwt.return_false)
+          in
+          outcome >|= fun ok -> Unix._exit (if ok then 0 else 1)
+      | child ->
+          Lwt_unix.waitpid [] child >|= fun (_, status) ->
+          Lwt_unix.disable_signal_handler id;
+          status = Lwt_unix.WEXITED 0
+      end ]
+
 let suite =
   suite "lwt_unix"
-    (wait_tests @ openfile_tests @ utimes_tests @ readdir_tests
+    (wait_tests @ fork_tests @ openfile_tests @ utimes_tests @ readdir_tests
    @ io_vectors_byte_count_tests @ readv_tests @ writev_tests
    @ send_recv_msg_tests @ bind_tests @ dir_tests @ lwt_preemptive_tests
    @ lwt_user_tests @ pread_tests ~blocking:true

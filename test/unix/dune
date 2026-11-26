@@ -29,7 +29,30 @@
    notification_growth
    notification_batch
    signal_action_raises
-   signal_handler_id)))
+   signal_handler_id
+   domain_notifications
+   domain_exit_main
+   domain_emfile)))
+
+; The main domain's exit hooks can still run jobs. The test passes if the
+; program exits. Builds everywhere, since it needs no second domain.
+
+(test
+ (name domain_exit_main)
+ (package lwt)
+ (modules domain_exit_main)
+ (libraries lwt.unix threads))
+
+; Every loop has its own notification channel, and an id carries the channel it
+; belongs to. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_notifications)
+ (package lwt)
+ (modules domain_notifications)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix threads))
 
 (executable
  (name dummy)
@@ -184,6 +207,21 @@
  (modules domain_upstream_scenarios)
  (build_if
   (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix))
+
+; Loop creation when descriptors are exhausted: must fail with EMFILE and
+; leave the channel table usable. The test lowers its own limit by re-running
+; itself under a shell, hence not on Windows. Needs a second domain, hence
+; OCaml 5.
+
+(test
+ (name domain_emfile)
+ (package lwt)
+ (modules domain_emfile)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
  (libraries lwt.unix))
 
 ; Which values a resolved promise can share across domains. Needs a second

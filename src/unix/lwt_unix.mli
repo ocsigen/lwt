@@ -1405,17 +1405,25 @@ val wait_for_jobs : unit -> unit Lwt.t
 
 (** {2 Notifications} *)
 
-(** Lwt internally uses a pipe to send notifications to the domain that
-    initialized this module. The following functions allow to use this pipe. *)
+(** Lwt internally uses a pipe to send notifications to a loop. The following
+    functions allow to use this pipe. *)
 
 (** {3:domains Notifications and domains}
 
-    The process has one notification descriptor. The domain that initialized
-    this module reads it.
+    Every Lwt loop has its own notification channel.
 
-    That domain is therefore the only one that learns of job completions,
-    signals and child exits. The functions that depend on them only work on
-    that domain. On another domain, they raise {!Lwt.Domain_crossing}.
+    {!make_notification} registers a notification on the calling domain. Its
+    handler runs there, whichever thread or domain sends the notification. The
+    handler only runs while its domain runs a loop.
+
+    {!send_notification} is therefore the way to wake a given loop from
+    elsewhere. It can be called from any thread and any domain, as can
+    {!stop_notification} and {!set_notification}.
+
+    Jobs, signal handlers and waiting for children still go through the
+    channel of the domain that initialized this module. The functions that
+    depend on them only work on that domain. On another domain, they raise
+    {!Lwt.Domain_crossing}.
 
     These functions are:
     - {!run_job}, and the operations built on it;
@@ -1430,15 +1438,7 @@ val wait_for_jobs : unit -> unit Lwt.t
 
     Jobs run with [Async_none] are not affected. Such a job runs synchronously,
     on the calling thread, and needs no notification. {!run_job} with
-    [Async_none] therefore works on any domain.
-
-    The notification functions themselves work from any thread and any domain:
-    {!make_notification}, {!stop_notification}, {!set_notification} and
-    {!send_notification}.
-
-    The handler of a notification always runs on the domain that initialized
-    this module, whichever domain created or sent the notification. The
-    handler runs while that domain runs its loop. *)
+    [Async_none] therefore works on any domain. *)
 
 type notification
 
@@ -1448,7 +1448,18 @@ val make_notification : ?once:bool -> (unit -> unit) -> notification
     received, [f] is called.
 
     if [once] is specified, then the notification is stopped after
-    the first time it is received. It defaults to [false]. *)
+    the first time it is received. It defaults to [false].
+
+    [f] runs on the domain that created the notification, whichever domain
+    sends it.
+
+    When a spawned domain exits, Lwt closes its notification channel. A
+    [Domain.at_exit] callback that runs after that can no longer create a
+    notification: [make_notification] raises [Failure].
+
+    Lwt cannot close a channel that is first created in such a callback. So a
+    domain should not use Lwt for the first time there: there is a fixed
+    number of channels, and each such domain keeps one for good. *)
 
 val send_notification : notification -> unit
 (** [send_notification id] sends a notification.

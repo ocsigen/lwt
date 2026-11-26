@@ -10,14 +10,23 @@ module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
 (* +-----------------------------------------------------------------+
-   | The domain that owns the notification file descriptor            |
+   | This domain's notification channel                              |
    +-----------------------------------------------------------------+ *)
 
-(* Jobs, signal handlers and child waiting reach Lwt through one process-wide
-   notification descriptor, read on the engine of the domain that initialized
-   this module, so their completions run on that domain. The operations that
-   need the descriptor fail on any other domain. [is_owner_slot] is [true] on
-   that domain only: it is set when the module is initialized. *)
+(* Jobs, signal handlers and child waiting reach Lwt through a notification
+   channel. There is one per loop: the C side keeps a table of channels, and a
+   notification id carries the index of the channel it belongs to, so a
+   notification wakes the loop it was made for.
+
+   The jobs themselves, the signal handlers and child waiting are still wired
+   to the domain that initialized this module, so they keep the owner check
+   below. On another domain, a job's completion would wake a promise from a
+   domain that does not own it. The operations that need the check say so.
+
+   The marker is a per-domain slot set to [true] once, at module
+   initialization. This is more accurate than asking whether we are the main
+   domain: the owner is whoever loaded the module. In a program with a single
+   domain, it always reads [true]. *)
 [@@@alert "-trespassing"]
 
 module Lwt_dls = Lwt_dls
@@ -26,6 +35,114 @@ let check_owner = Lwt.Private.check_owner
 
 [@@@alert "+trespassing"]
 
+(* Builds the locks that have no static initializer (Windows). Called once, at
+   module initialization, before any other domain exists. *)
+external init_notifications : unit -> unit = "lwt_unix_init_notifications"
+
+let () = init_notifications ()
+
+external new_notification_channel :
+   unit
+  -> Unix.file_descr * int
+  = "lwt_unix_new_notification_channel"
+
+external free_notification_channel :
+   int
+  -> unit
+  = "lwt_unix_free_notification_channel"
+
+external reset_notification_channel :
+   int
+  -> Unix.file_descr
+  = "lwt_unix_reset_notification_channel"
+
+external notification_channel_index :
+   int
+  -> int
+  = "lwt_unix_notification_channel_index"
+
+external send_notification : int -> unit = "lwt_unix_send_notification_stub"
+external recv_notifications : int -> int array = "lwt_unix_recv_notifications"
+
+external notification_local_count :
+   unit
+  -> int
+  = "lwt_unix_notification_local_count"
+
+external encode_notification :
+   int
+  -> int
+  -> int
+  = "lwt_unix_encode_notification"
+
+(* Forward cell: draining needs [call_notification], which needs the notifier
+   table, which is defined below. Set once, at the end of that section. *)
+let drain_notifications : (int -> unit) ref = ref (fun _ -> ())
+
+(* Forward reference too, for the same reason: removes a retired channel's
+   entries from the table of notifiers, defined with that table below. *)
+let purge_notifiers : (int -> unit) ref = ref (fun _ -> ())
+
+(* Per domain: the channel this loop is woken through, and the engine event
+   that watches it, created on first use. The notification ids this domain
+   hands out carry the channel's index, so that a pool thread or a signal
+   handler can wake the right loop. *)
+type notif =
+  { chan : int
+  ; event : Lwt_engine.event
+  ; mutable retired : bool
+    (* Set once the channel is retired at domain exit; see [notif_slot]. *) }
+
+let notif_slot : notif Lwt_dls.t =
+  Lwt_dls.new_key (fun () ->
+    let fd, chan = new_notification_channel () in
+    let event =
+      (* Free the channel if the engine fails, or its slot would leak, and
+         with it the descriptors. *)
+      try Lwt_engine.on_readable fd (fun _ -> !drain_notifications chan)
+      with exn ->
+        free_notification_channel chan;
+        raise exn
+    in
+    let notif = {chan; event; retired = false} in
+    (* Retire the channel with the domain. On the main domain, the drain of
+       exit hooks is a [Stdlib.at_exit], which runs after every
+       [Domain.at_exit], and an exit hook may need a job ([Lwt_io.flush_all]
+       does). So the channel is never retired there, as the process is ending
+       anyway. A late completion is dropped by the generation.
+
+       A [Domain.at_exit] callback that runs after this one may still use Lwt,
+       but nothing that needs a notification: [self_channel] fails. Giving the
+       loop a new channel would leak it, since OCaml does not run a callback
+       registered during the exit, and there is a fixed number of channels.
+       For the same reason, a channel first created in such a callback is
+       never retired, and its slot leaks. *)
+    if not (Lwt_dls.is_main_domain ())
+    then
+      Lwt_dls.at_domain_exit (fun () ->
+        (* Set first, so that a finalizer that runs during the purge cannot add
+           a notification after it. *)
+        notif.retired <- true;
+        Lwt_engine.stop_event event;
+        (* Forget this loop's notifications before the slot is freed. Once it
+           is free, another domain may take it and register notifications with
+           the same index, and a later purge would remove those too. Left in
+           the table, ours would leak, and after 256 reuses of the slot a stale
+           id would reach its new owner. A notification sent between the purge
+           and the free lands in a buffer that nobody drains any more. *)
+        !purge_notifiers chan;
+        free_notification_channel chan);
+    notif)
+
+let retired () =
+  failwith
+    "Lwt_unix: this domain has exited, and its loop can no longer be notified"
+
+let[@inline] self_channel () =
+  let notif = Lwt_dls.get notif_slot in
+  if notif.retired then retired () else notif.chan
+
+(* Set up lazily, per domain, by the slot above. *)
 let is_owner_slot : bool Lwt_dls.t = Lwt_dls.new_key (fun () -> false)
 let () = Lwt_dls.set is_owner_slot true
 let[@inline] is_notification_owner () = Lwt_dls.get is_owner_slot
@@ -99,19 +216,37 @@ type notification = int (* a simple ID*)
    [last] is the last id handed out. See
    https://github.com/ocsigen/lwt/issues/277 and
    https://github.com/ocsigen/lwt/pull/278 for its initial value. *)
-type notifiers = {map : notifier Notifiers.t; last : notification}
+type notifiers = {map : notifier Notifiers.t; last : int}
 
 let notifiers = Atomic.make {map = Notifiers.empty; last = 0x7FFFFFFF - 1000}
 
-let rec find_free_id map id =
-  if Notifiers.mem id map then find_free_id map (id + 1) else id
+(* The id carries the index of the calling domain's channel, so the handler
+   runs on the domain that created the notification, whichever domain sends
+   it. So [last] is only the local part of the last id, and is process-wide.
+   The C side masks it to the bits that index and generation leave, and the
+   table detects collisions: an id still registered is skipped.
+
+   A loop has [local_count] local parts. Once they are all taken, creating one
+   more fails, rather than search for ever. On a 32-bit platform, that is 32768
+   notifications alive on one loop. *)
+let local_count = notification_local_count ()
+
+let rec find_free_local map chan local tries =
+  if tries = 0
+  then
+    failwith "Lwt_unix.make_notification: too many notifications on this loop";
+  if Notifiers.mem (encode_notification chan local) map
+  then find_free_local map chan (local + 1) (tries - 1)
+  else local
 
 let make_notification ?(once = false) f =
+  let chan = self_channel () in
   let notifier = {notify_once = once; notify_handler = f} in
   let rec add () =
     let t = Atomic.get notifiers in
-    let id = find_free_id t.map (t.last + 1) in
-    let t' = {map = Notifiers.add id notifier t.map; last = id} in
+    let local = find_free_local t.map chan (t.last + 1) local_count in
+    let id = encode_notification chan local in
+    let t' = {map = Notifiers.add id notifier t.map; last = local} in
     if Atomic.compare_and_set notifiers t t' then id else add ()
   in
   add ()
@@ -124,6 +259,16 @@ let rec stop_notification id =
          (Atomic.compare_and_set notifiers t
             {t with map = Notifiers.remove id t.map})
   then stop_notification id
+
+let rec purge chan =
+  let t = Atomic.get notifiers in
+  let map =
+    Notifiers.filter (fun id _ -> notification_channel_index id <> chan) t.map
+  in
+  if map != t.map && not (Atomic.compare_and_set notifiers t {t with map})
+  then purge chan
+
+let () = purge_notifiers := purge
 
 let rec set_notification id f =
   let t = Atomic.get notifiers in
@@ -2251,33 +2396,25 @@ let tcflow ch act =
    | Reading notifications                                           |
    +-----------------------------------------------------------------+ *)
 
-external init_notification :
-   unit
-  -> Unix.file_descr
-  = "lwt_unix_init_notification"
-
-external send_notification : int -> unit = "lwt_unix_send_notification_stub"
-external recv_notifications : unit -> int array = "lwt_unix_recv_notifications"
-
-let handle_notifications _ =
-  (* Process available notifications. [recv_notifications] empties the buffer,
-     so if a handler raises, the notifications not handled yet are sent again
-     before the exception is re-raised. Otherwise a job completion or a
-     signal would be lost. *)
-  let ids = recv_notifications () in
-  Array.iteri
-    (fun i id ->
-       try call_notification id
-       with exn when Lwt.Exception_filter.run exn ->
-         let bt = Printexc.get_raw_backtrace () in
-         for j = i + 1 to Array.length ids - 1 do
-           send_notification ids.(j)
-         done;
-         Printexc.raise_with_backtrace exn bt)
-    ids
-
-let event_notifications =
-  ref (Lwt_engine.on_readable (init_notification ()) handle_notifications)
+(* Sets the forward reference declared at the top: from here on, a channel's
+   event drains that channel. *)
+let () =
+  drain_notifications :=
+    fun chan ->
+      (* [recv_notifications] empties the buffer, so if a handler raises, the
+         notifications not handled yet are sent again before the exception is
+         re-raised. Otherwise a job completion or a signal would be lost. *)
+      let ids = recv_notifications chan in
+      Array.iteri
+        (fun i id ->
+           try call_notification id
+           with exn when Lwt.Exception_filter.run exn ->
+             let bt = Printexc.get_raw_backtrace () in
+             for j = i + 1 to Array.length ids - 1 do
+               send_notification ids.(j)
+             done;
+             Printexc.raise_with_backtrace exn bt)
+        ids
 
 (* +-----------------------------------------------------------------+
    | Signals                                                         |
@@ -2385,11 +2522,18 @@ let fork () =
       Lwt_engine.fork ();
       (* Reset threading. *)
       reset_after_fork ();
-      (* Stop the old event for notifications. *)
-      Lwt_engine.stop_event !event_notifications;
-      (* Reinitialise the notification system. *)
-      event_notifications :=
-        Lwt_engine.on_readable (init_notification ()) handle_notifications;
+      (* Reset this domain's notification channel: the inherited descriptors
+         are the parent's, and so are the notifications still pending in it.
+         The channel keeps its slot and generation, so that the ids made before
+         the fork still name it. [fork] runs with a single domain, so there is
+         no other channel. *)
+      let old = Lwt_dls.get notif_slot in
+      Lwt_engine.stop_event old.event;
+      let fd = reset_notification_channel old.chan in
+      let event =
+        Lwt_engine.on_readable fd (fun _ -> !drain_notifications old.chan)
+      in
+      Lwt_dls.set notif_slot {old with event};
       (* Collect all pending jobs. *)
       let l = Lwt_sequence.fold_l (fun (_, f) l -> f :: l) jobs [] in
       (* Remove them all. *)
