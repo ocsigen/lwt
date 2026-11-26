@@ -16,7 +16,10 @@
 
 CAMLprim value lwt_unix_mcast_set_loop(value fd, value flag)
 {
-    int t, r, f;
+    int t, r;
+    /* A byte: OpenBSD refuses any other size, and the other systems accept
+       it. */
+    unsigned char f;
 
     t = socket_domain(Int_val(fd));
     f = Bool_val(flag);
