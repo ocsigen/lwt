@@ -139,11 +139,11 @@ let () =
   let round () =
     Domain.join
       (Domain.spawn (fun () ->
-         for _ = 1 to 4 do
-           ignore (Lwt_unix.make_notification ignore)
-         done;
          Lwt_main.run
-           (Lwt.bind (Lwt_unix.stat ".") (fun _ -> Lwt_unix.sleep 0.0001))))
+           (Lwt.bind (Lwt_unix.stat ".") (fun _ ->
+              Lwt.bind
+                (Lwt_preemptive.detach (fun () -> ()) ())
+                (fun () -> Lwt_unix.sleep 0.0001)))))
   in
   for _ = 1 to 20 do
     round ()

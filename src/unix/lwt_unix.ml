@@ -178,6 +178,9 @@ let[@inline] self_channel () = (live_notif ()).chan
    [notif_slot]. *)
 let ensure_channel () = ignore (Lwt_dls.get notif_slot)
 
+(* For [Lwt_preemptive], which then runs detached functions directly. *)
+let notification_channel_closed () = (self_notif ()).retired
+
 (* Set up lazily, per domain, by the slot above. *)
 let is_owner_slot : bool Lwt_dls.t = Lwt_dls.new_key (fun () -> false)
 let () = Lwt_dls.set is_owner_slot true

@@ -1421,9 +1421,7 @@ val wait_for_jobs : unit -> unit Lwt.t
       {!reinstall_signal_handler};
     - {!fork};
     - {!waitpid}, {!wait4} and {!wait}, when the child has not exited yet and
-      [WNOHANG] is not given, and so {!Lwt_process};
-    - {!Lwt_preemptive.detach}, {!Lwt_preemptive.init} and
-      {!Lwt_preemptive.set_bounds}. *)
+      [WNOHANG] is not given, and so {!Lwt_process}. *)
 
 type notification
 
@@ -1599,9 +1597,12 @@ val ensure_channel : unit -> unit
     [Lwt_main] calls it before it registers the drain of exit hooks, so that
     the drain runs while the channel still exists. *)
 
+val notification_channel_closed : unit -> bool
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** Whether this domain's notification channel has been closed, at the exit of
+    the domain. {!Lwt_preemptive.detach} then runs its function directly. *)
+
 val check_notification_owner : unit -> unit
 [@@alert trespassing "Internal to the Lwt packages, keep away."]
 (** [check_notification_owner ()] raises {!Lwt.Domain_crossing}, unless it is
-    called on the domain that initialized this module.
-
-    {!Lwt_preemptive} uses it. *)
+    called on the domain that initialized this module. *)

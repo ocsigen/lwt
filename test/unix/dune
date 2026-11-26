@@ -165,8 +165,8 @@
   (<> %{os_type} "Win32"))
  (libraries lwt.unix))
 
-; A timer wheel per domain, and detach only on the domain that initialized
-; Lwt_unix. Needs a second domain, hence OCaml 5.
+; A timer wheel and a pool of preemptive threads per domain. Needs a second
+; domain, hence OCaml 5.
 
 (test
  (name domain_timeouts)

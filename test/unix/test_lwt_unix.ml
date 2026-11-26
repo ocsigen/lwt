@@ -4,8 +4,19 @@
 open Test
 open Lwt.Infix
 
-(* An instance of the tester for the wait/waitpid tests. *)
-let () = match Sys.argv with [|_; "--child"|] -> exit 42 | _ -> ()
+(* An instance of the tester for the wait/waitpid tests, and one for the
+   busy-detach test: the latter leaves a detached computation running and ends
+   normally, at_exit hooks included. *)
+let () =
+  match Sys.argv with
+  | [|_; "--child"|] -> exit 42
+  | [|_; "--busy-detach"|] ->
+      Lwt_main.run
+        (Lwt.pick
+           [ Lwt_preemptive.detach (fun () -> Unix.sleepf 5.) ()
+           ; Lwt_unix.sleep 0.05 ]);
+      exit 0
+  | _ -> ()
 
 let wait_tests =
   [ test "wait" ~sequential:true ~only_if:(fun () -> not Sys.win32)
@@ -835,7 +846,21 @@ let dir_tests =
       Lwt_unix.getcwd () >>= fun here -> Lwt.return (here = unix_here)) ]
 
 let lwt_preemptive_tests =
-  [ test "run_in_main" begin fun () ->
+  [ (* The process must not wait, at exit, for a detached computation still
+     running. Measured on a child process. *)
+    test "exit does not wait for a busy detach" ~sequential:true
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let t0 = Unix.gettimeofday () in
+      let child =
+        Unix.create_process Sys.executable_name
+          [|Sys.executable_name; "--busy-detach"|]
+          Unix.stdin Unix.stdout Unix.stderr
+      in
+      Lwt_unix.waitpid [] child >|= fun (_, status) ->
+      let elapsed = Unix.gettimeofday () -. t0 in
+      status = Lwt_unix.WEXITED 0 && elapsed < 3.
+      end
+  ; test "run_in_main" begin fun () ->
         let f () =
           Lwt_preemptive.run_in_main (fun () ->
             Lwt_unix.sleep 0.01 >>= fun () -> Lwt.return 42)
