@@ -2302,9 +2302,7 @@ module Signal_map = Map.Make (struct
     let compare a b = a - b
   end)
 
-type signal_handler =
-  {sh_num : int; sh_node : (signal_handler_id -> int -> unit) Lwt_sequence.node}
-
+type signal_handler = {sh_num : int; sh_node : (int -> unit) Lwt_sequence.node}
 and signal_handler_id = signal_handler option ref
 
 let signals = ref Signal_map.empty
@@ -2328,7 +2326,7 @@ let on_signal_full signum handler =
              Its exception goes to the hook, as for [Lwt.on_success]. *)
           Lwt_sequence.iter_l
             (fun f ->
-               try f id signum
+               try f signum
                with exn when Lwt.Exception_filter.run exn ->
                  !Lwt.async_exception_hook exn)
             actions)
@@ -2340,7 +2338,8 @@ let on_signal_full signum handler =
       signals := Signal_map.add signum (notification, actions) !signals;
       notification, actions
   in
-  let node = Lwt_sequence.add_r handler actions in
+  (* Each handler gets its own id, so that it can disable itself. *)
+  let node = Lwt_sequence.add_r (fun signum -> handler id signum) actions in
   id := Some {sh_num = signum; sh_node = node};
   id
 
