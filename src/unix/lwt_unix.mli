@@ -109,23 +109,7 @@ type file_descr
     another domain raises {!Lwt.Domain_crossing}.
 
     {!stdin}, {!stdout} and {!stderr} are created when this module is
-    initialized. They belong to the domain that initialized this module.
-
-    For now, jobs only run on the domain that initialized this module (see
-    {!section-domains}). On another domain, a descriptor can only be used if
-    its I/O needs no job.
-
-    Such a descriptor is in non-blocking mode, and Lwt knows its mode. Lwt
-    knows the mode of the descriptors made by {!socket}, {!socketpair} and
-    {!accept}, by {!of_unix_file_descr} with [~blocking:false], and, except on
-    Windows, by {!pipe}, {!pipe_in} and {!pipe_out}.
-
-    Other descriptors do their I/O through jobs. These are the descriptors in
-    blocking mode, and the descriptors whose mode Lwt has to guess, since
-    guessing the mode is itself a job.
-
-    Many other operations are jobs too. Except on Windows, they include
-    {!openfile}, {!close} and {!stat}. *)
+    initialized. They belong to the domain that initialized this module. *)
 
 (** State of a {b file descriptor} *)
 type state =
@@ -1420,25 +1404,26 @@ val wait_for_jobs : unit -> unit Lwt.t
     elsewhere. It can be called from any thread and any domain, as can
     {!stop_notification} and {!set_notification}.
 
-    Jobs, signal handlers and waiting for children still go through the
-    channel of the domain that initialized this module. The functions that
-    depend on them only work on that domain. On another domain, they raise
+    Jobs can be submitted from any domain. A job completes on the loop that
+    submitted it. This covers {!run_job} and every operation built on it, such
+    as {!openfile}.
+
+    {!abort_jobs}, {!cancel_jobs} and {!wait_for_jobs} act on the jobs of the
+    calling loop.
+
+    Signal handlers and waiting for children still go through the channel of
+    the domain that initialized this module. The functions that depend on them
+    only work on that domain. On another domain, they raise
     {!Lwt.Domain_crossing}.
 
     These functions are:
-    - {!run_job}, and the operations built on it;
-    - {!abort_jobs}, {!cancel_jobs} and {!wait_for_jobs};
     - {!on_signal}, {!on_signal_full}, {!disable_signal_handler} and
       {!reinstall_signal_handler};
     - {!fork};
     - {!waitpid}, {!wait4} and {!wait}, when the child has not exited yet and
       [WNOHANG] is not given, and so {!Lwt_process};
     - {!Lwt_preemptive.detach}, {!Lwt_preemptive.init} and
-      {!Lwt_preemptive.set_bounds}.
-
-    Jobs run with [Async_none] are not affected. Such a job runs synchronously,
-    on the calling thread, and needs no notification. {!run_job} with
-    [Async_none] therefore works on any domain. *)
+      {!Lwt_preemptive.set_bounds}. *)
 
 type notification
 
@@ -1455,7 +1440,10 @@ val make_notification : ?once:bool -> (unit -> unit) -> notification
 
     When a spawned domain exits, Lwt closes its notification channel. A
     [Domain.at_exit] callback that runs after that can no longer create a
-    notification: [make_notification] raises [Failure].
+    notification: [make_notification] raises [Failure]. A job then runs
+    synchronously, as with {!Async_none}, since its completion cannot be
+    notified. A job still running when the channel closes fails with
+    [Failure].
 
     Lwt cannot close a channel that is first created in such a callback. So a
     domain should not use Lwt for the first time there: there is a fixed
@@ -1604,6 +1592,12 @@ val install_sigchld_handler : unit -> unit
     Several threads can call it at the same time.
 
     For internal use: {!Lwt_main.run} and {!waitpid} call it. *)
+
+val ensure_channel : unit -> unit
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** Creates this domain's notification channel if it does not exist yet.
+    [Lwt_main] calls it before it registers the drain of exit hooks, so that
+    the drain runs while the channel still exists. *)
 
 val check_notification_owner : unit -> unit
 [@@alert trespassing "Internal to the Lwt packages, keep away."]

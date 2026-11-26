@@ -142,7 +142,8 @@ let () =
          for _ = 1 to 4 do
            ignore (Lwt_unix.make_notification ignore)
          done;
-         Lwt_main.run (Lwt_unix.sleep 0.0001)))
+         Lwt_main.run
+           (Lwt.bind (Lwt_unix.stat ".") (fun _ -> Lwt_unix.sleep 0.0001))))
   in
   for _ = 1 to 20 do
     round ()
@@ -199,6 +200,48 @@ let () =
        ignore (Lwt_unix.make_notification ignore)));
   check "a loop past the exit of its domain refuses to create a notification"
     (Atomic.get late = "refused");
+  (* A job there runs synchronously, since its completion cannot be
+     notified. *)
+  let late_job = Atomic.make false in
+  Domain.join
+    (Domain.spawn (fun () ->
+       Domain.at_exit (fun () ->
+         Atomic.set late_job
+           (match
+              Lwt_main.run
+                (Lwt.bind
+                   (Lwt_unix.openfile Filename.null [Unix.O_RDONLY] 0)
+                   Lwt_unix.close)
+            with
+           | () -> true
+           | exception _ -> false));
+       ignore (Lwt_unix.make_notification ignore)));
+  check "a loop past the exit of its domain still runs a job"
+    (Atomic.get late_job);
+  (* A job still running when the channel is retired fails, rather than leave
+     a later callback waiting for ever. The job opens a FIFO, which blocks
+     until the main domain opens it for writing, after the domain is gone. *)
+  if not Sys.win32
+  then begin
+    let fifo = Filename.temp_file "domain_notifications" ".fifo" in
+    Sys.remove fifo;
+    Unix.mkfifo fifo 0o600;
+    let aborted = Atomic.make false in
+    Domain.join
+      (Domain.spawn (fun () ->
+         let pending = ref Lwt.return_unit in
+         Domain.at_exit (fun () ->
+           Atomic.set aborted
+             (match Lwt_main.run !pending with
+             | () -> false
+             | exception Failure _ -> true));
+         pending := Lwt.map ignore (Lwt_unix.openfile fifo [Unix.O_RDONLY] 0);
+         Lwt_main.run (Lwt_unix.sleep 0.01)));
+    (* Let the worker that is still opening the FIFO go. *)
+    Unix.close (Unix.openfile fifo [Unix.O_WRONLY] 0);
+    Sys.remove fifo;
+    check "a job still running when its domain exits fails" (Atomic.get aborted)
+  end;
   (* A loop whose engine cannot watch its channel frees the channel. There are
      more such loops than channels, and a loop with a working engine still gets
      one. *)

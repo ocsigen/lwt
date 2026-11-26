@@ -34,10 +34,11 @@ let hooks : hooks Lwt_dls.t =
   Lwt_dls.new_key (fun () ->
     if not (Lwt_dls.is_main_domain ())
     then begin
-      (* Build the engine first: it registers its own destruction with
-         [Domain.at_exit], whose callbacks run last-registered first, so the
-         exit hooks registered below run while the engine still exists. *)
+      (* The engine, then the channel, then the drain: domain exit callbacks
+         run last-registered first, so the drain runs while both still exist,
+         and the channel goes before the engine that watches it. *)
       ignore (Lwt_engine.get () : Lwt_engine.t);
+      (Lwt_unix.ensure_channel [@alert "-trespassing"]) ();
       Lwt_dls.at_domain_exit (fun () -> !drain_exit_hooks ())
     end;
     { enter_iter = Lwt_sequence.create ()

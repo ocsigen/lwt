@@ -151,9 +151,9 @@
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
 
-; Jobs, signals and child waiting belong to the domain that initialized
-; Lwt_unix. Needs a second domain, hence OCaml 5, and Unix.fork and SIGUSR1,
-; hence not Windows.
+; Jobs work on every domain. Signals and child waiting belong to the domain
+; that initialized Lwt_unix. Needs a second domain, hence OCaml 5, and
+; Unix.fork and SIGUSR1, hence not Windows.
 
 (test
  (name domain_unix_policy)
