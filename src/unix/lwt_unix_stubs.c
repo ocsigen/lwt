@@ -546,11 +546,14 @@ static void resize_notifications(void) {
   long new_notification_count = notification_count * 2;
   intnat *new_notifications =
       (intnat *)lwt_unix_malloc(new_notification_count * sizeof(intnat));
-  memcpy((void *)new_notifications, (void *)notifications,
+  intnat *old_notifications = notifications;
+  memcpy((void *)new_notifications, (void *)old_notifications,
          notification_count * sizeof(intnat));
-  free(notifications);
+  /* The new buffer is in place before the old one is freed: a fork in between
+     must not leave the child a freed buffer. */
   notifications = new_notifications;
   notification_count = new_notification_count;
+  free(old_notifications);
 }
 
 void lwt_unix_send_notification(intnat id) {
