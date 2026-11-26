@@ -50,6 +50,10 @@
     handlers of the signal from running. Its exception goes to
     Lwt.async_exception_hook, instead of out of Lwt_main.run. (Vincent Balat)
 
+  * Lwt_unix.on_signal_full: each handler of a signal gets its own id. They all
+    got the id of the first one, so a handler that disabled itself disabled
+    the first one instead. (Vincent Balat)
+
 ===== 6.1.3 =====
 
 ====== Changes ======
