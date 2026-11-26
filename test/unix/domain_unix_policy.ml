@@ -1,9 +1,9 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-(* Which operations belong to which domain, in both directions. Jobs work on
-   every domain. Signal handlers and child waiting still raise
-   [Lwt.Domain_crossing] off the domain that initialized the module.
+(* Which Lwt_unix operations work on which domain, in both directions. Jobs,
+   signal handlers and child waiting work on every domain. [fork] fails
+   everywhere once a domain has been spawned, as [Unix.fork] does.
 
    Needs a second domain, hence OCaml 5. *)
 
@@ -14,14 +14,6 @@ let check name b =
   then (
     Printf.eprintf "FAILED: %s\n" name;
     incr failures)
-
-(* [true] if [f] fails because it is not on the domain that initialized
-   [Lwt_unix]. *)
-let refused f =
-  match f () with
-  | _ -> false
-  | exception Lwt.Domain_crossing -> true
-  | exception _ -> false
 
 (* A file to read from another domain, made here since no system file is
    present everywhere. *)
@@ -34,12 +26,10 @@ let readable_file =
   path
 
 let () =
-  (* A child that stays alive, forked before any other domain exists, since
-     the runtime refuses [Unix.fork] once a domain has been spawned, even
-     after it is joined. *)
-  let child =
-    match Unix.fork () with 0 -> Unix.sleep 30; Unix._exit 0 | pid -> pid
-  in
+  (* A child forked before any other domain exists, since the runtime refuses
+     [Unix.fork] once a domain has been spawned, even after it is joined. It
+     exits at once, and another domain reaps it below. *)
+  let child = match Unix.fork () with 0 -> Unix._exit 0 | pid -> pid in
   let on_other_domain f = Domain.join (Domain.spawn f) in
   (* Jobs work on another domain. *)
   check "another domain runs a job"
@@ -60,14 +50,30 @@ let () =
        with
        | n -> n > 0
        | exception _ -> false));
-  (* Still refused on another domain. *)
-  check "a signal handler is refused on another domain"
+  (* Signals reach every subscribed loop, so another domain may subscribe and
+     receive the signal itself. *)
+  check "another domain subscribes to a signal and receives it"
     (on_other_domain (fun () ->
-       refused (fun () -> Lwt_unix.on_signal Sys.sigusr1 (fun _ -> ()))));
-  check "waiting for a child is refused on another domain"
+       let got = ref false in
+       let id = Lwt_unix.on_signal Sys.sigusr1 (fun _ -> got := true) in
+       Unix.kill (Unix.getpid ()) Sys.sigusr1;
+       Lwt_main.run (Lwt_unix.sleep 0.05);
+       Lwt_unix.disable_signal_handler id;
+       !got));
+  (* And another domain waits for a child that the main domain forked. *)
+  check "another domain waits for a child"
     (on_other_domain (fun () ->
-       refused (fun () -> Lwt_main.run (Lwt_unix.waitpid [] child))));
-  (* Allowed on another domain: a loop with timers, and the notification API. *)
+       match Lwt_main.run (Lwt_unix.waitpid [] child) with
+       | _ -> true
+       | exception _ -> false));
+  (* Spawning that domain is enough to make fork fail there. *)
+  check "fork fails on another domain"
+    (on_other_domain (fun () ->
+       match Lwt_unix.fork () with
+       | 0 -> Unix._exit 0
+       | _ -> false
+       | exception Failure _ -> true));
+  (* Also on another domain: a loop with timers, and the notification API. *)
   check "a loop with timers still runs on another domain"
     (on_other_domain (fun () ->
        match Lwt_main.run (Lwt_unix.sleep 0.01) with
@@ -107,7 +113,5 @@ let () =
         Lwt_unix.disable_signal_handler id;
         true
     | exception _ -> false);
-  (try Unix.kill child Sys.sigkill with _ -> ());
-  (try ignore (Unix.waitpid [] child) with _ -> ());
   if !failures > 0 then exit 1;
   print_endline "per-domain Lwt_unix policy: ok"

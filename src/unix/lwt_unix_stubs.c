@@ -535,8 +535,9 @@ CAMLprim value lwt_unix_socketpair_stub(value cloexec, value domain, value type,
 #define NSIG 64
 #endif
 
-/* Notifications id for each monitored signal. */
-static intnat signal_notifications[NSIG];
+/* The subscriptions to signals, 0 where there is none; the signal code further
+   down explains them. */
+static intnat signal_notifications[NSIG][LWT_NOTIFICATION_CHANNELS];
 
 /* The mode currently used for notifications. */
 enum notification_mode {
@@ -602,6 +603,13 @@ static lwt_unix_mutex notification_channels_mutex = PTHREAD_MUTEX_INITIALIZER;
 static lwt_unix_mutex notification_channels_mutex;
 #endif
 
+/* The mutex of the signal table, declared here for the initializer below. */
+#if defined(HAVE_PTHREAD)
+static lwt_unix_mutex signal_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+#else
+static lwt_unix_mutex signal_table_mutex;
+#endif
+
 void initialize_threading(void);
 
 /* Builds the mutexes and the condition that have no static initializer
@@ -610,6 +618,7 @@ void initialize_threading(void);
 CAMLprim value lwt_unix_init_notifications(value unit) {
 #if !defined(LWT_NOTIFICATION_MUTEX_IS_STATIC)
   lwt_unix_mutex_init(&notification_channels_mutex);
+  lwt_unix_mutex_init(&signal_table_mutex);
 #endif
   initialize_threading();
   return Val_unit;
@@ -876,7 +885,8 @@ value lwt_unix_recv_notifications(value val_index) {
   /* Read all pending notifications. */
   for (i = 0; i < chan->index; i++)
     Field(result, i) = Val_long(chan->notifications[i]);
-  /* Then the signals the handler could not buffer. */
+  /* Then the signals the handler could not buffer, each with the id it was
+     sent to. */
   for (signum = 0; signum < NSIG; signum++)
     if (chan->signal_overflow[signum]) {
       chan->signal_overflow[signum] = 0;
@@ -1199,82 +1209,76 @@ CAMLprim value lwt_unix_reset_notification_channel(value val_index) {
    | Signals                                                         |
    +-----------------------------------------------------------------+ */
 
-/* [signal_notifications] is declared with the notification buffer, above. */
+/* Subscribers per signal: one notification id per interested loop, indexed by
+   that loop's channel, so that every loop that asked gets the signal. A table
+   of integers, 0 meaning nobody, since [handle_signal] may not allocate, lock
+   or follow a freed pointer. It is written under [signal_table_mutex] and
+   read by the handler without it, so it is accessed with release stores and
+   acquire loads, which are async-signal-safe. The table is defined further
+   up, with the channels. */
 
 CAMLextern int caml_convert_signal_number(int);
 
-/* Send a notification when a signal is received. [errno] is saved and
-   restored: sending the notification may set it, and the handler may have
-   interrupted a thread between a failing system call and its reading of
-   [errno]. */
+/* Send a notification to every loop subscribed to this signal. [errno] is
+   saved and restored: sending the notification may set it, and the handler
+   may have interrupted a thread between a failing system call and its reading
+   of [errno]. */
 static void handle_signal(int signum) {
+  int i;
   int saved_errno = errno;
   if (signum >= 0 && signum < NSIG) {
-    intnat id = signal_notifications[signum];
-    if (id != -1) {
 #if defined(LWT_ON_WINDOWS)
-      /* The signal handler must be reinstalled if we use the signal
-         function. */
-      signal(signum, handle_signal);
+    /* The signal handler must be reinstalled if we use the signal
+       function. */
+    signal(signum, handle_signal);
 #endif
-      (void)send_notification(id, signum);
+    for (i = 0; i < LWT_NOTIFICATION_CHANNELS; i++) {
+      intnat id = LWT_LOAD_ACQUIRE(&signal_notifications[signum][i]);
+      if (id != 0) (void)send_notification(id, signum);
     }
   }
   errno = saved_errno;
 }
 
-/* For an engine that forwards signals ([Lwt_engine.forwards_signal]). Called
-   from OCaml, not from a signal handler, so the notification takes the
-   ordinary path: the buffer may grow, and an error is raised. */
-CAMLprim value lwt_unix_handle_signal(value val_signum) {
-  int signum = caml_convert_signal_number(Int_val(val_signum));
-  if (signum >= 0 && signum < NSIG) {
-    intnat id = signal_notifications[signum];
-    if (id != -1) lwt_unix_send_notification(id);
-  }
-  return Val_unit;
-}
+/* [signal_table_mutex] serializes the changes of subscription across loops:
+   updating the count, writing the id and installing the process-wide handler
+   must happen in one step, or a subscribed loop could be left with no handler.
+   The runtime lock is per domain in OCaml 5, so it does not serialize them.
+   [handle_signal] never takes this mutex. */
+
+/* Per signal, the subscriptions that need the process-wide handler: those
+   whose loop's engine does not forward the signal itself. Each subscription
+   remembers whether it was counted, since a loop may change engines between
+   subscribing and unsubscribing. Under [signal_table_mutex]. */
+static int signal_handler_users[NSIG];
+static char signal_counted[NSIG][LWT_NOTIFICATION_CHANNELS];
 
 #if defined(LWT_ON_WINDOWS)
-/* Handle Ctrl+C on windows. */
-static BOOL WINAPI handle_break(DWORD event) {
-  intnat id = signal_notifications[SIGINT];
-  if (id == -1 || (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT))
-    return FALSE;
-  (void)send_notification(id, SIGINT);
-  return TRUE;
-}
+/* Defined with the Windows code below. */
+static BOOL WINAPI handle_break(DWORD event);
 #endif
 
-/* Install a signal handler. */
-CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification, value val_forwarded) {
-#if !defined(LWT_ON_WINDOWS)
-  struct sigaction sa;
-#endif
-  int signum = caml_convert_signal_number(Int_val(val_signum));
-  intnat notification = Long_val(val_notification);
-
-  if (signum < 0 || signum >= NSIG)
-    caml_invalid_argument("Lwt_unix.on_signal: unavailable signal");
-
-  signal_notifications[signum] = notification;
-
-  if (Bool_val(val_forwarded)) return Val_unit;
-
+/* Installs the process-wide handler for [signum]. Returns 0, or the error code
+   with the name of the call that failed in [*name], so that the caller can
+   raise once it has released the mutex. The code is an errno value on every
+   platform: signal() sets errno on Windows too, and a Windows error code is
+   mapped to one. */
+static int install_process_handler(int signum, const char **name) {
 #if defined(LWT_ON_WINDOWS)
   if (signum == SIGINT) {
     if (!SetConsoleCtrlHandler(handle_break, TRUE)) {
-      signal_notifications[signum] = -1;
+      *name = "SetConsoleCtrlHandler";
       win32_maperr(GetLastError());
-      uerror("SetConsoleCtrlHandler", Nothing);
+      return errno;
     }
   } else {
     if (signal(signum, handle_signal) == SIG_ERR) {
-      signal_notifications[signum] = -1;
-      uerror("signal", Nothing);
+      *name = "signal";
+      return errno;
     }
   }
 #else
+  struct sigaction sa;
   sa.sa_handler = handle_signal;
 #if OCAML_VERSION >= 50000
   sa.sa_flags = SA_ONSTACK;
@@ -1283,43 +1287,144 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification, val
 #endif
   sigemptyset(&sa.sa_mask);
   if (sigaction(signum, &sa, NULL) == -1) {
-    signal_notifications[signum] = -1;
-    uerror("sigaction", Nothing);
+    *name = "sigaction";
+    return errno;
   }
 #endif
-  return Val_unit;
+  return 0;
 }
 
-/* Remove a signal handler. */
-CAMLprim value lwt_unix_remove_signal(value val_signum, value val_forwarded) {
-#if !defined(LWT_ON_WINDOWS)
-  struct sigaction sa;
-#endif
-  /* The signal number is valid here since it was when we did the
-     set_signal. */
-  int signum = caml_convert_signal_number(Int_val(val_signum));
-  signal_notifications[signum] = -1;
-
-  if (Bool_val(val_forwarded)) return Val_unit;
-
+static void uninstall_process_handler(int signum) {
 #if defined(LWT_ON_WINDOWS)
   if (signum == SIGINT)
     SetConsoleCtrlHandler(NULL, FALSE);
   else
     signal(signum, SIG_DFL);
 #else
+  struct sigaction sa;
   sa.sa_handler = SIG_DFL;
   sa.sa_flags = 0;
   sigemptyset(&sa.sa_mask);
   sigaction(signum, &sa, NULL);
 #endif
+}
+
+/* [error] is an errno value. */
+static void raise_handler_error(int error, const char *name) {
+  unix_error(error, name, Nothing);
+}
+
+/* For an engine that forwards signals ([Lwt_engine.forwards_signal]). Called
+   from OCaml, not from a signal handler, so the notifications take the
+   ordinary path: a buffer may grow, and an error is raised only once every
+   subscribed loop has been sent the signal. */
+CAMLprim value lwt_unix_handle_signal(value val_signum) {
+  int i, error = 0;
+  int signum = caml_convert_signal_number(Int_val(val_signum));
+  if (signum >= 0 && signum < NSIG) {
+    for (i = 0; i < LWT_NOTIFICATION_CHANNELS; i++) {
+      intnat id = LWT_LOAD_ACQUIRE(&signal_notifications[signum][i]);
+      if (id != 0) {
+        int e = send_notification(id, -1);
+        if (error == 0) error = e;
+      }
+    }
+  }
+  if (error != 0) {
+#if defined(LWT_ON_WINDOWS)
+    /* send_notification returns a Windows error code there. */
+    win32_maperr(error);
+    error = errno;
+#endif
+    raise_handler_error(error, "send_notification");
+  }
   return Val_unit;
 }
 
-/* Mark all signals as non-monitored. */
-CAMLprim value lwt_unix_init_signals(value Unit) {
-  int i;
-  for (i = 0; i < NSIG; i++) signal_notifications[i] = -1;
+#if defined(LWT_ON_WINDOWS)
+/* Handle Ctrl+C on windows. */
+static BOOL WINAPI handle_break(DWORD event) {
+  int i, sent = 0;
+  if (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT) return FALSE;
+  for (i = 0; i < LWT_NOTIFICATION_CHANNELS; i++) {
+    intnat id = LWT_LOAD_ACQUIRE(&signal_notifications[SIGINT][i]);
+    if (id != 0) {
+      (void)send_notification(id, SIGINT);
+      sent = 1;
+    }
+  }
+  return sent ? TRUE : FALSE;
+}
+#endif
+
+/* Install a signal handler. */
+CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification, value val_forwarded) {
+  int signum = caml_convert_signal_number(Int_val(val_signum));
+  intnat notification = Long_val(val_notification);
+  int slot;
+  int error = 0;
+  const char *name = NULL;
+
+  if (signum < 0 || signum >= NSIG)
+    caml_invalid_argument("Lwt_unix.on_signal: unavailable signal");
+
+  /* The id names the subscribing loop's channel, so it also says where to
+     record the subscription. */
+  slot = LWT_NOTIFICATION_INDEX(notification);
+  lwt_unix_mutex_lock(&signal_table_mutex);
+  LWT_STORE_RELEASE(&signal_notifications[signum][slot], notification);
+
+  /* Only the first subscription that needs the process-wide handler installs
+     it. A later one must neither reinstall it nor be told it failed. */
+  if (!Bool_val(val_forwarded) && !signal_counted[signum][slot]) {
+    if (signal_handler_users[signum] == 0)
+      error = install_process_handler(signum, &name);
+    if (error == 0) {
+      signal_handler_users[signum]++;
+      signal_counted[signum][slot] = 1;
+    } else
+      LWT_STORE_RELEASE(&signal_notifications[signum][slot], 0);
+  }
+  lwt_unix_mutex_unlock(&signal_table_mutex);
+
+  if (error != 0) raise_handler_error(error, name);
+  return Val_unit;
+}
+
+/* Remove one loop's subscription, and the process-wide handler with the last of
+   them. */
+CAMLprim value lwt_unix_remove_signal(value val_signum, value val_notification) {
+  /* The signal number is valid here since it was when we did the
+     set_signal. */
+  int signum = caml_convert_signal_number(Int_val(val_signum));
+  int slot = LWT_NOTIFICATION_INDEX(Long_val(val_notification));
+
+  lwt_unix_mutex_lock(&signal_table_mutex);
+  LWT_STORE_RELEASE(&signal_notifications[signum][slot], 0);
+  if (signal_counted[signum][slot]) {
+    signal_counted[signum][slot] = 0;
+    if (--signal_handler_users[signum] == 0) uninstall_process_handler(signum);
+  }
+  lwt_unix_mutex_unlock(&signal_table_mutex);
+  return Val_unit;
+}
+
+/* Puts the process-wide handler back, for a signal some loop is subscribed to,
+   after another library replaced it ([Lwt_unix.reinstall_signal_handler]). */
+CAMLprim value lwt_unix_reinstall_signal(value val_signum) {
+  int signum = caml_convert_signal_number(Int_val(val_signum));
+  int error = 0;
+  const char *name = NULL;
+
+  if (signum < 0 || signum >= NSIG)
+    caml_invalid_argument("Lwt_unix.reinstall_signal_handler: unavailable signal");
+
+  lwt_unix_mutex_lock(&signal_table_mutex);
+  if (signal_handler_users[signum] > 0)
+    error = install_process_handler(signum, &name);
+  lwt_unix_mutex_unlock(&signal_table_mutex);
+
+  if (error != 0) raise_handler_error(error, name);
   return Val_unit;
 }
 

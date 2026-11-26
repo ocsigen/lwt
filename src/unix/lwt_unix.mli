@@ -837,7 +837,11 @@ val on_signal_full :
     disable it. *)
 
 val disable_signal_handler : signal_handler_id -> unit
-(** Stops receiving this signal *)
+(** Stops receiving this signal. It must be called from the loop that
+    registered the handler, which owns the handler list and the
+    subscription this call may end.
+
+    @raise Lwt.Domain_crossing from another domain. *)
 
 val signal_count : unit -> int
 (** Returns the number of registered signal handler. *)
@@ -1411,17 +1415,16 @@ val wait_for_jobs : unit -> unit Lwt.t
     {!abort_jobs}, {!cancel_jobs} and {!wait_for_jobs} act on the jobs of the
     calling loop.
 
-    Signal handlers and waiting for children still go through the channel of
-    the domain that initialized this module. The functions that depend on them
-    only work on that domain. On another domain, they raise
+    {!on_signal} subscribes the calling loop. A signal reaches every loop that
+    subscribed to it. A handler can only be disabled from the loop that
+    registered it: on another domain, {!disable_signal_handler} raises
     {!Lwt.Domain_crossing}.
 
-    These functions are:
-    - {!on_signal}, {!on_signal_full}, {!disable_signal_handler} and
-      {!reinstall_signal_handler};
-    - {!fork};
-    - {!waitpid}, {!wait4} and {!wait}, when the child has not exited yet and
-      [WNOHANG] is not given, and so {!Lwt_process}. *)
+    Each loop reaps the children it waits for. Two loops that wait for any
+    child race for whichever exits.
+
+    {!fork}, and {!system} which uses it, fail once any domain has been
+    spawned, even after it has been joined. {!Unix.fork} does the same. *)
 
 type notification
 
@@ -1580,14 +1583,9 @@ val write_job_count_runtimte_event : unit -> unit
 
 val install_sigchld_handler : unit -> unit
 [@@alert trespassing "Internal to the Lwt packages, keep away."]
-(** Installs the SIGCHLD handler of the process, unless it is already
-    installed.
+(** Subscribes the calling loop to SIGCHLD, unless it is already subscribed.
 
-    The handler only wakes up the domain that initialized this module, so
-    only that domain installs it. On another domain, this function does
-    nothing, so that {!Lwt_main.run} can call it on every domain.
-
-    Several threads can call it at the same time.
+    It can be called from several domains at once.
 
     For internal use: {!Lwt_main.run} and {!waitpid} call it. *)
 
@@ -1601,8 +1599,3 @@ val notification_channel_closed : unit -> bool
 [@@alert trespassing "Internal to the Lwt packages, keep away."]
 (** Whether this domain's notification channel has been closed, at the exit of
     the domain. {!Lwt_preemptive.detach} then runs its function directly. *)
-
-val check_notification_owner : unit -> unit
-[@@alert trespassing "Internal to the Lwt packages, keep away."]
-(** [check_notification_owner ()] raises {!Lwt.Domain_crossing}, unless it is
-    called on the domain that initialized this module. *)

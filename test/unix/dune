@@ -31,6 +31,8 @@
    signal_action_raises
    signal_handler_id
    domain_notifications
+   domain_signals
+   domain_signal_forwarding
    domain_exit_main
    domain_emfile)))
 
@@ -42,6 +44,20 @@
  (package lwt)
  (modules domain_exit_main)
  (libraries lwt.unix threads))
+
+; A signal reaches every loop that subscribed to it, each on its own channel.
+; Needs a second domain, hence OCaml 5.
+; Uses Unix.kill, hence not on Windows.
+
+(test
+ (name domain_signals)
+ (package lwt)
+ (modules domain_signals)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
 
 ; Every loop has its own notification channel, and an id carries the channel it
 ; belongs to. Needs a second domain, hence OCaml 5.
@@ -151,9 +167,9 @@
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
 
-; Jobs work on every domain. Signals and child waiting belong to the domain
-; that initialized Lwt_unix. Needs a second domain, hence OCaml 5, and
-; Unix.fork and SIGUSR1, hence not Windows.
+; Jobs, signals and child waiting work on every domain, and fork fails once a
+; domain has been spawned. Needs a second domain, hence OCaml 5, and Unix.fork
+; and SIGUSR1, hence not Windows.
 
 (test
  (name domain_unix_policy)
@@ -251,6 +267,20 @@
  (name fork_pending_notification)
  (package lwt)
  (modules fork_pending_notification)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; A loop subscribing to a signal after one whose engine forwards it still gets
+; the process-wide handler. Needs other domains, hence OCaml 5.
+; Uses Unix.alarm and SIGUSR2, hence not on Windows.
+
+(test
+ (name domain_signal_forwarding)
+ (package lwt)
+ (modules domain_signal_forwarding)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
  (enabled_if
   (<> %{os_type} "Win32"))
  (libraries lwt.unix))

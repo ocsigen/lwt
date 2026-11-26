@@ -1051,6 +1051,29 @@ let dup_tests ~blocking =
       assert (read = file_contents);
       Lwt.return_true) ]
 
+let signal_tests =
+  [ (* reinstall_signal_handler puts Lwt's handler back after another library
+     replaced it. SIGURG is ignored by default, so a handler that is not
+     restored costs a timeout, not the test process. *)
+    test "reinstall_signal_handler" ~sequential:true
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let got, resolve_got = Lwt.wait () in
+      let id =
+        Lwt_unix.on_signal Sys.sigurg (fun _ ->
+          if Lwt.is_sleeping got then Lwt.wakeup resolve_got ())
+      in
+      let other_library_ran = ref false in
+      Sys.set_signal Sys.sigurg
+        (Sys.Signal_handle (fun _ -> other_library_ran := true));
+      Lwt_unix.reinstall_signal_handler Sys.sigurg;
+      Unix.kill (Unix.getpid ()) Sys.sigurg;
+      Lwt.pick
+        [(got >|= fun () -> true); (Lwt_unix.sleep 2. >|= fun () -> false)]
+      >|= fun lwt_handler_ran ->
+      Lwt_unix.disable_signal_handler id;
+      lwt_handler_ran && not !other_library_ran
+      end ]
+
 let fork_tests =
   [ (* The child of a fork keeps the notifications made before it: a signal
      handler, the notification of Lwt_preemptive.run_in_main, and the SIGCHLD
@@ -1097,8 +1120,8 @@ let fork_tests =
 
 let suite =
   suite "lwt_unix"
-    (wait_tests @ fork_tests @ openfile_tests @ utimes_tests @ readdir_tests
-   @ io_vectors_byte_count_tests @ readv_tests @ writev_tests
+    (wait_tests @ signal_tests @ fork_tests @ openfile_tests @ utimes_tests
+   @ readdir_tests @ io_vectors_byte_count_tests @ readv_tests @ writev_tests
    @ send_recv_msg_tests @ bind_tests @ dir_tests @ lwt_preemptive_tests
    @ lwt_user_tests @ pread_tests ~blocking:true
     @ pread_tests ~blocking:false

@@ -14,19 +14,13 @@ open Lwt.Infix
    +-----------------------------------------------------------------+ *)
 
 (* Jobs, signal handlers and child waiting reach Lwt through a notification
-   channel. There is one per loop: the C side keeps a table of channels, and a
-   notification id carries the index of the channel it belongs to, so a
-   notification wakes the loop it was made for.
+   channel, one per loop. A notification id carries the index of its channel
+   in a C table. So a job completion wakes the loop that submitted the job, a
+   signal wakes every loop that subscribed to it, and a child's exit wakes the
+   loop that waits for it.
 
-   Jobs are per loop as well: a completion wakes the loop that submitted the
-   work. The signal handlers and child waiting are still wired to the domain
-   that initialized this module, because a signal is a process-wide resource
-   that needs its own policy. They keep the owner check below.
-
-   The marker is a per-domain slot set to [true] once, at module
-   initialization. This is more accurate than asking whether we are the main
-   domain: the owner is whoever loaded the module. In a program with a single
-   domain, it always reads [true]. *)
+   The per-domain state is in [notif_slot] below: the channel, the jobs in
+   flight, the signal subscriptions and the children awaited. *)
 [@@@alert "-trespassing"]
 
 module Lwt_dls = Lwt_dls
@@ -75,13 +69,38 @@ external encode_notification :
   -> int
   = "lwt_unix_encode_notification"
 
-(* Forward cell: draining needs [call_notification], which needs the notifier
-   table, which is defined below. Set once, at the end of that section. *)
+(* Forward references: draining needs [call_notification], and the exit of a
+   domain needs [remove_signal]; both are defined below. Set once, each at the
+   end of its section. *)
 let drain_notifications : (int -> unit) ref = ref (fun _ -> ())
+let drop_signal_subscriptions : (unit -> unit) ref = ref (fun () -> ())
 
 (* Forward reference too, for the same reason: removes a retired channel's
    entries from the table of notifiers, defined with that table below. *)
 let purge_notifiers : (int -> unit) ref = ref (fun _ -> ())
+
+(* Declared here rather than where they are used, so that the per-domain record
+   below can mention them. *)
+
+type notification = int (* a simple id, carrying its channel's index *)
+
+module Signal_map = Map.Make (struct
+    type t = int
+
+    let compare a b = a - b
+  end)
+
+type signal_handler =
+  { sh_num : int
+  ; sh_node : (int -> unit) Lwt_sequence.node
+  ; sh_owner : Lwt_dls.token
+    (* The loop that registered it: the node above is in that loop's list of
+       handlers, which only that loop may touch. *)
+  }
+
+and signal_handler_id = signal_handler option ref
+
+type resource_usage = {ru_utime : float; ru_stime : float}
 
 (* Per domain: the channel this loop is woken through, and the engine event
    that watches it, created on first use. The notification ids this domain
@@ -96,6 +115,20 @@ type notif =
        submitted the job, so that is the loop that must remove the node and
        decrement the count. *)
   ; mutable job_count : int
+  ; mutable signals : (notification * (int -> unit) Lwt_sequence.t) Signal_map.t
+    (* The signals this loop is subscribed to, with the notification each
+       arrives on and the handlers to run. Per domain because a signal is
+       delivered to every loop that asked for it, on its own channel: the C side
+       keeps one subscriber slot per channel. *)
+  ; wait_children :
+      ((int * Unix.process_status * resource_usage) Lwt.u
+      * Unix.wait_flag list
+      * int)
+        Lwt_sequence.t
+    (* Children this loop is waiting for, and whether it has subscribed to
+       SIGCHLD. Per domain for the same reason: each loop reaps the children it
+       waits for, woken by its own subscription. *)
+  ; mutable sigchld_installed : bool
   ; mutable retired : bool
     (* Set once the channel is retired at domain exit; see [notif_slot]. *) }
 
@@ -115,6 +148,9 @@ let notif_slot : notif Lwt_dls.t =
       ; event
       ; jobs = Lwt_sequence.create ()
       ; job_count = 0
+      ; signals = Signal_map.empty
+      ; wait_children = Lwt_sequence.create ()
+      ; sigchld_installed = false
       ; retired = false }
     in
     (* Retire the channel with the domain. An exit hook may need a job
@@ -150,6 +186,9 @@ let notif_slot : notif Lwt_dls.t =
         in
         abort ();
         notif.job_count <- 0;
+        (* Unsubscribe, or the process-wide handler would stay installed for
+           nobody, and swallow the signal. *)
+        !drop_signal_subscriptions ();
         Lwt_engine.stop_event event;
         (* Forget this loop's notifications before the slot is freed. Once it
            is free, another domain may take it and register notifications with
@@ -180,14 +219,6 @@ let ensure_channel () = ignore (Lwt_dls.get notif_slot)
 
 (* For [Lwt_preemptive], which then runs detached functions directly. *)
 let notification_channel_closed () = (self_notif ()).retired
-
-(* Set up lazily, per domain, by the slot above. *)
-let is_owner_slot : bool Lwt_dls.t = Lwt_dls.new_key (fun () -> false)
-let () = Lwt_dls.set is_owner_slot true
-let[@inline] is_notification_owner () = Lwt_dls.get is_owner_slot
-
-let[@inline] check_notification_owner () =
-  if not (is_notification_owner ()) then raise Lwt.Domain_crossing
 
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
@@ -235,8 +266,6 @@ type notifier =
 
 module Notifiers = Map.Make (Int)
 
-type notification = int (* a simple ID*)
-
 (* Process-wide. Creating and stopping a notification must be safe from any
    thread or domain, like sending one. The table is an immutable map in an
    atomic. An update builds a new map, installs it with a compare-and-set, and
@@ -270,7 +299,10 @@ let rec find_free_local map chan local tries =
   if tries = 0
   then
     failwith "Lwt_unix.make_notification: too many notifications on this loop";
-  if Notifiers.mem (encode_notification chan local) map
+  let id = encode_notification chan local in
+  (* 0 is never handed out: in the C table of signal subscriptions it means
+     nobody. *)
+  if id = 0 || Notifiers.mem id map
   then find_free_local map chan (local + 1) (tries - 1)
   else local
 
@@ -2453,40 +2485,27 @@ let () =
    +-----------------------------------------------------------------+ *)
 
 external set_signal : int -> int -> bool -> unit = "lwt_unix_set_signal"
-external remove_signal : int -> bool -> unit = "lwt_unix_remove_signal"
-external init_signals : unit -> unit = "lwt_unix_init_signals"
+external remove_signal : int -> int -> unit = "lwt_unix_remove_signal"
+external reinstall_signal : int -> unit = "lwt_unix_reinstall_signal"
 external handle_signal : int -> unit = "lwt_unix_handle_signal"
-
-let () = init_signals ()
 
 let set_signal signum notification =
   set_signal signum notification (Lwt_engine.forwards_signal signum)
 
-let remove_signal signum =
-  remove_signal signum (Lwt_engine.forwards_signal signum)
-
-module Signal_map = Map.Make (struct
-    type t = int
-
-    let compare a b = a - b
-  end)
-
-type signal_handler = {sh_num : int; sh_node : (int -> unit) Lwt_sequence.node}
-and signal_handler_id = signal_handler option ref
-
-let signals = ref Signal_map.empty
-
+(* Reports on the calling loop's subscriptions. *)
 let signal_count () =
   Signal_map.fold
     (fun _signum (_notification, actions) len ->
        len + Lwt_sequence.length actions)
-    !signals 0
+    (self_notif ()).signals 0
 
+(* Subscribes this loop to the signal, if it is not already, and adds the
+   handler. The C side wakes every subscribed loop. *)
 let on_signal_full signum handler =
-  check_notification_owner ();
+  let notif = self_notif () in
   let id = ref None in
   let _, actions =
-    try Signal_map.find signum !signals
+    try Signal_map.find signum notif.signals
     with Not_found ->
       let actions = Lwt_sequence.create () in
       let notification =
@@ -2504,36 +2523,55 @@ let on_signal_full signum handler =
        with exn when Lwt.Exception_filter.run exn ->
          stop_notification notification;
          raise exn);
-      signals := Signal_map.add signum (notification, actions) !signals;
+      notif.signals <-
+        Signal_map.add signum (notification, actions) notif.signals;
       notification, actions
   in
   (* Each handler gets its own id, so that it can disable itself. *)
   let node = Lwt_sequence.add_r (fun signum -> handler id signum) actions in
-  id := Some {sh_num = signum; sh_node = node};
+  id := Some {sh_num = signum; sh_node = node; sh_owner = Lwt_dls.self_token ()};
   id
 
 let on_signal signum f = on_signal_full signum (fun _notification num -> f num)
 
 let disable_signal_handler id =
-  check_notification_owner ();
   match !id with
   | None -> ()
-  | Some sh ->
+  | Some sh -> (
+      (* From its own loop only: the handler list and the subscription belong to
+         that loop. *)
+      check_owner sh.sh_owner;
+      let notif = self_notif () in
       id := None;
       Lwt_sequence.remove sh.sh_node;
-      let notification, actions = Signal_map.find sh.sh_num !signals in
-      if Lwt_sequence.is_empty actions
-      then begin
-        remove_signal sh.sh_num;
-        signals := Signal_map.remove sh.sh_num !signals;
-        stop_notification notification
-      end
+      match Signal_map.find_opt sh.sh_num notif.signals with
+      | None ->
+          (* The subscriptions were dropped when the domain exited. *)
+          ()
+      | Some (notification, actions) ->
+          if Lwt_sequence.is_empty actions
+          then begin
+            remove_signal sh.sh_num notification;
+            notif.signals <- Signal_map.remove sh.sh_num notif.signals;
+            stop_notification notification
+          end)
 
+(* Sets the forward reference declared at the top: when a domain exits, it
+   drops its own subscriptions, since only that domain may touch them. *)
+let () =
+  drop_signal_subscriptions :=
+    fun () ->
+      let notif = self_notif () in
+      Signal_map.iter
+        (fun signum (notification, _) -> remove_signal signum notification)
+        notif.signals;
+      notif.signals <- Signal_map.empty
+
+(* Subscribing again would not reinstall the handler: only the first
+   subscription installs it. The C side counted the subscriptions that need it,
+   so it knows whether any does. *)
 let reinstall_signal_handler signum =
-  check_notification_owner ();
-  match Signal_map.find signum !signals with
-  | exception Not_found -> ()
-  | notification, _ -> set_signal signum notification
+  if Signal_map.mem signum (self_notif ()).signals then reinstall_signal signum
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -2543,11 +2581,8 @@ external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
 
 (* TODO: replace fork with something thread+domain safe *)
 let fork () =
-  (* [fork] reinitializes the notification descriptor and empties the job
-     sequence, which belong to the domain that initialized this module. Also,
-     the runtime refuses [Unix.fork] once a domain has been spawned, even after
-     it is joined. *)
-  check_notification_owner ();
+  (* The runtime refuses [Unix.fork] once any domain has been spawned, even
+     after it has been joined, so [fork] needs no domain check of its own. *)
   match Unix.fork () with
   | 0 ->
       (* Let the engine handle the fork *)
@@ -2588,7 +2623,6 @@ type process_status = Unix.process_status =
   | WSTOPPED of int
 
 type wait_flag = Unix.wait_flag = WNOHANG | WUNTRACED
-type resource_usage = {ru_utime : float; ru_stime : float}
 
 let has_wait4 = not Sys.win32
 
@@ -2605,56 +2639,41 @@ let do_wait4 flags pid =
     pid, status, {ru_utime = 0.0; ru_stime = 0.0}
   else stub_wait4 flags pid
 
-let wait_children = Lwt_sequence.create ()
-let wait_count () = Lwt_sequence.length wait_children
+(* Reports on the calling loop's waits. *)
+let wait_count () = Lwt_sequence.length (self_notif ()).wait_children
 
-(* Called by [install_sigchld_handler] below, which [Lwt_main.run] calls. This
-   is to avoid installing the sigchld_handler in cases where the user is not
-   really using Lwt (just linking against it for some reason). *)
-let really_install_sigchld_handler () =
-  if not Sys.win32
-  then
-    ignore
-      begin
-        on_signal Sys.sigchld (fun _ ->
-          Lwt_sequence.iter_node_l
-            begin fun node ->
-              let wakener, flags, pid = Lwt_sequence.get node in
-              try
-                let ((pid', _, _) as v) = do_wait4 flags pid in
-                if pid' <> 0
-                then begin
-                  Lwt_sequence.remove node; Lwt.wakeup wakener v
-                end
-              with e when Lwt.Exception_filter.run e ->
-                Lwt_sequence.remove node; Lwt.wakeup_exn wakener e
-            end
-            wait_children)
-      end
+(* Reaps the children this loop is waiting for, on SIGCHLD. Two loops waiting
+   for any child race for whichever exits. *)
+let sigchld_handler () =
+  let wait_children = (self_notif ()).wait_children in
+  Lwt_sequence.iter_node_l
+    begin fun node ->
+      let wakener, flags, pid = Lwt_sequence.get node in
+      try
+        let ((pid', _, _) as v) = do_wait4 flags pid in
+        if pid' <> 0
+        then begin
+          Lwt_sequence.remove node; Lwt.wakeup wakener v
+        end
+      with e when Lwt.Exception_filter.run e ->
+        Lwt_sequence.remove node; Lwt.wakeup_exn wakener e
+    end
+    wait_children
 
-(* The SIGCHLD handler is process-wide, so it is installed once per process.
-   Once it is installed, checking the atomic flag is all a call costs. The
-   mutex serializes the installation itself, and is released even if it
-   raises. *)
-let sigchld_installed = Atomic.make false
-let sigchld_install_mutex = Mutex.create ()
-
-(* Does nothing on a domain other than the one that initialized this module,
-   since [Lwt_main.run] calls it on every domain and only that domain can wait
-   for children. On another domain, [waitpid] and [wait4] fail when they would
-   block. *)
+(* Per loop: each loop that waits for a child subscribes for itself. Called by
+   [Lwt_main.run] on every domain, and does nothing the second time on the same
+   domain. *)
+(* Does nothing once the channel is retired, as no signal reaches the loop any
+   more: [Lwt_main.run] calls this, and must still work in a late
+   [Domain.at_exit] callback. Waiting for a child then fails instead. *)
 let install_sigchld_handler () =
-  if is_notification_owner () && not (Atomic.get sigchld_installed)
+  let notif = self_notif () in
+  if not (notif.sigchld_installed || notif.retired)
   then begin
-    Mutex.lock sigchld_install_mutex;
-    Fun.protect
-      ~finally:(fun () -> Mutex.unlock sigchld_install_mutex)
-      (fun () ->
-         if not (Atomic.get sigchld_installed)
-         then begin
-           really_install_sigchld_handler ();
-           Atomic.set sigchld_installed true
-         end)
+    if not Sys.win32
+    then ignore (on_signal Sys.sigchld (fun _ -> sigchld_handler ()));
+    (* Set after subscribing, so that a failed subscription is tried again. *)
+    notif.sigchld_installed <- true
   end
 
 let _waitpid flags pid =
@@ -2674,9 +2693,10 @@ let waitpid =
         if pid' <> 0
         then Lwt.return res
         else begin
-          check_notification_owner ();
           let res, w = Lwt.task () in
-          let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+          let node =
+            Lwt_sequence.add_l (w, flags, pid) (live_notif ()).wait_children
+          in
           Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
           res >>= fun (pid, status, _) -> Lwt.return (pid, status)
         end
@@ -2693,9 +2713,10 @@ let wait4 flags pid =
     if pid' <> 0
     then Lwt.return res
     else begin
-      check_notification_owner ();
       let res, w = Lwt.task () in
-      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+      let node =
+        Lwt_sequence.add_l (w, flags, pid) (live_notif ()).wait_children
+      in
       Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
       res
     end
