@@ -21,6 +21,10 @@
 
   * Make the Lwt.key storage thread-safe.
 
+  * Lwt_unix.mcast_set_loop and Lwt_unix.mcast_set_ttl failed with EINVAL on
+    OpenBSD, which wants a one-byte value. They now pass a byte, which the
+    other systems accept too. (Jérôme Vouillon)
+
 ===== 6.1.3 =====
 
 ====== Changes ======
