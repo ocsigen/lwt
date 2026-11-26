@@ -864,6 +864,14 @@ val default_buffer_size : unit -> int
 (** Return the default size for buffers. Channels that are created
     without a specific buffer use new buffer of this size. *)
 
+val close_on_finalise : 'mode channel -> unit
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** Closes the channel when it is collected, if its finalizer runs on the
+    channel's own domain. On a domain other than the main one, the channel is
+    also closed when that domain exits. Meant for the channels of a stream or a
+    process, which the user never closes. Must be called on the channel's own
+    domain. *)
+
 val set_default_buffer_size : int -> unit
 (** Change the default buffer size.
 

@@ -128,15 +128,31 @@ let mode wrapper = wrapper.channel.mode
 
    The counter is shared by all domains, and atomic. Bucket spread only
    matters inside one table, so a per-domain counter would not help. *)
-let hash_output_channel =
+let hash_channel =
   let index = Atomic.make 0 in
   fun () -> Atomic.fetch_and_add index 1
 
 module Outputs = Weak.Make (struct
     type t = output_channel
 
-    let hash _ = hash_output_channel ()
+    let hash _ = hash_channel ()
     let equal = ( == )
+  end)
+
+(* The channels that [close_on_finalise] registered, of either mode, held
+   weakly: the registry must not keep them alive. Unboxed, so that the table
+   holds the channel itself rather than a box that nothing else holds. *)
+type hidden = Hidden : 'mode channel -> hidden [@@unboxed]
+
+module Hidden = Weak.Make (struct
+    type t = hidden
+
+    let hash _ = hash_channel ()
+
+    (* Physical identity of the channel, through a field whose type does not
+       depend on the mode. *)
+    let equal (Hidden a) (Hidden b) =
+      a.channel.abort_waiter == b.channel.abort_waiter
   end)
 
 let position : type mode. mode channel -> int64 =
@@ -451,6 +467,28 @@ let flush_all () = flush_registry (Lwt_dls.get outputs)
 let () =
   (* Flush all output channels opened by the main domain on exit: *)
   if Lwt_dls.is_main_domain () then Lwt_main.at_exit flush_all
+
+let close_registry registry =
+  let channels = Hidden.fold (fun x l -> x :: l) registry [] in
+  Lwt_list.iter_p
+    (fun (Hidden wrapper) ->
+       Lwt.catch (fun () -> close wrapper) (fun _ -> Lwt.return_unit))
+    channels
+
+(* Per domain: the channels that [close_on_finalise] registered, those of a
+   stream or a process, which the user never sees and never closes. A spawned
+   domain closes them in its last exit hook, while its loop still runs: once
+   it has gone, their finalizers run on another domain, which cannot close
+   them (see [ignore_close]). The main domain leaves them to process exit. *)
+let hidden : Hidden.t Lwt_dls.t =
+  Lwt_dls.new_key (fun () ->
+    let registry = Hidden.create 8 in
+    if not (Lwt_dls.is_main_domain ())
+    then
+      ignore
+        (Lwt_main.Exit_hooks.add_last (fun () -> close_registry registry)
+         : Lwt_main.Exit_hooks.hook);
+    registry)
 
 let no_seek _pos _cmd =
   Lwt.fail (Failure "Lwt_io.seek: seek not supported on this channel")
@@ -1715,14 +1753,22 @@ let establish_server_deprecated ?fd ?buffer_size ?backlog sockaddr f =
   Lwt.ignore_result server_started;
   server
 
-let ignore_close ch = ignore (close ch)
+(* A channel whose domain has gone is not closed here: its finalizer runs on
+   another domain, where closing would raise, and the domain's exit hook closed
+   it already (see [hidden]). *)
+let owned ch = ch.channel.owner = Lwt_dls.self_token ()
+let ignore_close ch = if owned ch then ignore (close ch)
+
+(* On the channel's own domain: the finalizer and the registry are those of
+   the calling domain. *)
+let close_on_finalise ch =
+  check_owner ch.channel.owner;
+  Gc.finalise ignore_close ch;
+  Hidden.add (Lwt_dls.get hidden) (Hidden ch)
 
 let make_stream f lazy_ic =
   let lazy_ic =
-    lazy
-      ( Lazy.force lazy_ic >>= fun ic ->
-        Gc.finalise ignore_close ic;
-        Lwt.return ic )
+    lazy (Lazy.force lazy_ic >>= fun ic -> close_on_finalise ic; Lwt.return ic)
   in
   Lwt_stream.from (fun _ ->
     Lazy.force lazy_ic >>= fun ic ->

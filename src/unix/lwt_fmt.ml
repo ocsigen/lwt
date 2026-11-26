@@ -23,13 +23,10 @@ let make_stream () =
   let out_string s i j = push @@ Some (String (s, i, j))
   and flush () = push @@ Some Flush in
   let fmt = Format.make_formatter out_string flush in
-  (* Not sure about that one *)
-  Gc.finalise
-    (fun _ ->
-       (* If the domain that created the stream has exited, another domain runs
-          this finaliser, and [push] refuses it. *)
-       try push None with Lwt.Domain_crossing -> ())
-    fmt;
+  (* Through [Lwt_gc], which runs the function on the loop that registered it:
+     a plain finalizer may run on another domain once this one has gone, and
+     pushing to the stream from there would raise inside the finalizer. *)
+  Lwt_gc.finalise (fun _ -> push None; Lwt.return_unit) fmt;
   let commit () = Lwt.return_unit in
   stream, make_formatter ~commit ~fmt ()
 

@@ -62,7 +62,8 @@
  (libraries lwt.unix))
 
 ; Lwt_gc's deferred function runs on the loop that registered it, and one whose
-; domain has gone is dropped. Needs a second domain, hence OCaml 5.
+; domain has gone is dropped; a domain closes the channels of its streams and
+; processes before it goes. Needs a second domain, hence OCaml 5.
 
 (test
  (name domain_gc)
