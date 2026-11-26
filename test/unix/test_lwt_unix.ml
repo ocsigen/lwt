@@ -907,7 +907,9 @@ let lwt_user_tests =
       let pwnam = Unix.getpwnam (Unix.getlogin ()) in
       let unix_pwuid = Unix.getpwuid pwnam.pw_uid in
       Lwt_unix.getpwuid pwnam.pw_uid >>= fun pwuid ->
-      Lwt.return (pwuid = unix_pwuid)
+      (* Not the shell: on macOS, getpwuid and getpwuid_r, which Lwt uses, can
+         disagree on it, for example /bin/bash and /bin/sh (#1076). *)
+      Lwt.return ({pwuid with pw_shell = ""} = {unix_pwuid with pw_shell = ""})
       end
   ; test "getgrgid and Unix.getgrgid" ~only_if:(fun () -> not Sys.win32)
       begin fun () ->

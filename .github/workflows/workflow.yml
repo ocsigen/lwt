@@ -30,7 +30,18 @@ jobs:
         libev:
           - true
           - false
+        exclude:
+          # OCaml 5.0 does not build with the C23 default of the GCC on
+          # ubuntu-latest: it runs on ubuntu-22.04 instead (see below).
+          - os: ubuntu-latest
+            ocaml-compiler: "5.0"
         include:
+          - os: ubuntu-22.04
+            ocaml-compiler: "5.0"
+            libev: true
+          - os: ubuntu-22.04
+            ocaml-compiler: "5.0"
+            libev: false
           - os: ubuntu-24.04-arm
             ocaml-compiler: "5.4"
             libev: false
@@ -39,9 +50,6 @@ jobs:
             libev: false
           - os: windows-latest
             ocaml-compiler: "5.4"
-            libev: false
-          - os: windows-latest
-            ocaml-compiler: "ocaml-variants.4.14.2+options,host-system-msvc"
             libev: false
           - os: windows-latest
             ocaml-compiler: "ocaml-variants.4.14.2+options,host-system-mingw"
