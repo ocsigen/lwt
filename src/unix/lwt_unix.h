@@ -260,14 +260,22 @@ void lwt_unix_free_job(lwt_unix_job job);
     VAR->job.worker = (lwt_unix_job_worker)worker_##FUNC;                \
     VAR->job.result = (lwt_unix_job_result)result_##FUNC
 
+/* Raises Unix.Unix_error (ENOENT, FUNC, ARG) if the OCaml string ARG
+   contains a NUL byte, as the Unix library does. Without this check, C
+   would see ARG truncated at its first NUL byte. */
+#define LWT_UNIX_CHECK_STRING(FUNC, ARG)  \
+    do {                                   \
+      if (! caml_string_is_c_safe(ARG))    \
+        unix_error(ENOENT, #FUNC, ARG);    \
+    } while (0)
+
 /* Same as LWT_UNIX_INIT_JOB, but also stores a string argument named
    ARG at the end of the job structure. The offset of the copied
    string is assigned to the field VAR->ARG.
 
    The structure must ends with: char data[]; */
 #define LWT_UNIX_INIT_JOB_STRING(VAR, FUNC, SIZE, ARG) \
-    if (! caml_string_is_c_safe(ARG))                  \
-      unix_error(ENOENT, #FUNC, ARG);                 \
+    LWT_UNIX_CHECK_STRING(FUNC, ARG);                  \
     mlsize_t __len = caml_string_length(ARG);          \
     LWT_UNIX_INIT_JOB(VAR, FUNC, SIZE + __len + 1);    \
     VAR->ARG = VAR->data + SIZE;                       \
@@ -280,10 +288,8 @@ void lwt_unix_free_job(lwt_unix_job job);
 
    The structure definition must ends with: char data[]; */
 #define LWT_UNIX_INIT_JOB_STRING2(VAR, FUNC, SIZE, ARG1, ARG2) \
-    if (! caml_string_is_c_safe(ARG1))                  \
-      unix_error(ENOENT, #FUNC, ARG1);                 \
-    if (! caml_string_is_c_safe(ARG2))                  \
-      unix_error(ENOENT, #FUNC, ARG2);                 \
+    LWT_UNIX_CHECK_STRING(FUNC, ARG1);                         \
+    LWT_UNIX_CHECK_STRING(FUNC, ARG2);                         \
     mlsize_t __len1 = caml_string_length(ARG1);                \
     mlsize_t __len2 = caml_string_length(ARG2);                \
     LWT_UNIX_INIT_JOB(VAR, FUNC, SIZE + __len1 + __len2 + 2);  \

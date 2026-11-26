@@ -82,6 +82,9 @@ static value result_symlink(struct job_symlink* job)
 /* The stub creating the job structure. */
 CAMLprim value lwt_unix_symlink_job(value oldpath, value newpath)
 {
+  CAMLparam2(oldpath, newpath);
+  LWT_UNIX_CHECK_STRING(symlink, oldpath);
+  LWT_UNIX_CHECK_STRING(symlink, newpath);
   /* Get the length of the oldpath parameter. */
   mlsize_t len_oldpath = caml_string_length(oldpath) + 1;
   /* Get the length of the newpath parameter. */
@@ -100,7 +103,7 @@ CAMLprim value lwt_unix_symlink_job(value oldpath, value newpath)
   job->job.worker = (lwt_unix_job_worker)worker_symlink;
   job->job.result = (lwt_unix_job_result)result_symlink;
   /* Wrap the structure into a caml value. */
-  return lwt_unix_alloc_job(&job->job);
+  CAMLreturn(lwt_unix_alloc_job(&job->job));
 }
 
 #else /* !defined(LWT_ON_WINDOWS) */

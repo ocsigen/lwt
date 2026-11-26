@@ -83,6 +83,8 @@ static value result_mkdir(struct job_mkdir* job)
 /* The stub creating the job structure. */
 CAMLprim value lwt_unix_mkdir_job(value path, value mode)
 {
+  CAMLparam2(path, mode);
+  LWT_UNIX_CHECK_STRING(mkdir, path);
   /* Get the length of the path parameter. */
   mlsize_t len_path = caml_string_length(path) + 1;
   /* Allocate a new job. */
@@ -97,7 +99,7 @@ CAMLprim value lwt_unix_mkdir_job(value path, value mode)
   /* Copy the mode parameter. */
   job->mode = Int_val(mode);
   /* Wrap the structure into a caml value. */
-  return lwt_unix_alloc_job(&job->job);
+  CAMLreturn(lwt_unix_alloc_job(&job->job));
 }
 
 #else /* !defined(LWT_ON_WINDOWS) */
