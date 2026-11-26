@@ -81,64 +81,69 @@ type notifier =
        notification *)
   }
 
-module Notifiers = Hashtbl.Make (struct
-    type t = int
-
-    let equal (x : int) (y : int) = x = y
-    let hash (x : int) = x
-  end)
+module Notifiers = Map.Make (Int)
 
 (* Process-wide. Creating and stopping a notification must be safe from any
-   thread or domain, like sending one, hence the mutex. It is not held while a
-   handler runs, since handlers may create notifications. It is locked and
-   unlocked explicitly, rather than through [Fun.protect], which would allocate
-   on every notification: nothing in between raises, except [Not_found], which
-   is caught. *)
-let notifiers = Notifiers.create 1024
-let notifiers_mutex = Mutex.create ()
+   thread or domain, like sending one. The table is an immutable map in an
+   atomic. An update builds a new map, installs it with a compare-and-set, and
+   starts again if the table changed meanwhile.
+
+   A mutex would not do. A GC finalizer or an OCaml signal handler can run in
+   the middle of an update, on the same thread, at any allocation or poll
+   point. If it creates a notification, it would lock the mutex a second time.
+   A finalizer that closes a channel does, since closing is a job. Here, the
+   outer update just starts again.
+
+   [last] is the last id handed out. See
+   https://github.com/ocsigen/lwt/issues/277 and
+   https://github.com/ocsigen/lwt/pull/278 for its initial value. *)
+type notifiers = {map : notifier Notifiers.t; last : int}
+
+let notifiers = Atomic.make {map = Notifiers.empty; last = 0x7FFFFFFF - 1000}
 
 type notification = int (* a simple ID*)
 
-(* See https://github.com/ocsigen/lwt/issues/277 and
-   https://github.com/ocsigen/lwt/pull/278. *)
-let current_notification_id = ref (0x7FFFFFFF - 1000)
-
-let rec find_free_id id =
-  if Notifiers.mem notifiers id then find_free_id (id + 1) else id
+let rec find_free_id map id =
+  if Notifiers.mem id map then find_free_id map (id + 1) else id
 
 let make_notification ?(once = false) f =
-  Mutex.lock notifiers_mutex;
-  let id = find_free_id (!current_notification_id + 1) in
-  current_notification_id := id;
-  Notifiers.add notifiers id {notify_once = once; notify_handler = f};
-  Mutex.unlock notifiers_mutex;
-  id
+  let notifier = {notify_once = once; notify_handler = f} in
+  let rec add () =
+    let t = Atomic.get notifiers in
+    let id = find_free_id t.map (t.last + 1) in
+    let t' = {map = Notifiers.add id notifier t.map; last = id} in
+    if Atomic.compare_and_set notifiers t t' then id else add ()
+  in
+  add ()
 
-let stop_notification id =
-  Mutex.lock notifiers_mutex;
-  Notifiers.remove notifiers id;
-  Mutex.unlock notifiers_mutex
+let rec stop_notification id =
+  let t = Atomic.get notifiers in
+  if
+    Notifiers.mem id t.map
+    && not
+         (Atomic.compare_and_set notifiers t
+            {t with map = Notifiers.remove id t.map})
+  then stop_notification id
 
-let set_notification id f =
-  Mutex.lock notifiers_mutex;
-  match Notifiers.find notifiers id with
-  | exception Not_found ->
-      Mutex.unlock notifiers_mutex;
-      raise Not_found
-  | notifier ->
-      Notifiers.replace notifiers id {notifier with notify_handler = f};
-      Mutex.unlock notifiers_mutex
+let rec set_notification id f =
+  let t = Atomic.get notifiers in
+  let notifier = Notifiers.find id t.map in
+  let map = Notifiers.add id {notifier with notify_handler = f} t.map in
+  if not (Atomic.compare_and_set notifiers t {t with map})
+  then set_notification id f
 
-let call_notification id =
-  (* The lookup and the [once] removal are atomic together; the handler runs
-     after the lock is released. *)
-  Mutex.lock notifiers_mutex;
-  match Notifiers.find notifiers id with
-  | exception Not_found -> Mutex.unlock notifiers_mutex
-  | notifier ->
-      if notifier.notify_once then Notifiers.remove notifiers id;
-      Mutex.unlock notifiers_mutex;
-      notifier.notify_handler ()
+let rec call_notification id =
+  let t = Atomic.get notifiers in
+  match Notifiers.find_opt id t.map with
+  | None -> ()
+  | Some notifier when not notifier.notify_once -> notifier.notify_handler ()
+  | Some notifier ->
+      (* The handler runs only if this call is the one that removed it. *)
+      if
+        Atomic.compare_and_set notifiers t
+          {t with map = Notifiers.remove id t.map}
+      then notifier.notify_handler ()
+      else call_notification id
 
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
