@@ -907,17 +907,20 @@ v}
     If you are writing a library, you should leave this reference alone. Its
     behavior should be determined by the application.
 
-    It is shared by all domains: with several domains, set it before spawning
+    It is shared by all domains. With several domains, set it before spawning
     them.
 
     The default implementation calls [exit] on the domain where the exception
-    occurred. On a domain other than the main one, that does not run the main
-    domain's exit hooks ([Lwt_main.Exit_hooks], in [lwt.unix]), which flush
-    [Lwt_io.stdout] among others, so the main domain's buffered output can be
-    lost. A program that runs Lwt on several domains should set a hook that
-    hands the exception to the main domain instead, for example through an
-    [Atomic.t] and [Lwt_unix.send_notification], whose handler runs on the
-    domain that initialized [Lwt_unix], and let the main domain exit. *)
+    occurred. On a domain other than the main one, [exit] does not run the
+    exit hooks of the main domain ([Lwt_main.Exit_hooks], in [lwt.unix]).
+    These hooks flush [Lwt_io.stdout], among others. So the buffered output of
+    the main domain can be lost.
+
+    A program that runs Lwt on several domains should therefore set a hook
+    that hands the exception to the main domain, and let the main domain exit.
+    For example, the hook can store the exception in an [Atomic.t], and call
+    [Lwt_unix.send_notification]. The handler of a notification runs on the
+    domain that initialized [Lwt_unix], usually the main one. *)
 
 (** {2:2_Concurrency Concurrency} *)
 

@@ -310,9 +310,10 @@ type file_descr =
   ; hooks_writable : (unit -> unit) Lwt_sequence.t
     (* Hooks to call when the file descriptor becomes writable. *)
   ; owner : Lwt_dls.token
-    (* The domain that created the descriptor. Its readiness events are
-       registered on that domain's engine, and its hooks run there. Checked in
-       [check_descriptor], which every operation calls. *)
+    (* The domain that created the descriptor. Waiting for the descriptor to
+       be readable or writable adds an event to the engine of that domain, and
+       its hooks run there. Checked in [check_descriptor], which every
+       operation calls. *)
   }
 
 external is_socket : Unix.file_descr -> bool = "lwt_unix_is_socket" "noalloc"
