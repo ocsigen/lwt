@@ -48,6 +48,49 @@ end
 
 let log = Log.log
 
+(* If the tests of a library have not finished after a time limit, prints the
+   tests still running, and exits. Otherwise a test that hangs in CI would run
+   until the job times out, and say nothing about which test it was. A system
+   thread, so that it fires even if the loop is blocked. The limit is 300 s, or
+   the number of seconds in LWT_TEST_TIMEOUT. *)
+module Watchdog = struct
+  let limit =
+    match Sys.getenv_opt "LWT_TEST_TIMEOUT" with
+    | Some s -> float_of_string s
+    | None -> 300.
+
+  let running : (string, float) Hashtbl.t = Hashtbl.create 16
+  let mutex = Mutex.create ()
+
+  let started name =
+    Mutex.lock mutex;
+    Hashtbl.add running name (Unix.gettimeofday ());
+    Mutex.unlock mutex
+
+  let finished name =
+    Mutex.lock mutex;
+    Hashtbl.remove running name;
+    Mutex.unlock mutex
+
+  let start library_name =
+    let fire () =
+      Thread.delay limit;
+      Mutex.lock mutex;
+      let now = Unix.gettimeofday () in
+      Printf.eprintf
+        "\nTIMEOUT: the tests of library '%s' did not finish in %.0f s.\n"
+        library_name limit;
+      Printf.eprintf "Tests still running:\n";
+      Hashtbl.iter
+        (fun name since ->
+           Printf.eprintf "  %s (for %.0f s)\n" name (now -. since))
+        running;
+      flush stderr;
+      Unix._exit 1
+    in
+    ignore (Thread.create fire ())
+end
+
 let run_test : test -> outcome Lwt.t =
  fun test ->
   if test.skip_if_this_is_false () = false
@@ -57,6 +100,7 @@ let run_test : test -> outcome Lwt.t =
   end
   else begin
     let start_time = Unix.gettimeofday () in
+    Watchdog.started test.test_name;
     (log @@ fun k -> k test.test_name "starting");
     (* Lwt.async_exception_hook handling inspired by
          https://github.com/mirage/alcotest/issues/45 *)
@@ -78,6 +122,7 @@ let run_test : test -> outcome Lwt.t =
          Lwt.pick [test_completion_promise; async_exception_promise])
       (fun () ->
          Lwt.async_exception_hook := old_async_exception_hook;
+         Watchdog.finished test.test_name;
          let elapsed = Unix.gettimeofday () -. start_time in
          (log @@ fun k -> k test.test_name "finished in %.3f s" elapsed);
          Lwt.return_unit)
@@ -195,6 +240,7 @@ let run library_name suites =
     | Failure message -> Some (Printf.sprintf "Failure(%S)" message)
     | _ -> None);
   Printf.printf "Testing library '%s'...\n" library_name;
+  Watchdog.start library_name;
   let start_time = Unix.gettimeofday () in
   let rec loop_over_suites aggregated_outcomes suites =
     match suites with
@@ -228,6 +274,7 @@ let concurrent library_name suites =
     | Failure message -> Some (Printf.sprintf "Failure(%S)" message)
     | _ -> None);
   Printf.printf "Testing library '%s'...\n" library_name;
+  Watchdog.start library_name;
   let open Lwt.Infix in
   let run_test (suite, test) =
     begin if suite.skip_suite_if_this_is_false () = false
