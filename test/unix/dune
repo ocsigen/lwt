@@ -23,7 +23,8 @@
    domain_two_loops
    domain_upstream_scenarios
    domain_shared_resolved
-   notification_reentry)))
+   notification_reentry
+   fork_pending_notification)))
 
 (executable
  (name dummy)
@@ -199,3 +200,14 @@
  (name notification_reentry)
  (libraries lwt lwt.unix threads)
  (modules notification_reentry))
+
+; A notification pending at a fork is dropped in the child, whose own
+; notifications still reach its loop. Uses fork, hence not on Windows.
+
+(test
+ (name fork_pending_notification)
+ (package lwt)
+ (modules fork_pending_notification)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))

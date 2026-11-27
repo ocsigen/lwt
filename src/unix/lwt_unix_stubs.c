@@ -546,11 +546,14 @@ static void resize_notifications(void) {
   long new_notification_count = notification_count * 2;
   intnat *new_notifications =
       (intnat *)lwt_unix_malloc(new_notification_count * sizeof(intnat));
-  memcpy((void *)new_notifications, (void *)notifications,
+  intnat *old_notifications = notifications;
+  memcpy((void *)new_notifications, (void *)old_notifications,
          notification_count * sizeof(intnat));
-  free(notifications);
+  /* The new buffer is in place before the old one is freed: a fork in between
+     must not leave the child a freed buffer. */
   notifications = new_notifications;
   notification_count = new_notification_count;
+  free(old_notifications);
 }
 
 void lwt_unix_send_notification(intnat id) {
@@ -742,21 +745,27 @@ static int pipe_notification_recv(void) {
 }
 
 value lwt_unix_init_notification(void) {
+  enum notification_mode old_mode, new_mode;
+  int (*new_send)(void);
+  int (*new_recv)(void);
+  int new_fds[2] = {-1, -1};
+  int old_fds[2] = {-1, -1};
+  sigset_t new_mask, old_mask;
+
   switch (notification_mode) {
-#if defined(HAVE_EVENTFD)
-    case NOTIFICATION_MODE_EVENTFD:
-      notification_mode = NOTIFICATION_MODE_NONE;
-      if (close(notification_fd) == -1) uerror("close", Nothing);
-      break;
-#endif
-    case NOTIFICATION_MODE_PIPE:
-      notification_mode = NOTIFICATION_MODE_NONE;
-      if (close(notification_fds[0]) == -1) uerror("close", Nothing);
-      if (close(notification_fds[1]) == -1) uerror("close", Nothing);
-      break;
     case NOTIFICATION_MODE_NOT_INITIALIZED:
       notification_mode = NOTIFICATION_MODE_NONE;
       init_notifications();
+      break;
+#if defined(HAVE_EVENTFD)
+    case NOTIFICATION_MODE_EVENTFD:
+#endif
+    case NOTIFICATION_MODE_PIPE:
+      /* The child of a fork. A thread of the parent, such as a worker sending
+         a job completion, may have held the mutex at fork time. That thread
+         does not exist in the child, so the mutex would stay locked, and the
+         first send or receive of the child would block forever. */
+      lwt_unix_mutex_init(&notification_mutex);
       break;
     case NOTIFICATION_MODE_NONE:
       break;
@@ -764,24 +773,64 @@ value lwt_unix_init_notification(void) {
       caml_failwith("notification system in unknown state");
   }
 
+  /* The new descriptor is opened first, while the old one is still in use, so
+     that an error leaves the notification system as it was. */
 #if defined(HAVE_EVENTFD)
-  notification_fd = eventfd(0, 0);
-  if (notification_fd != -1) {
-    notification_mode = NOTIFICATION_MODE_EVENTFD;
-    notification_send = eventfd_notification_send;
-    notification_recv = eventfd_notification_recv;
-    set_close_on_exec(notification_fd);
-    return Val_int(notification_fd);
-  }
+  new_fds[0] = eventfd(0, 0);
+  if (new_fds[0] != -1) {
+    new_mode = NOTIFICATION_MODE_EVENTFD;
+    new_send = eventfd_notification_send;
+    new_recv = eventfd_notification_recv;
+    set_close_on_exec(new_fds[0]);
+  } else
 #endif
+  {
+    if (pipe(new_fds) == -1) uerror("pipe", Nothing);
+    set_close_on_exec(new_fds[0]);
+    set_close_on_exec(new_fds[1]);
+    new_mode = NOTIFICATION_MODE_PIPE;
+    new_send = pipe_notification_send;
+    new_recv = pipe_notification_recv;
+  }
 
-  if (pipe(notification_fds) == -1) uerror("pipe", Nothing);
-  set_close_on_exec(notification_fds[0]);
-  set_close_on_exec(notification_fds[1]);
-  notification_mode = NOTIFICATION_MODE_PIPE;
-  notification_send = pipe_notification_send;
-  notification_recv = pipe_notification_recv;
-  return Val_int(notification_fds[0]);
+  /* After a fork, the child keeps the parent's buffer. The notifications still
+     pending in it are the parent's: a signal was sent to the parent, and the
+     child cancels the parent's jobs. So they are dropped. Their wake-up went to
+     the parent's descriptor, and later senders would see the buffer non-empty
+     and write none: the child's loop would never wake up again.
+
+     The switch is made with every signal blocked, as senders do around the
+     buffer: a signal handler running in the middle would write to a
+     descriptor about to be closed, and leave an id in the buffer with no
+     wake-up. No mutex: the child has a single thread here, and a thread of the
+     parent may have held it at the fork. */
+  sigfillset(&new_mask);
+  pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
+  old_mode = notification_mode;
+#if defined(HAVE_EVENTFD)
+  if (old_mode == NOTIFICATION_MODE_EVENTFD) old_fds[0] = notification_fd;
+#endif
+  if (old_mode == NOTIFICATION_MODE_PIPE) {
+    old_fds[0] = notification_fds[0];
+    old_fds[1] = notification_fds[1];
+  }
+#if defined(HAVE_EVENTFD)
+  if (new_mode == NOTIFICATION_MODE_EVENTFD) notification_fd = new_fds[0];
+#endif
+  if (new_mode == NOTIFICATION_MODE_PIPE) {
+    notification_fds[0] = new_fds[0];
+    notification_fds[1] = new_fds[1];
+  }
+  notification_send = new_send;
+  notification_recv = new_recv;
+  notification_mode = new_mode;
+  notification_index = 0;
+  pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+
+  /* Nothing writes to the old descriptors any more. */
+  if (old_fds[0] != -1 && close(old_fds[0]) == -1) uerror("close", Nothing);
+  if (old_fds[1] != -1 && close(old_fds[1]) == -1) uerror("close", Nothing);
+  return Val_int(new_fds[0]);
 }
 
 #endif /* defined(LWT_ON_WINDOWS) */

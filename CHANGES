@@ -42,6 +42,13 @@
     OpenBSD, which wants a one-byte value. They now pass a byte, which the
     other systems accept too. (Jérôme Vouillon)
 
+  * Lwt_unix.fork: when a notification was pending at the fork, a job
+    completion or a signal for example, the child's loop never woke up again
+    for any notification. The child now drops the parent's pending
+    notifications, which belong to the parent. A worker thread that held the
+    notification lock at fork time no longer blocks the child either.
+    (Vincent Balat, Jérôme Vouillon)
+
 ===== 6.1.3 =====
 
 ====== Changes ======
