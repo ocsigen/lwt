@@ -34,6 +34,15 @@
     a library's module-level mutex or pool, which would otherwise belong to the
     main domain.
 
+====== Breaking changes ======
+
+  * Lwt_unix.on_signal: a handler that raises no longer keeps the other
+    handlers of the signal from running. Its exception goes to
+    Lwt.async_exception_hook, instead of out of Lwt_main.run. By default, the
+    hook prints the exception and exits the program. A program that caught
+    the exception around Lwt_main.run must now catch it in the handler, or
+    set the hook. (Vincent Balat)
+
 ====== Fixes ======
 
   * Make the Lwt.key storage thread-safe.
@@ -41,6 +50,14 @@
   * Lwt_unix.mcast_set_loop and Lwt_unix.mcast_set_ttl failed with EINVAL on
     OpenBSD, which wants a one-byte value. They now pass a byte, which the
     other systems accept too. (Jérôme Vouillon)
+
+  * Lwt_unix: when a notification handler (a signal handler, for example)
+    raises, the other notifications received at the same time are no longer
+    lost. They are handled the next time the loop runs. (Vincent Balat)
+
+  * Lwt_unix.on_signal_full: each handler of a signal gets its own id.
+    Previously they all got the id of the first one, so a handler that
+    disabled itself disabled the first one instead. (Vincent Balat)
 
 ===== 6.1.3 =====
 

@@ -838,7 +838,11 @@ type signal_handler_id
 val on_signal : int -> (int -> unit) -> signal_handler_id
 (** [on_signal signum f] calls [f] each time the signal with numnber
     [signum] is received by the process. It returns a signal handler
-    identifier that can be used to stop monitoring [signum]. *)
+    identifier that can be used to stop monitoring [signum].
+
+    If [f] raises an exception, it is passed to
+    [!]{!Lwt.async_exception_hook}, and the other handlers of the signal still
+    run. By default, this will terminate the process. *)
 
 val on_signal_full :
    int

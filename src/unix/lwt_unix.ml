@@ -2260,8 +2260,21 @@ external send_notification : int -> unit = "lwt_unix_send_notification_stub"
 external recv_notifications : unit -> int array = "lwt_unix_recv_notifications"
 
 let handle_notifications _ =
-  (* Process available notifications. *)
-  Array.iter call_notification (recv_notifications ())
+  (* Process available notifications. [recv_notifications] empties the buffer,
+     so if a handler raises, the notifications not handled yet are sent again
+     before the exception is re-raised. Otherwise a job completion or a
+     signal would be lost. *)
+  let ids = recv_notifications () in
+  Array.iteri
+    (fun i id ->
+       try call_notification id
+       with exn when Lwt.Exception_filter.run exn ->
+         let bt = Printexc.get_raw_backtrace () in
+         for j = i + 1 to Array.length ids - 1 do
+           send_notification ids.(j)
+         done;
+         Printexc.raise_with_backtrace exn bt)
+    ids
 
 let event_notifications =
   ref (Lwt_engine.on_readable (init_notification ()) handle_notifications)
@@ -2289,9 +2302,7 @@ module Signal_map = Map.Make (struct
     let compare a b = a - b
   end)
 
-type signal_handler =
-  {sh_num : int; sh_node : (signal_handler_id -> int -> unit) Lwt_sequence.node}
-
+type signal_handler = {sh_num : int; sh_node : (int -> unit) Lwt_sequence.node}
 and signal_handler_id = signal_handler option ref
 
 let signals = ref Signal_map.empty
@@ -2311,7 +2322,14 @@ let on_signal_full signum handler =
       let actions = Lwt_sequence.create () in
       let notification =
         make_notification (fun () ->
-          Lwt_sequence.iter_l (fun f -> f id signum) actions)
+          (* A handler that raises must not keep the next ones from running.
+             Its exception goes to the hook, as for [Lwt.on_success]. *)
+          Lwt_sequence.iter_l
+            (fun f ->
+               try f signum
+               with exn when Lwt.Exception_filter.run exn ->
+                 !Lwt.async_exception_hook exn)
+            actions)
       in
       (try set_signal signum notification
        with exn when Lwt.Exception_filter.run exn ->
@@ -2320,7 +2338,8 @@ let on_signal_full signum handler =
       signals := Signal_map.add signum (notification, actions) !signals;
       notification, actions
   in
-  let node = Lwt_sequence.add_r handler actions in
+  (* Each handler gets its own id, so that it can disable itself. *)
+  let node = Lwt_sequence.add_r (fun signum -> handler id signum) actions in
   id := Some {sh_num = signum; sh_node = node};
   id
 

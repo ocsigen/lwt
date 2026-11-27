@@ -23,7 +23,10 @@
    domain_two_loops
    domain_upstream_scenarios
    domain_shared_resolved
-   notification_reentry)))
+   notification_reentry
+   notification_batch
+   signal_action_raises
+   signal_handler_id)))
 
 (executable
  (name dummy)
@@ -199,3 +202,33 @@
  (name notification_reentry)
  (libraries lwt lwt.unix threads)
  (modules notification_reentry))
+
+; A notification handler that raises does not lose the rest of its batch.
+
+(test
+ (name notification_batch)
+ (package lwt)
+ (modules notification_batch)
+ (libraries lwt.unix))
+
+; A signal handler that raises does not keep the next ones from running. Uses
+; SIGUSR1, hence not on Windows.
+
+(test
+ (name signal_action_raises)
+ (package lwt)
+ (modules signal_action_raises)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; Each handler of a signal gets its own id. Uses SIGUSR2, hence not on
+; Windows.
+
+(test
+ (name signal_handler_id)
+ (package lwt)
+ (modules signal_handler_id)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
