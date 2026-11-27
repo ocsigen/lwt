@@ -30,6 +30,11 @@ val self_token : unit -> token
 The calling domain's identity. Always the same value on 4\.14.
 
 ```ocaml
-val check_owner : string -> token -> unit
+val is_main_domain : unit -> bool
 ```
-`check_owner name owner` raises `Invalid_argument`, mentioning `name`, unless `owner` is the calling domain's token.
+Always `true` on 4\.14, where there is one domain and it is the main one.
+
+```ocaml
+val at_domain_exit : (unit -> unit) -> unit
+```
+`at_domain_exit f` runs `f` when the current domain exits. On the main domain, that is at process exit, before every `Stdlib.at_exit` callback, so a callback that must run after the user's own `Stdlib.at_exit` callbacks is registered with `Stdlib.at_exit` instead. On 4\.14 it is `Stdlib.at_exit`.

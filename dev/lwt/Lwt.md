@@ -636,7 +636,11 @@ If you are writing an application, you are welcome to reassign the reference, an
 
 If you are writing a library, you should leave this reference alone. Its behavior should be determined by the application.
 
-It is shared by all domains: with several domains, set it before spawning them.
+It is shared by all domains. With several domains, set it before spawning them.
+
+The default implementation calls `exit` on the domain where the exception occurred. On a domain other than the main one, `exit` does not run the exit hooks of the main domain (`Lwt_main.Exit_hooks`, in `lwt.unix`). These hooks flush `Lwt_io.stdout`, among others. So the buffered output of the main domain can be lost.
+
+A program that runs Lwt on several domains should therefore set a hook that hands the exception to the main domain, and let the main domain exit. For example, the hook can store the exception in an `Atomic.t`, and call `Lwt_unix.send_notification`. The handler of a notification runs on the domain that initialized `Lwt_unix`, usually the main one.
 
 ### Concurrency
 
@@ -768,15 +772,19 @@ Canceled promises are those rejected with this exception, `Lwt.Canceled`. See [`
 ```ocaml
 exception Domain_crossing
 ```
-Raised when a *pending* promise is changed from a domain other than the one that created it:
+Raised when a value that belongs to one domain is used from another domain.
+
+A *pending* promise belongs to the domain that created it. Its callbacks run on that domain. Modifying the promise from another domain raises `Domain_crossing`. Here "modifying" means:
 
 - resolving or rejecting it, including by canceling it,
 - attaching a callback to it, explicitly with the `on_*` functions or implicitly by binding on it.
-A pending promise belongs to the domain that created it. Its callbacks run on that domain.
+Reading a pending promise, with [`Lwt.state`](./#type-state) for example, is not checked. It does not change the promise.
 
-A *resolved* promise has no owner, and can be used from any domain.
+A *resolved* promise has no owner. It can be used from any domain.
 
-Reading a pending promise, with [`Lwt.state`](./#type-state) for example, is not checked.
+Other values belong to the domain that created them too. Among them are the values of [`Lwt_mutex`](./Lwt_mutex.md), [`Lwt_condition`](./Lwt_condition.md), [`Lwt_mvar`](./Lwt_mvar.md), [`Lwt_pool`](./Lwt_pool.md), [`Lwt_stream`](./Lwt_stream.md) and [`Lwt_switch`](./Lwt_switch.md). In `lwt.unix`, file descriptors, channels and timeouts also belong to their domain.
+
+Some features of `lwt.unix` only work on the domain that initialized `Lwt_unix`. These features include jobs, signal handlers and waiting for child processes. They also raise `Domain_crossing` on other domains.
 
 since 6\.2.0
 ```ocaml

@@ -1471,7 +1471,11 @@ If you are writing an application, you are welcome to reassign the reference, an
 
 If you are writing a library, you should leave this reference alone. Its behavior should be determined by the application.
 
-It is shared by all domains: with several domains, set it before spawning them.
+It is shared by all domains. With several domains, set it before spawning them.
+
+The default implementation calls `exit` on the domain where the exception occurred. On a domain other than the main one, `exit` does not run the exit hooks of the main domain (`Lwt_main.Exit_hooks`, in `lwt.unix`). These hooks flush `Lwt_io.stdout`, among others. So the buffered output of the main domain can be lost.
+
+A program that runs Lwt on several domains should therefore set a hook that hands the exception to the main domain, and let the main domain exit. For example, the hook can store the exception in an `Atomic.t`, and call `Lwt_unix.send_notification`. The handler of a notification runs on the domain that initialized `Lwt_unix`, usually the main one.
 
 ### Concurrency
 
@@ -1603,15 +1607,19 @@ Canceled promises are those rejected with this exception, `Lwt.Canceled`. See [`
 ```ocaml
 exception Domain_crossing
 ```
-Raised when a *pending* promise is changed from a domain other than the one that created it:
+Raised when a value that belongs to one domain is used from another domain.
+
+A *pending* promise belongs to the domain that created it. Its callbacks run on that domain. Modifying the promise from another domain raises `Domain_crossing`. Here "modifying" means:
 
 - resolving or rejecting it, including by canceling it,
 - attaching a callback to it, explicitly with the `on_*` functions or implicitly by binding on it.
-A pending promise belongs to the domain that created it. Its callbacks run on that domain.
+Reading a pending promise, with [`Lwt.state`](./#type-state) for example, is not checked. It does not change the promise.
 
-A *resolved* promise has no owner, and can be used from any domain.
+A *resolved* promise has no owner. It can be used from any domain.
 
-Reading a pending promise, with [`Lwt.state`](./#type-state) for example, is not checked.
+Other values belong to the domain that created them too. Among them are the values of [`Lwt_mutex`](./Lwt_mutex.md), [`Lwt_condition`](./Lwt_condition.md), [`Lwt_mvar`](./Lwt_mvar.md), [`Lwt_pool`](./Lwt_pool.md), [`Lwt_stream`](./Lwt_stream.md) and [`Lwt_switch`](./Lwt_switch.md). In `lwt.unix`, file descriptors, channels and timeouts also belong to their domain.
+
+Some features of `lwt.unix` only work on the domain that initialized `Lwt_unix`. These features include jobs, signal handlers and waiting for child processes. They also raise `Domain_crossing` on other domains.
 
 since 6\.2.0
 ```ocaml
@@ -2349,7 +2357,7 @@ type 'a t
 ```
 A stream holding values of type `'a`.
 
-A stream belongs to the domain that creates it, and using it, or its push function, from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+A stream belongs to the domain that creates it. Using it, or its push function, from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing). One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 Naming convention: in this module, all functions applying a function to each element of a stream are suffixed by:
 
@@ -3032,7 +3040,7 @@ type t
 ```
 Type of Lwt mutexes.
 
-A mutex belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+A mutex belongs to the domain that creates it. Using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing). One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : unit -> t
@@ -3082,7 +3090,7 @@ type 'a t
 ```
 Condition variable type. The type parameter denotes the type of value propagated from notifier to waiter.
 
-A condition variable belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+A condition variable belongs to the domain that creates it. Using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing). One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : unit -> 'a t
@@ -3125,7 +3133,7 @@ type 'a t
 ```
 The type of a mailbox variable. Mailbox variables are used to communicate values between threads in a synchronous way. The type parameter specifies the type of the value propagated from `put` to `take`.
 
-A mailbox variable belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+A mailbox variable belongs to the domain that creates it. Using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing). One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : 'a -> 'a t
@@ -3212,7 +3220,7 @@ type t
 ```
 Type of switches.
 
-A switch belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+A switch belongs to the domain that creates it. Using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing). One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : unit -> t
@@ -3295,7 +3303,7 @@ type 'a t
 ```
 A pool containing elements of type `'a`.
 
-A pool belongs to the domain that creates it, and using it from another domain raises `Invalid_argument`. One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
+A pool belongs to the domain that creates it. Using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing). One created when a module is initialized therefore belongs to the main domain. To keep one at top level with an instance per domain, use [`Lwt_per_domain`](./Lwt_per_domain.md).
 
 ```ocaml
 val create : 
@@ -3421,6 +3429,18 @@ A **file descriptor** may be:
 
 - **opened**, in which case it is fully usable
 - **closed** or **aborted**, in which case it is no longer usable
+A **file descriptor** belongs to the domain that created it. Using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing).
+
+[`stdin`](./#val-stdin), [`stdout`](./#val-stdout) and [`stderr`](./#val-stderr) are created when this module is initialized. They belong to the domain that initialized this module.
+
+For now, jobs only run on the domain that initialized this module (see [Notifications and domains](./#domains)). On another domain, a descriptor can only be used if its I/O needs no job.
+
+Such a descriptor is in non-blocking mode, and Lwt knows its mode. Lwt knows the mode of the descriptors made by [`socket`](./#val-socket), [`socketpair`](./#val-socketpair) and [`accept`](./#val-accept), by [`of_unix_file_descr`](./#val-of_unix_file_descr) with `~blocking:false`, and, except on Windows, by [`pipe`](./#val-pipe), [`pipe_in`](./#val-pipe_in) and [`pipe_out`](./#val-pipe_out).
+
+Other descriptors do their I/O through jobs. These are the descriptors in blocking mode, and the descriptors whose mode Lwt has to guess, since guessing the mode is itself a job.
+
+Many other operations are jobs too. Except on Windows, they include [`openfile`](./#val-openfile), [`close`](./#val-close) and [`stat`](./#val-stat).
+
 ```ocaml
 type state = 
   | Opened (* The file descriptor is opened *)
@@ -4745,7 +4765,27 @@ Wait for all pending jobs to terminate.
 
 ### Notifications
 
-Lwt internally use a pipe to send notification to the main thread. The following functions allow to use this pipe.
+Lwt internally uses a pipe to send notifications to the domain that initialized this module. The following functions allow to use this pipe.
+
+#### Notifications and domains
+
+The process has one notification descriptor. The domain that initialized this module reads it.
+
+That domain is therefore the only one that learns of job completions, signals and child exits. The functions that depend on them only work on that domain. On another domain, they raise [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing).
+
+These functions are:
+
+- [`run_job`](./#val-run_job), and the operations built on it;
+- [`abort_jobs`](./#val-abort_jobs), [`cancel_jobs`](./#val-cancel_jobs) and [`wait_for_jobs`](./#val-wait_for_jobs);
+- [`on_signal`](./#val-on_signal), [`on_signal_full`](./#val-on_signal_full), [`disable_signal_handler`](./#val-disable_signal_handler) and [`reinstall_signal_handler`](./#val-reinstall_signal_handler);
+- [`fork`](./#val-fork);
+- [`waitpid`](./#val-waitpid), [`wait4`](./#val-wait4) and [`wait`](./#val-wait), when the child has not exited yet and `WNOHANG` is not given, and so [`Lwt_process`](./Lwt_process.md);
+- [`Lwt_preemptive.detach`](./Lwt_preemptive.md#val-detach), [`Lwt_preemptive.init`](./Lwt_preemptive.md#val-init) and [`Lwt_preemptive.set_bounds`](./Lwt_preemptive.md#val-set_bounds).
+Jobs run with `Async_none` are not affected. Such a job runs synchronously, on the calling thread, and needs no notification. [`run_job`](./#val-run_job) with `Async_none` therefore works on any domain.
+
+The notification functions themselves work from any thread and any domain: [`make_notification`](./#val-make_notification), [`stop_notification`](./#val-stop_notification), [`set_notification`](./#val-set_notification) and [`send_notification`](./#val-send_notification).
+
+The handler of a notification always runs on the domain that initialized this module, whichever domain created or sent the notification. The handler runs while that domain runs its loop.
 
 ```ocaml
 type notification
@@ -4932,7 +4972,15 @@ Exception raised when a channel is closed. The parameter is a description of the
 ```ocaml
 type 'mode channel
 ```
-Type of buffered byte channels
+Type of buffered byte channels.
+
+A channel belongs to the domain that created it. Therefore using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing).
+
+The channels [`stdout`](./#val-stdout), [`stderr`](./#val-stderr), [`stdin`](./#val-stdin), [`null`](./#val-null) and [`zero`](./#val-zero) are created when this module is initialized. Therefore they belong to the domain that initialized them.
+
+For now, another domain can only make channels over descriptors that need no [`Lwt_unix`](./Lwt_unix.md) job. [`Lwt_unix.file_descr`](./Lwt_unix.md#type-file_descr) explains which descriptors these are. For example, this makes such a channel: `of_fd (Lwt_unix.of_unix_file_descr ~blocking:false fd)`.
+
+[`of_unix_fd`](./#val-of_unix_fd) and [`open_file`](./#val-open_file) make channels that need jobs. Except on Windows, closing a channel also uses a job, so [`close`](./#val-close) fails on another domain.
 
 ```ocaml
 type input
@@ -5104,7 +5152,11 @@ val flush : output_channel -> unit Lwt.t
 ```ocaml
 val flush_all : unit -> unit Lwt.t
 ```
-`flush_all ()` flushes all open output channels
+`flush_all ()` flushes the output channels opened by the calling domain.
+
+Unlike `Stdlib.flush_all`, it does not flush the channels of other domains. Those channels belong to their domains, and only their own domain can flush them.
+
+Each domain flushes its own channels when it exits.
 
 ```ocaml
 val buffer_size : 'a channel -> int
@@ -6393,6 +6445,8 @@ This module allows to mix preemptive threads with `Lwt` cooperative threads. It 
 
 See [Mwt](https://github.com/hcarty/mwt) for a more modern implementation.
 
+[`detach`](./#val-detach) hands its result back through Lwt's notification descriptor, read by the domain that initialized [`Lwt_unix`](./Lwt_unix.md). So [`detach`](./#val-detach), [`init`](./#val-init) and [`set_bounds`](./#val-set_bounds) belong to that domain, and raise [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing) elsewhere. [`run_in_main`](./#val-run_in_main) and [`run_in_main_dont_wait`](./#val-run_in_main_dont_wait) may be called from any thread and any domain: the function runs on the domain that initialized [`Lwt_unix`](./Lwt_unix.md), and [`run_in_main`](./#val-run_in_main) blocks its caller until the loop of that domain has run it.
+
 ```ocaml
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 ```
@@ -6596,6 +6650,8 @@ module Make (H : Stdlib.Hashtbl.HashedType) : S with type key = H.t
 
 Cancelable timeouts.
 
+A timeout is created, started and stopped on one domain: the one whose `Lwt_main.run` runs its action. Each domain has its own timer wheel, so several domains can use this module at the same time. Starting a timeout on a domain other than the one that created it raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing).
+
 ```ocaml
 type t
 ```
@@ -6777,12 +6833,14 @@ Abstract class for engines based on a poll-like function.
 ```ocaml
 val get : unit -> t
 ```
-`get ()` returns the engine currently in use.
+`get ()` returns the engine currently in use by the calling domain. Each domain has its own engine.
+
+Domains initialize their engine upon first use.
 
 ```ocaml
 val set : ?transfer:bool -> ?destroy:bool -> t -> unit
 ```
-`set ?transfer ?destroy engine` replaces the current engine by the given one.
+`set ?transfer ?destroy engine` replaces the current engine of the calling domain by the given one; other domains keep theirs.
 
 If `transfer` is `true` (the default) all events from the current engine are transferred to the new one.
 
@@ -7379,9 +7437,14 @@ val self_token : unit -> token
 The calling domain's identity. Always the same value on 4\.14.
 
 ```ocaml
-val check_owner : string -> token -> unit
+val is_main_domain : unit -> bool
 ```
-`check_owner name owner` raises `Invalid_argument`, mentioning `name`, unless `owner` is the calling domain's token.
+Always `true` on 4\.14, where there is one domain and it is the main one.
+
+```ocaml
+val at_domain_exit : (unit -> unit) -> unit
+```
+`at_domain_exit f` runs `f` when the current domain exits. On the main domain, that is at process exit, before every `Stdlib.at_exit` callback, so a callback that must run after the user's own `Stdlib.at_exit` callbacks is registered with `Stdlib.at_exit` instead. On 4\.14 it is `Stdlib.at_exit`.
 
 
 ---
@@ -8044,6 +8107,8 @@ Removes all hooks from the hook sequence underlying this module.
 
 Promise-returning hooks, of type `unit -> unit Lwt.t`, that are called at process exit. Exceptions raised by these hooks are ignored.
 
+The hooks are per domain. Those registered on a domain other than the main one run when that domain exits. At process exit, the hooks that run are those of the domain that called `Stdlib.exit`, or of the main domain when the program returns. An `exit` called from another domain does not run the main domain's hooks, so call `Stdlib.exit` from the main domain. The default [`Lwt.async_exception_hook`](./Lwt.md#val-async_exception_hook) calls `exit` on whichever domain the exception occurs on, so replace it when running Lwt on several domains.
+
 since 4\.2.0
 ```ocaml
 type 'return_value kind = 'return_value Lwt.t
@@ -8157,7 +8222,7 @@ Removes all hooks from the hook sequence underlying this module.
 
 Values with one instance per domain.
 
-An `Lwt_mutex.t`, an `Lwt_pool.t` or any other value holding Lwt state belongs to the domain that created it, and using it from another domain raises `Invalid_argument`. A value created when a module is initialized therefore belongs to the main domain: a library that keeps a mutex or a pool at top level works with one domain and fails with several. This module is the way to keep such a value at top level and still have one per domain:
+An `Lwt_mutex.t`, an `Lwt_pool.t` or any other value holding Lwt state belongs to the domain that created it, and using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing). A value created when a module is initialized therefore belongs to the main domain: a library that keeps a mutex or a pool at top level works with one domain and fails with several. This module is the way to keep such a value at top level and still have one per domain:
 
 ```ocaml
   let lock = Lwt_per_domain.make Lwt_mutex.create

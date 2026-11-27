@@ -2,6 +2,8 @@
 
 Cancelable timeouts.
 
+A timeout is created, started and stopped on one domain: the one whose `Lwt_main.run` runs its action. Each domain has its own timer wheel, so several domains can use this module at the same time. Starting a timeout on a domain other than the one that created it raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing).
+
 ```ocaml
 type t
 ```

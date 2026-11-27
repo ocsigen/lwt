@@ -81,6 +81,18 @@ A **file descriptor** may be:
 
 - **opened**, in which case it is fully usable
 - **closed** or **aborted**, in which case it is no longer usable
+A **file descriptor** belongs to the domain that created it. Using it from another domain raises [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing).
+
+[`stdin`](./#val-stdin), [`stdout`](./#val-stdout) and [`stderr`](./#val-stderr) are created when this module is initialized. They belong to the domain that initialized this module.
+
+For now, jobs only run on the domain that initialized this module (see [Notifications and domains](./#domains)). On another domain, a descriptor can only be used if its I/O needs no job.
+
+Such a descriptor is in non-blocking mode, and Lwt knows its mode. Lwt knows the mode of the descriptors made by [`socket`](./#val-socket), [`socketpair`](./#val-socketpair) and [`accept`](./#val-accept), by [`of_unix_file_descr`](./#val-of_unix_file_descr) with `~blocking:false`, and, except on Windows, by [`pipe`](./#val-pipe), [`pipe_in`](./#val-pipe_in) and [`pipe_out`](./#val-pipe_out).
+
+Other descriptors do their I/O through jobs. These are the descriptors in blocking mode, and the descriptors whose mode Lwt has to guess, since guessing the mode is itself a job.
+
+Many other operations are jobs too. Except on Windows, they include [`openfile`](./#val-openfile), [`close`](./#val-close) and [`stat`](./#val-stat).
+
 ```ocaml
 type state = 
   | Opened (* The file descriptor is opened *)
@@ -1405,7 +1417,27 @@ Wait for all pending jobs to terminate.
 
 ### Notifications
 
-Lwt internally use a pipe to send notification to the main thread. The following functions allow to use this pipe.
+Lwt internally uses a pipe to send notifications to the domain that initialized this module. The following functions allow to use this pipe.
+
+#### Notifications and domains
+
+The process has one notification descriptor. The domain that initialized this module reads it.
+
+That domain is therefore the only one that learns of job completions, signals and child exits. The functions that depend on them only work on that domain. On another domain, they raise [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing).
+
+These functions are:
+
+- [`run_job`](./#val-run_job), and the operations built on it;
+- [`abort_jobs`](./#val-abort_jobs), [`cancel_jobs`](./#val-cancel_jobs) and [`wait_for_jobs`](./#val-wait_for_jobs);
+- [`on_signal`](./#val-on_signal), [`on_signal_full`](./#val-on_signal_full), [`disable_signal_handler`](./#val-disable_signal_handler) and [`reinstall_signal_handler`](./#val-reinstall_signal_handler);
+- [`fork`](./#val-fork);
+- [`waitpid`](./#val-waitpid), [`wait4`](./#val-wait4) and [`wait`](./#val-wait), when the child has not exited yet and `WNOHANG` is not given, and so [`Lwt_process`](./Lwt_process.md);
+- [`Lwt_preemptive.detach`](./Lwt_preemptive.md#val-detach), [`Lwt_preemptive.init`](./Lwt_preemptive.md#val-init) and [`Lwt_preemptive.set_bounds`](./Lwt_preemptive.md#val-set_bounds).
+Jobs run with `Async_none` are not affected. Such a job runs synchronously, on the calling thread, and needs no notification. [`run_job`](./#val-run_job) with `Async_none` therefore works on any domain.
+
+The notification functions themselves work from any thread and any domain: [`make_notification`](./#val-make_notification), [`stop_notification`](./#val-stop_notification), [`set_notification`](./#val-set_notification) and [`send_notification`](./#val-send_notification).
+
+The handler of a notification always runs on the domain that initialized this module, whichever domain created or sent the notification. The handler runs while that domain runs its loop.
 
 ```ocaml
 type notification

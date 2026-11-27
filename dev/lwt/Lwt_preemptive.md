@@ -4,6 +4,8 @@ This module allows to mix preemptive threads with `Lwt` cooperative threads. It 
 
 See [Mwt](https://github.com/hcarty/mwt) for a more modern implementation.
 
+[`detach`](./#val-detach) hands its result back through Lwt's notification descriptor, read by the domain that initialized [`Lwt_unix`](./Lwt_unix.md). So [`detach`](./#val-detach), [`init`](./#val-init) and [`set_bounds`](./#val-set_bounds) belong to that domain, and raise [`Lwt.Domain_crossing`](./Lwt.md#exception-Domain_crossing) elsewhere. [`run_in_main`](./#val-run_in_main) and [`run_in_main_dont_wait`](./#val-run_in_main_dont_wait) may be called from any thread and any domain: the function runs on the domain that initialized [`Lwt_unix`](./Lwt_unix.md), and [`run_in_main`](./#val-run_in_main) blocks its caller until the loop of that domain has run it.
+
 ```ocaml
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 ```

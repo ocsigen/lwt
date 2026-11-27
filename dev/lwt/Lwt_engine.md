@@ -140,12 +140,14 @@ Abstract class for engines based on a poll-like function.
 ```ocaml
 val get : unit -> t
 ```
-`get ()` returns the engine currently in use.
+`get ()` returns the engine currently in use by the calling domain. Each domain has its own engine.
+
+Domains initialize their engine upon first use.
 
 ```ocaml
 val set : ?transfer:bool -> ?destroy:bool -> t -> unit
 ```
-`set ?transfer ?destroy engine` replaces the current engine by the given one.
+`set ?transfer ?destroy engine` replaces the current engine of the calling domain by the given one; other domains keep theirs.
 
 If `transfer` is `true` (the default) all events from the current engine are transferred to the new one.
 
