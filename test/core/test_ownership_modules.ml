@@ -13,19 +13,11 @@ let check name b =
     Printf.eprintf "FAILED: %s\n" name;
     incr failures)
 
-let contains needle m =
-  let n = String.length needle in
-  let rec go i =
-    i + n <= String.length m && (String.sub m i n = needle || go (i + 1))
-  in
-  go 0
-
-(* [true] if [f] is refused because the value belongs to another domain, as
-   opposed to any other [Invalid_argument]. *)
+(* [true] if [f] is refused because the value belongs to another domain. *)
 let refused f =
   match f () with
   | _ -> false
-  | exception Invalid_argument m -> contains "belongs to another domain" m
+  | exception Lwt.Domain_crossing -> true
   | exception _ -> false
 
 let on_other_domain f = Domain.join (Domain.spawn f)
@@ -73,9 +65,12 @@ let () =
      the error into an element, at each read, forever. *)
   check "parsing a stream is refused on another domain, by [parse] itself"
     (on_other_domain (fun () ->
-       match Lwt_stream.parse empty Lwt_stream.get with
-       | _ -> false
-       | exception Invalid_argument m -> contains "Lwt_stream.parse" m));
+       let parser_ran = ref false in
+       refused (fun () ->
+         Lwt_stream.parse empty (fun s ->
+           parser_ran := true;
+           Lwt_stream.get s))
+       && not !parser_ran));
   check "wrapping a stream is refused on another domain"
     (on_other_domain (fun () -> refused (fun () -> Lwt_stream.wrap_exn empty)));
   (* Same for a bounded push. *)

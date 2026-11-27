@@ -57,8 +57,8 @@
 type t
 (** Type of switches.
 
-    A switch belongs to the domain that creates it, and using it from another
-    domain raises [Invalid_argument]. One created when a module is initialized
+    A switch belongs to the domain that creates it. Using it from another domain
+    raises {!Lwt.Domain_crossing}. One created when a module is initialized
     therefore belongs to the main domain. To keep one at top level with an
     instance per domain, use {!Lwt_per_domain}. *)
 

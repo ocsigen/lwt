@@ -36,7 +36,23 @@ exception Channel_closed of string
 (** {2 Types} *)
 
 type 'mode channel
-(** Type of buffered byte channels *)
+(** Type of buffered byte channels.
+
+    A channel belongs to the domain that created it. Therefore using it from
+    another domain raises {!Lwt.Domain_crossing}.
+
+    The channels {!stdout}, {!stderr}, {!stdin}, {!null} and {!zero} are
+    created when this module is initialized. Therefore they belong to the
+    domain that initialized them.
+
+    For now, another domain can only make channels over descriptors that need
+    no {!Lwt_unix} job. {!Lwt_unix.file_descr} explains which descriptors
+    these are. For example, this makes such a channel:
+    [of_fd (Lwt_unix.of_unix_file_descr ~blocking:false fd)].
+
+    {!of_unix_fd} and {!open_file} make channels that need jobs. Except on
+    Windows, closing a channel also uses a job, so {!close} fails on another
+    domain. *)
 
 type input
 (** Input mode *)
@@ -187,7 +203,13 @@ val flush : output_channel -> unit Lwt.t
 (** [flush oc] performs all pending writes on [oc] *)
 
 val flush_all : unit -> unit Lwt.t
-(** [flush_all ()] flushes all open output channels *)
+(** [flush_all ()] flushes the output channels opened by the calling domain.
+
+    Unlike [Stdlib.flush_all], it does not flush the channels of other
+    domains. Those channels belong to their domains, and only their own domain
+    can flush them.
+
+    Each domain flushes its own channels when it exits. *)
 
 val buffer_size : 'a channel -> int
 (** Returns the size of the internal buffer. *)

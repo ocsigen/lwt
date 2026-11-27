@@ -73,13 +73,22 @@ class virtual abstract =
     val timers = Lwt_sequence.create ()
     (* Sequence of timers. *)
 
+    val mutable destroyed = false
+    (* Destroying twice must be harmless: [set] destroys the engine it replaces,
+       and a domain's exit destroys whatever engine it has then. For libev the
+       second destruction would free the loop a second time. *)
+
     method destroy =
-      Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) readables;
-      Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) writables;
-      Lwt_sequence.iter_l
-        (fun (_delay, _repeat, _f, _g, ev) -> stop_event ev)
-        timers;
-      self#cleanup
+      if not destroyed
+      then begin
+        destroyed <- true;
+        Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) readables;
+        Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) writables;
+        Lwt_sequence.iter_l
+          (fun (_delay, _repeat, _f, _g, ev) -> stop_event ev)
+          timers;
+        self#cleanup
+      end
 
     method transfer (engine : abstract) =
       Lwt_sequence.iter_l
@@ -484,29 +493,68 @@ class select =
    | The current engine                                              |
    +-----------------------------------------------------------------+ *)
 
-let current =
-  if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default
-  then ref (new libev () :> t)
-  else ref (new select :> t)
+(* Per domain, since each domain runs its own loop. Lwt's libev binding
+   creates its loops with [ev_loop_new] rather than using libev's default loop
+   (see lwt_libev_stubs.c), so several of them can coexist. libev allows a loop
+   to be used by one thread at a time, and the functions below always take the
+   calling domain's engine. An engine object kept by one domain and used on
+   another is not checked. *)
+[@@@alert "-trespassing"]
 
-let get () = !current
+module Lwt_dls = Lwt_dls
+
+[@@@alert "+trespassing"]
+
+(* At a domain's exit, replaces the engine the domain has then, which [set] may
+   have changed, by a select engine, and destroys it. Filled in below, once
+   [set] is defined, since the slot initializer of [current] cannot refer to
+   [set]. *)
+let retire_current : (unit -> unit) ref = ref (fun () -> ())
+
+let current : t Lwt_dls.t =
+  Lwt_dls.new_key (fun () ->
+    let engine =
+      if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default
+      then (new libev () :> t)
+      else (new select :> t)
+    in
+    (* Destroy it with the domain, or a libev loop leaks its epoll descriptor.
+       Not on the main domain, where [Lwt_main]'s exit hooks run after every
+       [Domain.at_exit] callback and need an engine. *)
+    if not (Lwt_dls.is_main_domain ())
+    then
+      Lwt_dls.at_domain_exit (fun () ->
+        (* Replace the engine rather than leave a destroyed one in place: a
+           [Domain.at_exit] callback registered before this one runs after it,
+           and may still use Lwt. A select engine holds no system resource, so
+           it leaks nothing, and [set] moves the pending events to it. *)
+        !retire_current ();
+        (* Also the initial engine, in case [set ~destroy:false] replaced it
+           without destroying it. Nothing on this domain can use it any more,
+           and destroying twice is harmless. *)
+        engine#destroy);
+    engine)
+
+let get () = Lwt_dls.get current
 
 let set ?(transfer = true) ?(destroy = true) engine =
-  if transfer then !current#transfer (engine : #t :> abstract);
-  if destroy then !current#destroy;
-  current := (engine : #t :> t)
+  let previous = Lwt_dls.get current in
+  if transfer then previous#transfer (engine : #t :> abstract);
+  if destroy then previous#destroy;
+  Lwt_dls.set current (engine : #t :> t)
 
-let id () = !current#id
-let iter block = !current#iter block
-let on_readable fd f = !current#on_readable fd f
-let on_writable fd f = !current#on_writable fd f
-let on_timer delay repeat f = !current#on_timer delay repeat f
-let fake_io fd = !current#fake_io fd
-let readable_count () = !current#readable_count
-let writable_count () = !current#writable_count
-let timer_count () = !current#timer_count
-let fork () = !current#fork
-let forwards_signal n = !current#forwards_signal n
+let () = retire_current := fun () -> set (new select)
+let id () = (Lwt_dls.get current)#id
+let iter block = (Lwt_dls.get current)#iter block
+let on_readable fd f = (Lwt_dls.get current)#on_readable fd f
+let on_writable fd f = (Lwt_dls.get current)#on_writable fd f
+let on_timer delay repeat f = (Lwt_dls.get current)#on_timer delay repeat f
+let fake_io fd = (Lwt_dls.get current)#fake_io fd
+let readable_count () = (Lwt_dls.get current)#readable_count
+let writable_count () = (Lwt_dls.get current)#writable_count
+let timer_count () = (Lwt_dls.get current)#timer_count
+let fork () = (Lwt_dls.get current)#fork
+let forwards_signal n = (Lwt_dls.get current)#forwards_signal n
 
 module Versioned = struct
   class libev_1 = libev_deprecated

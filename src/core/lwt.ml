@@ -573,6 +573,7 @@ include Public_types
 module Basic_helpers : sig
   val identical : ('a, _, _) promise -> ('a, _, _) promise -> bool
   val underlying : ('a, 'u, 'c) promise -> ('a, underlying, 'c) promise
+  val read_underlying : ('a, 'u, 'c) promise -> ('a, underlying, 'c) promise
 
   type ('a, 'u, 'c) state_changed =
     | State_may_have_changed of ('a, 'u, 'c) promise
@@ -621,6 +622,19 @@ end = struct
         let p'' = underlying p' in
         if not (identical p'' p') then p.state <- Proxy p'';
         p''
+
+  (* [read_underlying p] is [underlying p], without shortening the chain of
+     proxies. It is for the functions that may read a promise of another
+     domain, such as [Lwt.state]: they must not write to it. *)
+  let rec read_underlying : type u c.
+    ('a, u, c) promise -> ('a, underlying, c) promise
+    =
+   fun p ->
+    match p.state with
+    | Fulfilled _ -> (p : (_, underlying, _) promise)
+    | Rejected _ -> p
+    | Pending _ -> p
+    | Proxy p' -> read_underlying p'
 
   type ('a, 'u, 'c) state_changed =
     | State_may_have_changed of ('a, 'u, 'c) promise
@@ -2990,7 +3004,7 @@ end = struct
 
   let state p =
     let (Internal p) = to_internal_promise p in
-    match (underlying p).state with
+    match (read_underlying p).state with
     | Fulfilled v -> Return v
     | Rejected exn -> Fail exn
     | Pending _ -> Sleep
@@ -2999,14 +3013,14 @@ end = struct
 
   let is_sleeping p =
     let (Internal p) = to_internal_promise p in
-    match (underlying p).state with
+    match (read_underlying p).state with
     | Fulfilled _ -> false
     | Rejected _ -> false
     | Pending _ -> true
 
   let poll p =
     let (Internal p) = to_internal_promise p in
-    match (underlying p).state with
+    match (read_underlying p).state with
     | Rejected e -> reraise e
     | Fulfilled v -> Some v
     | Pending _ -> None
@@ -3134,4 +3148,11 @@ module Private = struct
   end
 
   let tracing_context = tracing_context
+
+  (* [check_owner owner] raises [Domain_crossing] unless [owner] is the calling
+     domain. For the values that belong to the domain that created them, such
+     as a mutex or a file descriptor. *)
+  let[@inline] check_owner (owner : Lwt_dls.token) =
+    if (owner :> int) <> (Lwt_dls.self_token () :> int)
+    then raise Domain_crossing
 end

@@ -11,7 +11,24 @@
 
   * Lwt_mutex, Lwt_condition, Lwt_mvar, Lwt_pool, Lwt_stream and Lwt_switch
     values belong to the domain that creates them: using one from another
-    domain raises Invalid_argument, instead of corrupting it quietly.
+    domain raises Lwt.Domain_crossing, instead of corrupting it quietly.
+
+  * Several Lwt loops in one program, one per domain: Lwt_main.run may be
+    called on a spawned domain (the rule against nested calls is now per
+    domain). Each loop has its own scheduler, engine, timer wheel, Lwt_main
+    hooks and registry of open channels. Exit hooks registered on a spawned
+    domain run when it exits. A file descriptor, a channel and an Lwt_timeout
+    belong to the domain that creates them, and raise Lwt.Domain_crossing
+    elsewhere. The standard channels (Lwt_io.stdin, stdout, stderr, null and
+    zero, and Lwt_unix.stdin, stdout and stderr) belong to the domain that
+    initialized their module. Jobs, signals, child processes and
+    Lwt_preemptive stay with the domain that initialized Lwt_unix, and raise
+    Lwt.Domain_crossing elsewhere. Jobs include opening and closing files,
+    and I/O on a descriptor in blocking mode, so another domain can only use
+    descriptors in non-blocking mode, such as sockets.
+    The lazy value Lwt_unix.sigchld_handler_installer is removed: forcing it
+    from two domains at once raised Lazy.Undefined, and no package outside Lwt
+    used it.
 
   * Lwt_per_domain: a top-level value with one instance per domain, for example
     a library's module-level mutex or pool, which would otherwise belong to the

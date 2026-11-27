@@ -17,6 +17,8 @@ open Lwt.Infix
 
 module Lwt_dls = Lwt_dls
 
+let check_owner = Lwt.Private.check_owner
+
 [@@@alert "+trespassing"]
 
 type t =
@@ -30,7 +32,7 @@ let create () =
   ; owner = Lwt_dls.self_token () }
 
 let lock m =
-  Lwt_dls.check_owner "Lwt_mutex.lock" m.owner;
+  check_owner m.owner;
   if m.locked
   then (Lwt.add_task_r [@ocaml.warning "-3"]) m.waiters
   else begin
@@ -39,7 +41,7 @@ let lock m =
   end
 
 let unlock m =
-  Lwt_dls.check_owner "Lwt_mutex.unlock" m.owner;
+  check_owner m.owner;
   if m.locked
   then
     begin if Lwt_sequence.is_empty m.waiters

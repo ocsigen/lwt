@@ -16,6 +16,8 @@ open Lwt.Infix
 
 module Lwt_dls = Lwt_dls
 
+let check_owner = Lwt.Private.check_owner
+
 [@@@alert "+trespassing"]
 
 type 'a t =
@@ -142,7 +144,7 @@ let check_and_release p c cleared =
     Lwt.return_unit)
 
 let use p f =
-  Lwt_dls.check_owner "Lwt_pool.use" p.owner;
+  check_owner p.owner;
   acquire p >>= fun c ->
   (* Capture the current cleared state so we can see if it changes while this
      element is in use *)
@@ -160,7 +162,7 @@ let use p f =
   else (release p c; promise)
 
 let clear p =
-  Lwt_dls.check_owner "Lwt_pool.clear" p.owner;
+  check_owner p.owner;
   let elements = Queue.fold (fun l element -> element :: l) [] p.list in
   Queue.clear p.list;
   (* Indicate to any currently in-use elements that we cleared the pool *)

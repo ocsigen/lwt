@@ -80,6 +80,8 @@ type 'a source =
 
 module Lwt_dls = Lwt_dls
 
+let check_owner = Lwt.Private.check_owner
+
 [@@@alert "+trespassing"]
 
 type 'a t =
@@ -112,7 +114,7 @@ let clone s =
   (match s.source with
   | Push_bounded _ -> invalid_arg "Lwt_stream.clone"
   | From _ | From_direct _ | Push _ -> ());
-  Lwt_dls.check_owner "Lwt_stream.clone" s.owner;
+  check_owner s.owner;
   (* A clone shares the queue, so it keeps the owner. *)
   { source = s.source
   ; close = s.close
@@ -155,7 +157,7 @@ let create_with_reference () =
      owner. *)
   let owner = t.owner in
   let push x =
-    Lwt_dls.check_owner "Lwt_stream.push" owner;
+    check_owner owner;
     if not (Lwt.is_sleeping closed) then raise Closed;
     (* Push the element at the end of the queue. *)
     enqueue' x last;
@@ -249,7 +251,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close
     method size = info.pushb_size
 
     method resize size =
-      Lwt_dls.check_owner "Lwt_stream.bounded_push#resize" owner;
+      check_owner owner;
       if size < 0 then invalid_arg "Lwt_stream.bounded_push#resize";
       info.pushb_size <- size;
       if info.pushb_count < info.pushb_size && info.pushb_pending <> None
@@ -259,7 +261,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close
       end
 
     method push x =
-      Lwt_dls.check_owner "Lwt_stream.bounded_push#push" owner;
+      check_owner owner;
       if closed
       then Lwt.fail Closed
       else if info.pushb_pending <> None
@@ -300,7 +302,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close
       end
 
     method close =
-      Lwt_dls.check_owner "Lwt_stream.bounded_push#close" owner;
+      check_owner owner;
       if not closed
       then begin
         closed <- true;
@@ -355,7 +357,7 @@ let create_bounded size =
 (* Wait for a new element to be added to the queue of pending element
    of the stream. *)
 let feed s =
-  Lwt_dls.check_owner "Lwt_stream (reading)" s.owner;
+  check_owner s.owner;
   match s.source with
   | From from ->
       (* There is already a thread started to create a new element,
@@ -401,7 +403,7 @@ let feed s =
    Precondition: node.data <> None
 *)
 let consume s node =
-  Lwt_dls.check_owner "Lwt_stream (reading)" s.owner;
+  check_owner s.owner;
   if node == s.node
   then begin
     s.node <- node.next;
@@ -460,7 +462,7 @@ let wrap_exn s =
   (* Checked here, as [get_exn_rec] would turn the error into an element, again
      at each read. The new stream belongs to this domain, so its reads are
      checked too. *)
-  Lwt_dls.check_owner "Lwt_stream.wrap_exn" s.owner;
+  check_owner s.owner;
   from (fun () -> get_exn_rec s s.node)
 
 let rec nget_rec node acc n s =
@@ -984,7 +986,7 @@ let choose streams =
 
 let parse s f =
   (* Checked here: the handler below writes [s.node]. *)
-  Lwt_dls.check_owner "Lwt_stream.parse" s.owner;
+  check_owner s.owner;
   (match s.source with
   | Push_bounded _ -> invalid_arg "Lwt_stream.parse"
   | From _ | From_direct _ | Push _ -> ());

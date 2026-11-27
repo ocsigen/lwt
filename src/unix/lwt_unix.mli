@@ -103,7 +103,29 @@ type file_descr
 
     - {b opened}, in which case it is fully usable
     - {b closed} or {b aborted}, in which case it is no longer
-    usable *)
+    usable
+
+    A {b file descriptor} belongs to the domain that created it. Using it from
+    another domain raises {!Lwt.Domain_crossing}.
+
+    {!stdin}, {!stdout} and {!stderr} are created when this module is
+    initialized. They belong to the domain that initialized this module.
+
+    For now, jobs only run on the domain that initialized this module (see
+    {!section-domains}). On another domain, a descriptor can only be used if
+    its I/O needs no job.
+
+    Such a descriptor is in non-blocking mode, and Lwt knows its mode. Lwt
+    knows the mode of the descriptors made by {!socket}, {!socketpair} and
+    {!accept}, by {!of_unix_file_descr} with [~blocking:false], and, except on
+    Windows, by {!pipe}, {!pipe_in} and {!pipe_out}.
+
+    Other descriptors do their I/O through jobs. These are the descriptors in
+    blocking mode, and the descriptors whose mode Lwt has to guess, since
+    guessing the mode is itself a job.
+
+    Many other operations are jobs too. Except on Windows, they include
+    {!openfile}, {!close} and {!stat}. *)
 
 (** State of a {b file descriptor} *)
 type state =
@@ -1379,8 +1401,40 @@ val wait_for_jobs : unit -> unit Lwt.t
 
 (** {2 Notifications} *)
 
-(** Lwt internally use a pipe to send notification to the main
-    thread. The following functions allow to use this pipe. *)
+(** Lwt internally uses a pipe to send notifications to the domain that
+    initialized this module. The following functions allow to use this pipe. *)
+
+(** {3:domains Notifications and domains}
+
+    The process has one notification descriptor. The domain that initialized
+    this module reads it.
+
+    That domain is therefore the only one that learns of job completions,
+    signals and child exits. The functions that depend on them only work on
+    that domain. On another domain, they raise {!Lwt.Domain_crossing}.
+
+    These functions are:
+    - {!run_job}, and the operations built on it;
+    - {!abort_jobs}, {!cancel_jobs} and {!wait_for_jobs};
+    - {!on_signal}, {!on_signal_full}, {!disable_signal_handler} and
+      {!reinstall_signal_handler};
+    - {!fork};
+    - {!waitpid}, {!wait4} and {!wait}, when the child has not exited yet and
+      [WNOHANG] is not given, and so {!Lwt_process};
+    - {!Lwt_preemptive.detach}, {!Lwt_preemptive.init} and
+      {!Lwt_preemptive.set_bounds}.
+
+    Jobs run with [Async_none] are not affected. Such a job runs synchronously,
+    on the calling thread, and needs no notification. {!run_job} with
+    [Async_none] therefore works on any domain.
+
+    The notification functions themselves work from any thread and any domain:
+    {!make_notification}, {!stop_notification}, {!set_notification} and
+    {!send_notification}.
+
+    The handler of a notification always runs on the domain that initialized
+    this module, whichever domain created or sent the notification. The
+    handler runs while that domain runs its loop. *)
 
 type notification
 
@@ -1522,4 +1576,23 @@ val write_bigarray :
 (** @deprecated This is for internal use only. *)
 
 val write_job_count_runtimte_event : unit -> unit
-val sigchld_handler_installer : unit Lazy.t
+
+val install_sigchld_handler : unit -> unit
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** Installs the SIGCHLD handler of the process, unless it is already
+    installed.
+
+    The handler only wakes up the domain that initialized this module, so
+    only that domain installs it. On another domain, this function does
+    nothing, so that {!Lwt_main.run} can call it on every domain.
+
+    Several threads can call it at the same time.
+
+    For internal use: {!Lwt_main.run} and {!waitpid} call it. *)
+
+val check_notification_owner : unit -> unit
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** [check_notification_owner ()] raises {!Lwt.Domain_crossing}, unless it is
+    called on the domain that initialized this module.
+
+    {!Lwt_preemptive} uses it. *)
