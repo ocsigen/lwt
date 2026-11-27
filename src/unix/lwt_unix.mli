@@ -108,24 +108,12 @@ type file_descr
     A {b file descriptor} belongs to the domain that created it. Using it from
     another domain raises {!Lwt.Domain_crossing}.
 
-    {!stdin}, {!stdout} and {!stderr} are created when this module is
-    initialized. They belong to the domain that initialized this module.
+    {!stdin}, {!stdout} and {!stderr} can be used from any domain. Only the
+    domain that initialized this module may change their mode ({!set_blocking})
+    or what they name ({!dup2}), since that changes them for every domain.
 
-    For now, jobs only run on the domain that initialized this module (see
-    {!section-domains}). On another domain, a descriptor can only be used if
-    its I/O needs no job.
-
-    Such a descriptor is in non-blocking mode, and Lwt knows its mode. Lwt
-    knows the mode of the descriptors made by {!socket}, {!socketpair} and
-    {!accept}, by {!of_unix_file_descr} with [~blocking:false], and, except on
-    Windows, by {!pipe}, {!pipe_in} and {!pipe_out}.
-
-    Other descriptors do their I/O through jobs. These are the descriptors in
-    blocking mode, and the descriptors whose mode Lwt has to guess, since
-    guessing the mode is itself a job.
-
-    Many other operations are jobs too. Except on Windows, they include
-    {!openfile}, {!close} and {!stat}. *)
+    If that domain makes one of them non-blocking, another domain that would
+    have to wait for it raises {!Lwt.Domain_crossing}. *)
 
 (** State of a {b file descriptor} *)
 type state =
@@ -293,7 +281,16 @@ val system : string -> process_status Lwt.t
 (** {2 Basic file input/output} *)
 
 val stdin : file_descr
-(** The {b file descriptor} for standard input. *)
+(** The {b file descriptor} for standard input.
+
+    Unlike other descriptors, the three standard ones can be used from any
+    domain. They are blocking, so a read or a write from another domain is a
+    job of that domain. Other operations run at once, as they would without
+    Lwt: one that blocks, such as {!recv} on a socket with no data, blocks the
+    loop of the calling domain. On another domain, {!wait_read} and
+    {!wait_write} return at once.
+
+    Only the domain that initialized this module may close or abort them. *)
 
 val stdout : file_descr
 (** The {b file descriptor} for standard output. *)
@@ -838,7 +835,11 @@ type signal_handler_id
 val on_signal : int -> (int -> unit) -> signal_handler_id
 (** [on_signal signum f] calls [f] each time the signal with numnber
     [signum] is received by the process. It returns a signal handler
-    identifier that can be used to stop monitoring [signum]. *)
+    identifier that can be used to stop monitoring [signum].
+
+    If [f] raises an exception, it is passed to
+    [!]{!Lwt.async_exception_hook}, and the other handlers of the signal still
+    run. By default, this will terminate the process. *)
 
 val on_signal_full :
    int
@@ -849,7 +850,11 @@ val on_signal_full :
     disable it. *)
 
 val disable_signal_handler : signal_handler_id -> unit
-(** Stops receiving this signal *)
+(** Stops receiving this signal. It must be called from the loop that
+    registered the handler, which owns the handler list and the
+    subscription this call may end.
+
+    @raise Lwt.Domain_crossing from another domain. *)
 
 val signal_count : unit -> int
 (** Returns the number of registered signal handler. *)
@@ -1401,40 +1406,38 @@ val wait_for_jobs : unit -> unit Lwt.t
 
 (** {2 Notifications} *)
 
-(** Lwt internally uses a pipe to send notifications to the domain that
-    initialized this module. The following functions allow to use this pipe. *)
+(** Lwt internally uses a pipe to send notifications to a loop. The following
+    functions allow to use this pipe. *)
 
 (** {3:domains Notifications and domains}
 
-    The process has one notification descriptor. The domain that initialized
-    this module reads it.
+    Every Lwt loop has its own notification channel.
 
-    That domain is therefore the only one that learns of job completions,
-    signals and child exits. The functions that depend on them only work on
-    that domain. On another domain, they raise {!Lwt.Domain_crossing}.
+    {!make_notification} registers a notification on the calling domain. Its
+    handler runs there, whichever thread or domain sends the notification. The
+    handler only runs while its domain runs a loop.
 
-    These functions are:
-    - {!run_job}, and the operations built on it;
-    - {!abort_jobs}, {!cancel_jobs} and {!wait_for_jobs};
-    - {!on_signal}, {!on_signal_full}, {!disable_signal_handler} and
-      {!reinstall_signal_handler};
-    - {!fork};
-    - {!waitpid}, {!wait4} and {!wait}, when the child has not exited yet and
-      [WNOHANG] is not given, and so {!Lwt_process};
-    - {!Lwt_preemptive.detach}, {!Lwt_preemptive.init} and
-      {!Lwt_preemptive.set_bounds}.
+    {!send_notification} is therefore the way to wake a given loop from
+    elsewhere. It can be called from any thread and any domain, as can
+    {!stop_notification} and {!set_notification}.
 
-    Jobs run with [Async_none] are not affected. Such a job runs synchronously,
-    on the calling thread, and needs no notification. {!run_job} with
-    [Async_none] therefore works on any domain.
+    Jobs can be submitted from any domain. A job completes on the loop that
+    submitted it. This covers {!run_job} and every operation built on it, such
+    as {!openfile}.
 
-    The notification functions themselves work from any thread and any domain:
-    {!make_notification}, {!stop_notification}, {!set_notification} and
-    {!send_notification}.
+    {!abort_jobs}, {!cancel_jobs} and {!wait_for_jobs} act on the jobs of the
+    calling loop.
 
-    The handler of a notification always runs on the domain that initialized
-    this module, whichever domain created or sent the notification. The
-    handler runs while that domain runs its loop. *)
+    {!on_signal} subscribes the calling loop. A signal reaches every loop that
+    subscribed to it. A handler can only be disabled from the loop that
+    registered it: on another domain, {!disable_signal_handler} raises
+    {!Lwt.Domain_crossing}.
+
+    Each loop reaps the children it waits for. Two loops that wait for any
+    child race for whichever exits.
+
+    {!fork}, and {!system} which uses it, fail once any domain has been
+    spawned, even after it has been joined. {!Unix.fork} does the same. *)
 
 type notification
 
@@ -1444,7 +1447,21 @@ val make_notification : ?once:bool -> (unit -> unit) -> notification
     received, [f] is called.
 
     if [once] is specified, then the notification is stopped after
-    the first time it is received. It defaults to [false]. *)
+    the first time it is received. It defaults to [false].
+
+    [f] runs on the domain that created the notification, whichever domain
+    sends it.
+
+    When a spawned domain exits, Lwt closes its notification channel. A
+    [Domain.at_exit] callback that runs after that can no longer create a
+    notification: [make_notification] raises [Failure]. A job then runs
+    synchronously, as with {!Async_none}, since its completion cannot be
+    notified. A job still running when the channel closes fails with
+    [Failure].
+
+    Lwt cannot close a channel that is first created in such a callback. So a
+    domain should not use Lwt for the first time there: there is a fixed
+    number of channels, and each such domain keeps one for good. *)
 
 val send_notification : notification -> unit
 (** [send_notification id] sends a notification.
@@ -1579,20 +1596,19 @@ val write_job_count_runtimte_event : unit -> unit
 
 val install_sigchld_handler : unit -> unit
 [@@alert trespassing "Internal to the Lwt packages, keep away."]
-(** Installs the SIGCHLD handler of the process, unless it is already
-    installed.
+(** Subscribes the calling loop to SIGCHLD, unless it is already subscribed.
 
-    The handler only wakes up the domain that initialized this module, so
-    only that domain installs it. On another domain, this function does
-    nothing, so that {!Lwt_main.run} can call it on every domain.
-
-    Several threads can call it at the same time.
+    It can be called from several domains at once.
 
     For internal use: {!Lwt_main.run} and {!waitpid} call it. *)
 
-val check_notification_owner : unit -> unit
+val ensure_channel : unit -> unit
 [@@alert trespassing "Internal to the Lwt packages, keep away."]
-(** [check_notification_owner ()] raises {!Lwt.Domain_crossing}, unless it is
-    called on the domain that initialized this module.
+(** Creates this domain's notification channel if it does not exist yet.
+    [Lwt_main] calls it before it registers the drain of exit hooks, so that
+    the drain runs while the channel still exists. *)
 
-    {!Lwt_preemptive} uses it. *)
+val notification_channel_closed : unit -> bool
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** Whether this domain's notification channel has been closed, at the exit of
+    the domain. {!Lwt_preemptive.detach} then runs its function directly. *)

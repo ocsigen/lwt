@@ -19,13 +19,25 @@
     hooks and registry of open channels. Exit hooks registered on a spawned
     domain run when it exits. A file descriptor, a channel and an Lwt_timeout
     belong to the domain that creates them, and raise Lwt.Domain_crossing
-    elsewhere. The standard channels (Lwt_io.stdin, stdout, stderr, null and
-    zero, and Lwt_unix.stdin, stdout and stderr) belong to the domain that
-    initialized their module. Jobs, signals, child processes and
-    Lwt_preemptive stay with the domain that initialized Lwt_unix, and raise
-    Lwt.Domain_crossing elsewhere. Jobs include opening and closing files,
-    and I/O on a descriptor in blocking mode, so another domain can only use
-    descriptors in non-blocking mode, such as sockets.
+    elsewhere. Jobs, signals, child processes and Lwt_preemptive work from
+    every loop. Each loop has its own notification channel and its own pool of
+    preemptive threads, and a signal reaches every loop that subscribed to it.
+    A notification's handler runs on the domain that created it, whichever
+    thread or domain sends it, so Lwt_unix.send_notification wakes a given
+    loop from anywhere. When a spawned domain exits, its loop's channel is
+    closed. A Domain.at_exit callback that runs after that can still run a
+    loop. Jobs and Lwt_preemptive.detach then run synchronously, but creating
+    a notification, subscribing to a signal or waiting for a child raises
+    Failure. A domain should not use Lwt for the first time in such a
+    callback, nor detach for the first time in an exit hook: Lwt cannot clean
+    up what it creates then.
+    Lwt_io.stdin, stdout, stderr, null and zero, and Lwt_fmt.stdout and
+    stderr, stand for one channel or formatter per domain, so every loop can
+    print. Lwt_unix.stdin, stdout and stderr can be used from every loop.
+    Lwt_process works from every loop when it can spawn with posix_spawnp
+    (no ?cwd, and not a script without #!). Lwt_unix.fork, and so
+    Lwt_unix.system, still fail once a domain has been spawned, as Unix.fork
+    does.
     The lazy value Lwt_unix.sigchld_handler_installer is removed: forcing it
     from two domains at once raised Lazy.Undefined, and no package outside Lwt
     used it.
@@ -34,6 +46,15 @@
     a library's module-level mutex or pool, which would otherwise belong to the
     main domain.
 
+====== Breaking changes ======
+
+  * Lwt_unix.on_signal: a handler that raises no longer keeps the other
+    handlers of the signal from running. Its exception goes to
+    Lwt.async_exception_hook, instead of out of Lwt_main.run. By default, the
+    hook prints the exception and exits the program. A program that caught
+    the exception around Lwt_main.run must now catch it in the handler, or
+    set the hook. (Vincent Balat)
+
 ====== Fixes ======
 
   * Make the Lwt.key storage thread-safe.
@@ -41,6 +62,35 @@
   * Lwt_unix.mcast_set_loop and Lwt_unix.mcast_set_ttl failed with EINVAL on
     OpenBSD, which wants a one-byte value. They now pass a byte, which the
     other systems accept too. (Jérôme Vouillon)
+
+  * Lwt_unix.fork: when a notification was pending at the fork, a job
+    completion or a signal for example, the child's loop never woke up again
+    for any notification. The child now drops the parent's pending
+    notifications, which belong to the parent. A worker thread that held the
+    notification lock at fork time no longer blocks the child either.
+    (Vincent Balat, Jérôme Vouillon)
+
+  * Lwt_unix: the signal handler neither allocates nor raises. When the
+    notification buffer was full, it grew it with malloc, which deadlocks if
+    the signal interrupted malloc. It now marks the signal pending, and the
+    loop delivers it the next time it reads its notifications. A failed
+    wake-up write raised an OCaml exception from the handler. It is now ignored
+    there. Several deliveries of one signal while the buffer is full now merge
+    into one, as pending signals do. The buffer now grows with its lock
+    released, so that the handler, which takes that lock, no longer waits for
+    a thread that is itself waiting for malloc.
+
+  * Lwt_unix: when a job completes and the write that wakes the loop fails,
+    the worker thread no longer raises an OCaml exception. It does not hold
+    the runtime lock, so raising there was not allowed.
+
+  * Lwt_unix: when a notification handler (a signal handler, for example)
+    raises, the other notifications received at the same time are no longer
+    lost. They are handled the next time the loop runs. (Vincent Balat)
+
+  * Lwt_unix.on_signal_full: each handler of a signal gets its own id.
+    Previously they all got the id of the first one, so a handler that
+    disabled itself disabled the first one instead. (Vincent Balat)
 
 ===== 6.1.3 =====
 

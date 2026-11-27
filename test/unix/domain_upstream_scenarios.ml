@@ -88,14 +88,21 @@ let () =
     | exception _ -> false);
   (try Lwt_main.run (Lwt_unix.close r) with _ -> ());
   (try Lwt_main.run (Lwt_unix.close wfd) with _ -> ());
-  (* 5. preempting: detaching blocking work from a spawned domain. *)
-  check "preempting: detaching from another domain is refused"
-    (on_other_domain (fun () ->
-       refused (fun () -> Lwt_main.run (Lwt_preemptive.detach (fun () -> 1) ()))));
-  check "preempting: detaching from the main domain works"
-    (match Lwt_main.run (Lwt_preemptive.detach String.length "hello") with
-    | 5 -> true
-    | _ -> false
-    | exception _ -> false);
+  (* 5. preempting: several domains each detach a list of blocking work. The
+     results return through each detaching loop's own channel. *)
+  check "preempting: several domains detach at once"
+    (let inputs = ["a"; "bb"; "ccc"; "dddd"] in
+     let run () =
+       Domain.spawn (fun () ->
+         match
+           Lwt_main.run
+             (Lwt_list.map_p (Lwt_preemptive.detach String.length) inputs)
+         with
+         | lengths -> lengths = List.map String.length inputs
+         | exception _ -> false)
+     in
+     let a = run () and b = run () in
+     let ra = Domain.join a and rb = Domain.join b in
+     ra && rb);
   if !failures > 0 then exit 1;
   print_endline "6.0.0-beta00 multidomain scenarios: ok"

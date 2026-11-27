@@ -4,8 +4,19 @@
 open Test
 open Lwt.Infix
 
-(* An instance of the tester for the wait/waitpid tests. *)
-let () = match Sys.argv with [|_; "--child"|] -> exit 42 | _ -> ()
+(* An instance of the tester for the wait/waitpid tests, and one for the
+   busy-detach test: the latter leaves a detached computation running and ends
+   normally, at_exit hooks included. *)
+let () =
+  match Sys.argv with
+  | [|_; "--child"|] -> exit 42
+  | [|_; "--busy-detach"|] ->
+      Lwt_main.run
+        (Lwt.pick
+           [ Lwt_preemptive.detach (fun () -> Unix.sleepf 5.) ()
+           ; Lwt_unix.sleep 0.05 ]);
+      exit 0
+  | _ -> ()
 
 let wait_tests =
   [ test "wait" ~sequential:true ~only_if:(fun () -> not Sys.win32)
@@ -835,7 +846,21 @@ let dir_tests =
       Lwt_unix.getcwd () >>= fun here -> Lwt.return (here = unix_here)) ]
 
 let lwt_preemptive_tests =
-  [ test "run_in_main" begin fun () ->
+  [ (* The process must not wait, at exit, for a detached computation still
+     running. Measured on a child process. *)
+    test "exit does not wait for a busy detach" ~sequential:true
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let t0 = Unix.gettimeofday () in
+      let child =
+        Unix.create_process Sys.executable_name
+          [|Sys.executable_name; "--busy-detach"|]
+          Unix.stdin Unix.stdout Unix.stderr
+      in
+      Lwt_unix.waitpid [] child >|= fun (_, status) ->
+      let elapsed = Unix.gettimeofday () -. t0 in
+      status = Lwt_unix.WEXITED 0 && elapsed < 3.
+      end
+  ; test "run_in_main" begin fun () ->
         let f () =
           Lwt_preemptive.run_in_main (fun () ->
             Lwt_unix.sleep 0.01 >>= fun () -> Lwt.return 42)
@@ -1026,10 +1051,77 @@ let dup_tests ~blocking =
       assert (read = file_contents);
       Lwt.return_true) ]
 
+let signal_tests =
+  [ (* reinstall_signal_handler puts Lwt's handler back after another library
+     replaced it. SIGURG is ignored by default, so a handler that is not
+     restored costs a timeout, not the test process. *)
+    test "reinstall_signal_handler" ~sequential:true
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let got, resolve_got = Lwt.wait () in
+      let id =
+        Lwt_unix.on_signal Sys.sigurg (fun _ ->
+          if Lwt.is_sleeping got then Lwt.wakeup resolve_got ())
+      in
+      let other_library_ran = ref false in
+      Sys.set_signal Sys.sigurg
+        (Sys.Signal_handle (fun _ -> other_library_ran := true));
+      Lwt_unix.reinstall_signal_handler Sys.sigurg;
+      Unix.kill (Unix.getpid ()) Sys.sigurg;
+      Lwt.pick
+        [(got >|= fun () -> true); (Lwt_unix.sleep 2. >|= fun () -> false)]
+      >|= fun lwt_handler_ran ->
+      Lwt_unix.disable_signal_handler id;
+      lwt_handler_ran && not !other_library_ran
+      end ]
+
+let fork_tests =
+  [ (* The child of a fork keeps the notifications made before it: a signal
+     handler, the notification of Lwt_preemptive.run_in_main, and the SIGCHLD
+     subscription.
+     The child ends with _exit, so that the suite's exit hooks run only in the
+     parent. *)
+    test "fork: the child keeps its notifications" ~sequential:true
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let got, resolve_got = Lwt.wait () in
+      let id =
+        Lwt_unix.on_signal Sys.sigurg (fun _ ->
+          if Lwt.is_sleeping got then Lwt.wakeup resolve_got ())
+      in
+      match Lwt_unix.fork () with
+      | 0 ->
+          let outcome =
+            Lwt.catch
+              (fun () ->
+                 Unix.kill (Unix.getpid ()) Sys.sigurg;
+                 let timeout = Lwt_unix.sleep 2. >|= fun () -> false in
+                 Lwt.pick [(got >|= fun () -> true); timeout]
+                 >>= fun signalled ->
+                 let in_main =
+                   Lwt_preemptive.detach
+                     (fun () ->
+                        Lwt_preemptive.run_in_main (fun () -> Lwt.return_true))
+                     ()
+                 in
+                 Lwt.pick [in_main; (Lwt_unix.sleep 2. >|= fun () -> false)]
+                 >>= fun ran_in_main ->
+                 let reaped =
+                   Lwt_process.exec ("", [|"true"|]) >|= fun _ -> true
+                 in
+                 Lwt.pick [reaped; (Lwt_unix.sleep 2. >|= fun () -> false)]
+                 >|= fun reaped -> signalled && ran_in_main && reaped)
+              (fun _ -> Lwt.return_false)
+          in
+          outcome >|= fun ok -> Unix._exit (if ok then 0 else 1)
+      | child ->
+          Lwt_unix.waitpid [] child >|= fun (_, status) ->
+          Lwt_unix.disable_signal_handler id;
+          status = Lwt_unix.WEXITED 0
+      end ]
+
 let suite =
   suite "lwt_unix"
-    (wait_tests @ openfile_tests @ utimes_tests @ readdir_tests
-   @ io_vectors_byte_count_tests @ readv_tests @ writev_tests
+    (wait_tests @ signal_tests @ fork_tests @ openfile_tests @ utimes_tests
+   @ readdir_tests @ io_vectors_byte_count_tests @ readv_tests @ writev_tests
    @ send_recv_msg_tests @ bind_tests @ dir_tests @ lwt_preemptive_tests
    @ lwt_user_tests @ pread_tests ~blocking:true
     @ pread_tests ~blocking:false

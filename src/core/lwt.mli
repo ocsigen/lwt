@@ -919,8 +919,8 @@ v}
     A program that runs Lwt on several domains should therefore set a hook
     that hands the exception to the main domain, and let the main domain exit.
     For example, the hook can store the exception in an [Atomic.t], and call
-    [Lwt_unix.send_notification]. The handler of a notification runs on the
-    domain that initialized [Lwt_unix], usually the main one. *)
+    [Lwt_unix.send_notification] on a notification created by the main domain.
+    The handler of that notification runs on the main domain. *)
 
 (** {2:2_Concurrency Concurrency} *)
 

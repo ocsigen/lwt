@@ -38,21 +38,15 @@ exception Channel_closed of string
 type 'mode channel
 (** Type of buffered byte channels.
 
-    A channel belongs to the domain that created it. Therefore using it from
-    another domain raises {!Lwt.Domain_crossing}.
+    A channel belongs to the domain that created it. Using it from another
+    domain raises {!Lwt.Domain_crossing}.
 
-    The channels {!stdout}, {!stderr}, {!stdin}, {!null} and {!zero} are
-    created when this module is initialized. Therefore they belong to the
-    domain that initialized them.
+    A channel is a mutable buffer with a lock made of Lwt promises. The check
+    keeps another domain from corrupting the buffer.
 
-    For now, another domain can only make channels over descriptors that need
-    no {!Lwt_unix} job. {!Lwt_unix.file_descr} explains which descriptors
-    these are. For example, this makes such a channel:
-    [of_fd (Lwt_unix.of_unix_file_descr ~blocking:false fd)].
-
-    {!of_unix_fd} and {!open_file} make channels that need jobs. Except on
-    Windows, closing a channel also uses a job, so {!close} fails on another
-    domain. *)
+    {!stdin}, {!stdout}, {!stderr}, {!zero} and {!null} can be used from any
+    domain. Each of them stands for one channel per domain, made on first use
+    on that domain. *)
 
 type input
 (** Input mode *)
@@ -84,7 +78,21 @@ val stdin : input_channel
 (** The standard input, it reads data from {!Lwt_unix.stdin} *)
 
 val stdout : output_channel
-(** The standard output, it writes data to {!Lwt_unix.stdout} *)
+(** The standard output, it writes data to {!Lwt_unix.stdout}.
+
+    This value stands for one channel per domain. Each domain that uses it has
+    its own buffer over the same descriptor. The buffer is flushed when that
+    domain exits. For the main domain, that is when the process exits.
+
+    Output from several domains therefore interleaves at flushes, not byte by
+    byte.
+
+    Closing it from a domain other than the main one flushes and closes the
+    channel of that domain. The descriptor stays open for the other domains.
+
+    The same holds for {!stderr} and {!stdin}. When several domains read
+    standard input, each buffer takes its own chunks of it, so each domain sees
+    only part of the input. *)
 
 val stderr : output_channel
 (** The standard output for error messages, it writes data to
@@ -872,6 +880,14 @@ val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
 val default_buffer_size : unit -> int
 (** Return the default size for buffers. Channels that are created
     without a specific buffer use new buffer of this size. *)
+
+val close_on_finalise : 'mode channel -> unit
+[@@alert trespassing "Internal to the Lwt packages, keep away."]
+(** Closes the channel when it is collected, if its finalizer runs on the
+    channel's own domain. On a domain other than the main one, the channel is
+    also closed when that domain exits. Meant for the channels of a stream or a
+    process, which the user never closes. Must be called on the channel's own
+    domain. *)
 
 val set_default_buffer_size : int -> unit
 (** Change the default buffer size.

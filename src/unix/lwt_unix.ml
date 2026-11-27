@@ -10,14 +10,17 @@ module Lwt_sequence = Lwt_sequence
 open Lwt.Infix
 
 (* +-----------------------------------------------------------------+
-   | The domain that owns the notification file descriptor            |
+   | This domain's notification channel                              |
    +-----------------------------------------------------------------+ *)
 
-(* Jobs, signal handlers and child waiting reach Lwt through one process-wide
-   notification descriptor, read on the engine of the domain that initialized
-   this module, so their completions run on that domain. The operations that
-   need the descriptor fail on any other domain. [is_owner_slot] is [true] on
-   that domain only: it is set when the module is initialized. *)
+(* Jobs, signal handlers and child waiting reach Lwt through a notification
+   channel, one per loop. A notification id carries the index of its channel
+   in a C table. So a job completion wakes the loop that submitted the job, a
+   signal wakes every loop that subscribed to it, and a child's exit wakes the
+   loop that waits for it.
+
+   The per-domain state is in [notif_slot] below: the channel, the jobs in
+   flight, the signal subscriptions and the children awaited. *)
 [@@@alert "-trespassing"]
 
 module Lwt_dls = Lwt_dls
@@ -26,16 +29,196 @@ let check_owner = Lwt.Private.check_owner
 
 [@@@alert "+trespassing"]
 
-let is_owner_slot : bool Lwt_dls.t = Lwt_dls.new_key (fun () -> false)
-let () = Lwt_dls.set is_owner_slot true
-let[@inline] is_notification_owner () = Lwt_dls.get is_owner_slot
+(* Builds the locks that have no static initializer (Windows). Called once, at
+   module initialization, before any other domain exists. *)
+external init_notifications : unit -> unit = "lwt_unix_init_notifications"
 
-let[@inline] check_notification_owner () =
-  if not (is_notification_owner ()) then raise Lwt.Domain_crossing
+let () = init_notifications ()
 
-(* Process-wide: the running jobs and their count. Only the domain that
-   initialized this module touches them, so they need no lock. *)
-let job_count = ref 0
+external new_notification_channel :
+   unit
+  -> Unix.file_descr * int
+  = "lwt_unix_new_notification_channel"
+
+external free_notification_channel :
+   int
+  -> unit
+  = "lwt_unix_free_notification_channel"
+
+external reset_notification_channel :
+   int
+  -> Unix.file_descr
+  = "lwt_unix_reset_notification_channel"
+
+external notification_channel_index :
+   int
+  -> int
+  = "lwt_unix_notification_channel_index"
+
+external send_notification : int -> unit = "lwt_unix_send_notification_stub"
+external recv_notifications : int -> int array = "lwt_unix_recv_notifications"
+
+external notification_local_count :
+   unit
+  -> int
+  = "lwt_unix_notification_local_count"
+
+external encode_notification :
+   int
+  -> int
+  -> int
+  = "lwt_unix_encode_notification"
+
+(* Forward references: draining needs [call_notification], and the exit of a
+   domain needs [remove_signal]; both are defined below. Set once, each at the
+   end of its section. *)
+let drain_notifications : (int -> unit) ref = ref (fun _ -> ())
+let drop_signal_subscriptions : (unit -> unit) ref = ref (fun () -> ())
+
+(* Forward reference too, for the same reason: removes a retired channel's
+   entries from the table of notifiers, defined with that table below. *)
+let purge_notifiers : (int -> unit) ref = ref (fun _ -> ())
+
+(* Declared here rather than where they are used, so that the per-domain record
+   below can mention them. *)
+
+type notification = int (* a simple id, carrying its channel's index *)
+
+module Signal_map = Map.Make (struct
+    type t = int
+
+    let compare a b = a - b
+  end)
+
+type signal_handler =
+  { sh_num : int
+  ; sh_node : (int -> unit) Lwt_sequence.node
+  ; sh_owner : Lwt_dls.token
+    (* The loop that registered it: the node above is in that loop's list of
+       handlers, which only that loop may touch. *)
+  }
+
+and signal_handler_id = signal_handler option ref
+
+type resource_usage = {ru_utime : float; ru_stime : float}
+
+(* Per domain: the channel this loop is woken through, and the engine event
+   that watches it, created on first use. The notification ids this domain
+   hands out carry the channel's index, so that a pool thread or a signal
+   handler can wake the right loop. *)
+type notif =
+  { chan : int
+  ; event : Lwt_engine.event
+  ; jobs : (unit Lwt.t * (exn -> unit)) Lwt_sequence.t
+    (* The jobs this loop has in flight, with the function that aborts each,
+       and their count. Per domain because a completion wakes the loop that
+       submitted the job, so that is the loop that must remove the node and
+       decrement the count. *)
+  ; mutable job_count : int
+  ; mutable signals : (notification * (int -> unit) Lwt_sequence.t) Signal_map.t
+    (* The signals this loop is subscribed to, with the notification each
+       arrives on and the handlers to run. Per domain because a signal is
+       delivered to every loop that asked for it, on its own channel: the C side
+       keeps one subscriber slot per channel. *)
+  ; wait_children :
+      ((int * Unix.process_status * resource_usage) Lwt.u
+      * Unix.wait_flag list
+      * int)
+        Lwt_sequence.t
+    (* Children this loop is waiting for, and whether it has subscribed to
+       SIGCHLD. Per domain for the same reason: each loop reaps the children it
+       waits for, woken by its own subscription. *)
+  ; mutable sigchld_installed : bool
+  ; mutable retired : bool
+    (* Set once the channel is retired at domain exit; see [notif_slot]. *) }
+
+let notif_slot : notif Lwt_dls.t =
+  Lwt_dls.new_key (fun () ->
+    let fd, chan = new_notification_channel () in
+    let event =
+      (* Free the channel if the engine fails, or its slot would leak, and
+         with it the descriptors. *)
+      try Lwt_engine.on_readable fd (fun _ -> !drain_notifications chan)
+      with exn ->
+        free_notification_channel chan;
+        raise exn
+    in
+    let notif =
+      { chan
+      ; event
+      ; jobs = Lwt_sequence.create ()
+      ; job_count = 0
+      ; signals = Signal_map.empty
+      ; wait_children = Lwt_sequence.create ()
+      ; sigchld_installed = false
+      ; retired = false }
+    in
+    (* Retire the channel with the domain. An exit hook may need a job
+       ([Lwt_io.flush_all] does), so the drain of exit hooks must run while the
+       channel lives. On a spawned domain, [Lwt_main] calls {!ensure_channel}
+       before registering its drain, which then runs first. On the main domain,
+       the drain is a [Stdlib.at_exit], which runs after every
+       [Domain.at_exit]. So the channel is never retired there, as the process
+       is ending anyway. The C side drops a later completion, since its
+       generation is stale.
+
+       A [Domain.at_exit] callback that runs after this one may still use Lwt,
+       but nothing that needs a notification: [live_notif] fails. Giving the
+       loop a new channel would leak it, since OCaml does not run a callback
+       registered during the exit, and there is a fixed number of channels.
+       For the same reason, a channel first created in such a callback is
+       never retired, and its slot leaks. *)
+    if not (Lwt_dls.is_main_domain ())
+    then
+      Lwt_dls.at_domain_exit (fun () ->
+        (* Set first, so that a finalizer that runs during the purge cannot add
+           a notification after it. *)
+        notif.retired <- true;
+        (* Fail the jobs still in flight: their completions would come through
+           this channel, and nothing would handle them. A later callback that
+           waits for one gets the exception, rather than waiting for ever. *)
+        let rec abort () =
+          match Lwt_sequence.take_opt_l notif.jobs with
+          | Some (_, f) ->
+              f (Failure "Lwt_unix: the domain exited while the job ran");
+              abort ()
+          | None -> ()
+        in
+        abort ();
+        notif.job_count <- 0;
+        (* Unsubscribe, or the process-wide handler would stay installed for
+           nobody, and swallow the signal. *)
+        !drop_signal_subscriptions ();
+        Lwt_engine.stop_event event;
+        (* Forget this loop's notifications before the slot is freed. Once it
+           is free, another domain may take it and register notifications with
+           the same index, and a later purge would remove those too. Left in
+           the table, ours would leak, and after 256 reuses of the slot a stale
+           id would reach its new owner. A notification sent between the purge
+           and the free lands in a buffer that nobody drains any more. *)
+        !purge_notifiers chan;
+        free_notification_channel chan);
+    notif)
+
+let retired () =
+  failwith
+    "Lwt_unix: this domain has exited, and its loop can no longer be notified"
+
+let[@inline] self_notif () = Lwt_dls.get notif_slot
+
+(* For what needs a notification, which fails once the channel is retired. *)
+let[@inline] live_notif () =
+  let notif = Lwt_dls.get notif_slot in
+  if notif.retired then retired () else notif
+
+let[@inline] self_channel () = (live_notif ()).chan
+
+(* For [Lwt_main], before it registers the drain of exit hooks; see
+   [notif_slot]. *)
+let ensure_channel () = ignore (Lwt_dls.get notif_slot)
+
+(* For [Lwt_preemptive], which then runs detached functions directly. *)
+let notification_channel_closed () = (self_notif ()).retired
 
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
@@ -83,8 +266,6 @@ type notifier =
 
 module Notifiers = Map.Make (Int)
 
-type notification = int (* a simple ID*)
-
 (* Process-wide. Creating and stopping a notification must be safe from any
    thread or domain, like sending one. The table is an immutable map in an
    atomic. An update builds a new map, installs it with a compare-and-set, and
@@ -99,19 +280,40 @@ type notification = int (* a simple ID*)
    [last] is the last id handed out. See
    https://github.com/ocsigen/lwt/issues/277 and
    https://github.com/ocsigen/lwt/pull/278 for its initial value. *)
-type notifiers = {map : notifier Notifiers.t; last : notification}
+type notifiers = {map : notifier Notifiers.t; last : int}
 
 let notifiers = Atomic.make {map = Notifiers.empty; last = 0x7FFFFFFF - 1000}
 
-let rec find_free_id map id =
-  if Notifiers.mem id map then find_free_id map (id + 1) else id
+(* The id carries the index of the calling domain's channel, so the handler
+   runs on the domain that created the notification, whichever domain sends
+   it. So [last] is only the local part of the last id, and is process-wide.
+   The C side masks it to the bits that index and generation leave, and the
+   table detects collisions: an id still registered is skipped.
+
+   A loop has [local_count] local parts. Once they are all taken, creating one
+   more fails, rather than search for ever. On a 32-bit platform, that is 32768
+   notifications alive on one loop. *)
+let local_count = notification_local_count ()
+
+let rec find_free_local map chan local tries =
+  if tries = 0
+  then
+    failwith "Lwt_unix.make_notification: too many notifications on this loop";
+  let id = encode_notification chan local in
+  (* 0 is never handed out: in the C table of signal subscriptions it means
+     nobody. *)
+  if id = 0 || Notifiers.mem id map
+  then find_free_local map chan (local + 1) (tries - 1)
+  else local
 
 let make_notification ?(once = false) f =
+  let chan = self_channel () in
   let notifier = {notify_once = once; notify_handler = f} in
   let rec add () =
     let t = Atomic.get notifiers in
-    let id = find_free_id t.map (t.last + 1) in
-    let t' = {map = Notifiers.add id notifier t.map; last = id} in
+    let local = find_free_local t.map chan (t.last + 1) local_count in
+    let id = encode_notification chan local in
+    let t' = {map = Notifiers.add id notifier t.map; last = local} in
     if Atomic.compare_and_set notifiers t t' then id else add ()
   in
   add ()
@@ -124,6 +326,16 @@ let rec stop_notification id =
          (Atomic.compare_and_set notifiers t
             {t with map = Notifiers.remove id t.map})
   then stop_notification id
+
+let rec purge chan =
+  let t = Atomic.get notifiers in
+  let map =
+    Notifiers.filter (fun id _ -> notification_channel_index id <> chan) t.map
+  in
+  if map != t.map && not (Atomic.compare_and_set notifiers t {t with map})
+  then purge chan
+
+let () = purge_notifiers := purge
 
 let rec set_notification id f =
   let t = Atomic.get notifiers in
@@ -203,28 +415,23 @@ external check_job : 'a job -> int -> bool = "lwt_unix_check_job" "noalloc"
    when it finishes. *)
 [@@ocaml.warning "-3"]
 
-(* For all running job, a waiter and a function to abort it. *)
-let jobs = Lwt_sequence.create ()
-
-let rec abort_jobs_aux exn =
+(* Each of these acts on the calling loop's jobs. *)
+let rec abort_jobs_aux jobs exn =
   match Lwt_sequence.take_opt_l jobs with
-  | Some (_, f) -> f exn; abort_jobs_aux exn
+  | Some (_, f) -> f exn; abort_jobs_aux jobs exn
   | None -> ()
 
-let abort_jobs exn =
-  check_notification_owner ();
-  abort_jobs_aux exn
-
-let cancel_jobs () =
-  check_notification_owner ();
-  abort_jobs_aux Lwt.Canceled
+let abort_jobs exn = abort_jobs_aux (self_notif ()).jobs exn
+let cancel_jobs () = abort_jobs_aux (self_notif ()).jobs Lwt.Canceled
 
 let wait_for_jobs () =
-  check_notification_owner ();
-  Lwt.join (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) jobs [])
+  Lwt.join
+    (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) (self_notif ()).jobs [])
 
 let run_job_aux async_method job result =
-  check_notification_owner ();
+  (* Checked before the job starts, since its completion needs a
+     notification. *)
+  let notif = live_notif () in
   (* Starts the job. *)
   if start_job job async_method
   then
@@ -234,22 +441,22 @@ let run_job_aux async_method job result =
   else begin
     (* Thread for the job. *)
     let waiter, wakener = Lwt.wait () in
-    (* Add the job to the sequence of all jobs. *)
+    (* Add the job to this loop's sequence. *)
     let node =
       Lwt_sequence.add_l
         ( (waiter >>= fun _ -> Lwt.return_unit)
         , fun exn ->
             if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_exn wakener exn )
-        jobs
+        notif.jobs
     in
-    incr job_count;
+    notif.job_count <- notif.job_count + 1;
     ignore
       begin
         (* Create the notification for asynchronous wakeup. *)
       let notification =
         make_notification ~once:true (fun () ->
           Lwt_sequence.remove node;
-          decr job_count;
+          notif.job_count <- notif.job_count - 1;
           let result = result job in
           if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_result wakener result)
       in
@@ -283,7 +490,9 @@ let self_result job =
 
 let run_job ?async_method job =
   let async_method = choose_async_method async_method in
-  if async_method = Async_none
+  (* Once the channel is retired, a completion can no longer be notified, so
+     the job runs synchronously. *)
+  if async_method = Async_none || (self_notif ()).retired
   then
     try Lwt.return (run_job_sync job)
     with exn when Lwt.Exception_filter.run exn -> Lwt.fail exn
@@ -314,6 +523,12 @@ type file_descr =
        be readable or writable adds an event to the engine of that domain, and
        its hooks run there. Checked in [check_descriptor], which every
        operation calls. *)
+  ; shared : bool
+    (* Set for [stdin], [stdout] and [stderr], which every loop needs. They are
+       blocking, so another domain does not wait for them to be ready: reads
+       and writes are jobs of that domain, and the other operations run at
+       once, as they would without Lwt. Only the domain that initialized
+       Lwt_unix closes or aborts them. *)
   }
 
 external is_socket : Unix.file_descr -> bool = "lwt_unix_is_socket" "noalloc"
@@ -364,13 +579,17 @@ let mk_ch ?blocking ?(set_flags = true) fd =
   ; event_writable = None
   ; hooks_readable = Lwt_sequence.create ()
   ; hooks_writable = Lwt_sequence.create ()
+  ; shared = false
   ; owner = Lwt_dls.self_token () }
 
 (* The operations that force [ch.blocking] before reaching [check_descriptor]
    call this first: on another domain, forcing [ch.blocking] could run
    [guess_blocking] there, and the lazy value would keep the result for the
-   domain that owns the descriptor. *)
-let[@inline] check_descriptor_owner ch = check_owner ch.owner
+   domain that owns the descriptor. A shared standard descriptor passes: its
+   mode is blocking, and known from the start. *)
+let[@inline] check_descriptor_owner ch =
+  if (ch.owner :> int) <> (Lwt_dls.self_token () :> int) && not ch.shared
+  then raise Lwt.Domain_crossing
 
 let check_descriptor ch =
   check_descriptor_owner ch;
@@ -383,9 +602,18 @@ let state ch = ch.state
 let blocking ch = check_descriptor ch; Lazy.force ch.blocking
 
 let set_blocking ?(set_flags = true) ch blocking =
+  (* Strictly the owner: the mode of a shared standard descriptor applies to
+     the whole process, so only the domain that initialized Lwt_unix may change
+     it. *)
+  check_owner ch.owner;
   check_descriptor ch;
   ch.set_flags <- set_flags;
-  ch.blocking <- is_blocking ~blocking ~set_flags ch.fd
+  let blocking = is_blocking ~blocking ~set_flags ch.fd in
+  (* On a shared descriptor, forced before it is stored: another domain may
+     read [ch.blocking] at any time, and a lazy value forced by two domains at
+     once fails. *)
+  if ch.shared then ignore (Lazy.force blocking);
+  ch.blocking <- blocking
 
 external unix_stub_readable : Unix.file_descr -> bool = "lwt_unix_readable"
 external unix_stub_writable : Unix.file_descr -> bool = "lwt_unix_writable"
@@ -437,9 +665,18 @@ let abort ch e =
 
 let unix_file_descr ch = ch.fd
 let of_unix_file_descr = mk_ch
-let stdin = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stdin
-let stdout = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stdout
-let stderr = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stderr
+
+(* Shared by every domain (see [shared]). Their blocking mode is settled here,
+   once, by forcing it, since a lazy value forced by two domains at once
+   fails. *)
+let standard fd =
+  let ch = {(mk_ch ~set_flags:false ~blocking:true fd) with shared = true} in
+  ignore (Lazy.force ch.blocking);
+  ch
+
+let stdin = standard Unix.stdin
+let stdout = standard Unix.stdout
+let stderr = standard Unix.stderr
 
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |
@@ -534,6 +771,13 @@ let rec retry_syscall node event ch wakener action =
 let dummy = Lwt_sequence.add_r ignore (Lwt_sequence.create ())
 
 let register_action event ch action =
+  (* Another domain gets here only with a shared standard descriptor, since
+     any other descriptor fails [check_descriptor]. This happens when the
+     domain that initialized Lwt_unix made the descriptor non-blocking, or when
+     a call has to be retried, such as an [accept] with no connection yet.
+     Waiting would change the shared record and register an event that the
+     owner's loop runs. Only the owner can wait for it. *)
+  if ch.owner <> Lwt_dls.self_token () then raise Lwt.Domain_crossing;
   let waiter, wakener = Lwt.task () in
   match event with
   | Read ->
@@ -556,17 +800,25 @@ let register_action event ch action =
       waiter
 
 (* Wraps a system call *)
-let wrap_syscall event ch action =
+let rec wrap_syscall event ch action =
   check_descriptor ch;
   Lazy.force ch.blocking >>= fun blocking ->
   try
+    (* On a domain other than its owner, a shared standard descriptor is not
+       waited for: that would register an event in the owner's engine. *)
     if
       (not blocking)
       || (event = Read && unix_readable ch.fd)
       || (event = Write && unix_writable ch.fd)
+      || ch.owner <> Lwt_dls.self_token ()
     then Lwt.return (action ())
     else register_action event ch action
   with
+  | Unix.Unix_error (Unix.EINTR, _, _) when ch.owner <> Lwt_dls.self_token () ->
+      (* Interrupted by a signal, on a domain other than the owner, which
+         cannot wait for the descriptor (see [register_action]): nothing
+         happened, so try again. *)
+      wrap_syscall event ch action
   | Retry
   | Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
   | Sys_blocked_io ->
@@ -627,7 +879,12 @@ type bigarray =
 let wait_read ch =
   Lwt.catch
     (fun () ->
-       if readable ch then Lwt.return_unit else register_action Read ch ignore)
+       (* A shared standard descriptor on a domain other than its owner: no
+          event in the owner's engine. The job that follows waits in its worker
+          thread. *)
+       if readable ch || ch.owner <> Lwt_dls.self_token ()
+       then Lwt.return_unit
+       else register_action Read ch ignore)
     Lwt.reraise
 
 external stub_read :
@@ -719,7 +976,10 @@ let read_bigarray function_name fd buf pos len =
 let wait_write ch =
   Lwt.catch
     (fun () ->
-       if writable ch then Lwt.return_unit else register_action Write ch ignore)
+       (* As in [wait_read]. *)
+       if writable ch || ch.owner <> Lwt_dls.self_token ()
+       then Lwt.return_unit
+       else register_action Write ch ignore)
     Lwt.reraise
 
 external stub_write :
@@ -1295,22 +1555,43 @@ let dup ?cloexec ch =
   ; event_writable = None
   ; hooks_readable = Lwt_sequence.create ()
   ; hooks_writable = Lwt_sequence.create ()
-  ; (* [check_descriptor] above checked that [ch] belongs to this domain, and
-       so does its duplicate. *)
-    owner = ch.owner }
+  ; (* We own [ch], or it is a shared standard descriptor: the duplicate is
+       ours. *)
+    owner = Lwt_dls.self_token ()
+  ; shared = false }
 
 let dup2 ?cloexec ch1 ch2 =
   check_descriptor ch1;
-  check_descriptor_owner ch2;
+  (* Strictly the owner of [ch2], as for [set_blocking]: redirecting a shared
+     standard descriptor changes it for every domain. *)
+  check_owner ch2.owner;
   Unix.dup2 ?cloexec ch1.fd ch2.fd;
   ch2.set_flags <- ch1.set_flags;
-  ch2.blocking <-
-    (if ch2.set_flags
-     then
-       lazy
-         ( Lazy.force ch1.blocking >>= function
-           | blocking -> Lazy.force (is_blocking ~blocking ch2.fd) )
-     else ch1.blocking)
+  let blocking =
+    if ch2.set_flags
+    then
+      lazy
+        ( Lazy.force ch1.blocking >>= function
+          | blocking -> Lazy.force (is_blocking ~blocking ch2.fd) )
+    else ch1.blocking
+  in
+  (* The mode of a shared standard descriptor is settled at once, on this
+     domain, before it is stored: another domain may read [ch2.blocking] at any
+     time, and a lazy value forced by two domains at once fails. [is_blocking]
+     guesses the mode with a job, which would still be pending, so the guess
+     runs here, synchronously. *)
+  let blocking =
+    if not ch2.shared
+    then blocking
+    else if Sys.win32
+    then (
+      ignore (Lazy.force blocking);
+      blocking)
+    else
+      Lazy.from_val
+        (run_job ~async_method:Async_none (guess_blocking_job ch2.fd))
+  in
+  ch2.blocking <- blocking
 
 let set_close_on_exec ch =
   check_descriptor ch;
@@ -2251,101 +2532,118 @@ let tcflow ch act =
    | Reading notifications                                           |
    +-----------------------------------------------------------------+ *)
 
-external init_notification :
-   unit
-  -> Unix.file_descr
-  = "lwt_unix_init_notification"
-
-external send_notification : int -> unit = "lwt_unix_send_notification_stub"
-external recv_notifications : unit -> int array = "lwt_unix_recv_notifications"
-
-let handle_notifications _ =
-  (* Process available notifications. *)
-  Array.iter call_notification (recv_notifications ())
-
-let event_notifications =
-  ref (Lwt_engine.on_readable (init_notification ()) handle_notifications)
+(* Sets the forward reference declared at the top: from here on, a channel's
+   event drains that channel. *)
+let () =
+  drain_notifications :=
+    fun chan ->
+      (* [recv_notifications] empties the buffer, so if a handler raises, the
+         notifications not handled yet are sent again before the exception is
+         re-raised. Otherwise a job completion or a signal would be lost. *)
+      let ids = recv_notifications chan in
+      Array.iteri
+        (fun i id ->
+           try call_notification id
+           with exn when Lwt.Exception_filter.run exn ->
+             let bt = Printexc.get_raw_backtrace () in
+             for j = i + 1 to Array.length ids - 1 do
+               send_notification ids.(j)
+             done;
+             Printexc.raise_with_backtrace exn bt)
+        ids
 
 (* +-----------------------------------------------------------------+
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
 external set_signal : int -> int -> bool -> unit = "lwt_unix_set_signal"
-external remove_signal : int -> bool -> unit = "lwt_unix_remove_signal"
-external init_signals : unit -> unit = "lwt_unix_init_signals"
+external remove_signal : int -> int -> unit = "lwt_unix_remove_signal"
+external reinstall_signal : int -> unit = "lwt_unix_reinstall_signal"
 external handle_signal : int -> unit = "lwt_unix_handle_signal"
-
-let () = init_signals ()
 
 let set_signal signum notification =
   set_signal signum notification (Lwt_engine.forwards_signal signum)
 
-let remove_signal signum =
-  remove_signal signum (Lwt_engine.forwards_signal signum)
-
-module Signal_map = Map.Make (struct
-    type t = int
-
-    let compare a b = a - b
-  end)
-
-type signal_handler =
-  {sh_num : int; sh_node : (signal_handler_id -> int -> unit) Lwt_sequence.node}
-
-and signal_handler_id = signal_handler option ref
-
-let signals = ref Signal_map.empty
-
+(* Reports on the calling loop's subscriptions. *)
 let signal_count () =
   Signal_map.fold
     (fun _signum (_notification, actions) len ->
        len + Lwt_sequence.length actions)
-    !signals 0
+    (self_notif ()).signals 0
 
+(* Subscribes this loop to the signal, if it is not already, and adds the
+   handler. The C side wakes every subscribed loop. *)
 let on_signal_full signum handler =
-  check_notification_owner ();
+  let notif = self_notif () in
   let id = ref None in
   let _, actions =
-    try Signal_map.find signum !signals
+    try Signal_map.find signum notif.signals
     with Not_found ->
       let actions = Lwt_sequence.create () in
       let notification =
         make_notification (fun () ->
-          Lwt_sequence.iter_l (fun f -> f id signum) actions)
+          (* A handler that raises must not keep the next ones from running.
+             Its exception goes to the hook, as for [Lwt.on_success]. *)
+          Lwt_sequence.iter_l
+            (fun f ->
+               try f signum
+               with exn when Lwt.Exception_filter.run exn ->
+                 !Lwt.async_exception_hook exn)
+            actions)
       in
       (try set_signal signum notification
        with exn when Lwt.Exception_filter.run exn ->
          stop_notification notification;
          raise exn);
-      signals := Signal_map.add signum (notification, actions) !signals;
+      notif.signals <-
+        Signal_map.add signum (notification, actions) notif.signals;
       notification, actions
   in
-  let node = Lwt_sequence.add_r handler actions in
-  id := Some {sh_num = signum; sh_node = node};
+  (* Each handler gets its own id, so that it can disable itself. *)
+  let node = Lwt_sequence.add_r (fun signum -> handler id signum) actions in
+  id := Some {sh_num = signum; sh_node = node; sh_owner = Lwt_dls.self_token ()};
   id
 
 let on_signal signum f = on_signal_full signum (fun _notification num -> f num)
 
 let disable_signal_handler id =
-  check_notification_owner ();
   match !id with
   | None -> ()
-  | Some sh ->
+  | Some sh -> (
+      (* From its own loop only: the handler list and the subscription belong to
+         that loop. *)
+      check_owner sh.sh_owner;
+      let notif = self_notif () in
       id := None;
       Lwt_sequence.remove sh.sh_node;
-      let notification, actions = Signal_map.find sh.sh_num !signals in
-      if Lwt_sequence.is_empty actions
-      then begin
-        remove_signal sh.sh_num;
-        signals := Signal_map.remove sh.sh_num !signals;
-        stop_notification notification
-      end
+      match Signal_map.find_opt sh.sh_num notif.signals with
+      | None ->
+          (* The subscriptions were dropped when the domain exited. *)
+          ()
+      | Some (notification, actions) ->
+          if Lwt_sequence.is_empty actions
+          then begin
+            remove_signal sh.sh_num notification;
+            notif.signals <- Signal_map.remove sh.sh_num notif.signals;
+            stop_notification notification
+          end)
 
+(* Sets the forward reference declared at the top: when a domain exits, it
+   drops its own subscriptions, since only that domain may touch them. *)
+let () =
+  drop_signal_subscriptions :=
+    fun () ->
+      let notif = self_notif () in
+      Signal_map.iter
+        (fun signum (notification, _) -> remove_signal signum notification)
+        notif.signals;
+      notif.signals <- Signal_map.empty
+
+(* Subscribing again would not reinstall the handler: only the first
+   subscription installs it. The C side counted the subscriptions that need it,
+   so it knows whether any does. *)
 let reinstall_signal_handler signum =
-  check_notification_owner ();
-  match Signal_map.find signum !signals with
-  | exception Not_found -> ()
-  | notification, _ -> set_signal signum notification
+  if Signal_map.mem signum (self_notif ()).signals then reinstall_signal signum
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -2355,23 +2653,32 @@ external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
 
 (* TODO: replace fork with something thread+domain safe *)
 let fork () =
-  (* [fork] reinitializes the notification descriptor and empties the job
-     sequence, which belong to the domain that initialized this module. Also,
-     the runtime refuses [Unix.fork] once a domain has been spawned, even after
-     it is joined. *)
-  check_notification_owner ();
+  (* The runtime refuses [Unix.fork] once any domain has been spawned, even
+     after it has been joined, so [fork] needs no domain check of its own. *)
   match Unix.fork () with
   | 0 ->
       (* Let the engine handle the fork *)
       Lwt_engine.fork ();
       (* Reset threading. *)
       reset_after_fork ();
-      (* Stop the old event for notifications. *)
-      Lwt_engine.stop_event !event_notifications;
-      (* Reinitialise the notification system. *)
-      event_notifications :=
-        Lwt_engine.on_readable (init_notification ()) handle_notifications;
+      (* Reset this domain's notification channel: the inherited descriptors
+         are the parent's, and so are the notifications still pending in it.
+         The channel keeps its slot and generation, so that the ids made before
+         the fork still name it. [fork] runs with a single domain, so there is
+         no other channel. *)
+      let old = Lwt_dls.get notif_slot in
+      Lwt_engine.stop_event old.event;
+      let fd = reset_notification_channel old.chan in
+      let event =
+        Lwt_engine.on_readable fd (fun _ -> !drain_notifications old.chan)
+      in
+      (* The child keeps the parent's job sequence, which the lines below
+         empty and cancel, so its count starts again at zero. The closures of
+         those jobs still refer to the old record, so a job that completes
+         after all does not count down in the new one. *)
+      Lwt_dls.set notif_slot {old with event; job_count = 0};
       (* Collect all pending jobs. *)
+      let jobs = (self_notif ()).jobs in
       let l = Lwt_sequence.fold_l (fun (_, f) l -> f :: l) jobs [] in
       (* Remove them all. *)
       Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
@@ -2388,7 +2695,6 @@ type process_status = Unix.process_status =
   | WSTOPPED of int
 
 type wait_flag = Unix.wait_flag = WNOHANG | WUNTRACED
-type resource_usage = {ru_utime : float; ru_stime : float}
 
 let has_wait4 = not Sys.win32
 
@@ -2405,56 +2711,41 @@ let do_wait4 flags pid =
     pid, status, {ru_utime = 0.0; ru_stime = 0.0}
   else stub_wait4 flags pid
 
-let wait_children = Lwt_sequence.create ()
-let wait_count () = Lwt_sequence.length wait_children
+(* Reports on the calling loop's waits. *)
+let wait_count () = Lwt_sequence.length (self_notif ()).wait_children
 
-(* Called by [install_sigchld_handler] below, which [Lwt_main.run] calls. This
-   is to avoid installing the sigchld_handler in cases where the user is not
-   really using Lwt (just linking against it for some reason). *)
-let really_install_sigchld_handler () =
-  if not Sys.win32
-  then
-    ignore
-      begin
-        on_signal Sys.sigchld (fun _ ->
-          Lwt_sequence.iter_node_l
-            begin fun node ->
-              let wakener, flags, pid = Lwt_sequence.get node in
-              try
-                let ((pid', _, _) as v) = do_wait4 flags pid in
-                if pid' <> 0
-                then begin
-                  Lwt_sequence.remove node; Lwt.wakeup wakener v
-                end
-              with e when Lwt.Exception_filter.run e ->
-                Lwt_sequence.remove node; Lwt.wakeup_exn wakener e
-            end
-            wait_children)
-      end
+(* Reaps the children this loop is waiting for, on SIGCHLD. Two loops waiting
+   for any child race for whichever exits. *)
+let sigchld_handler () =
+  let wait_children = (self_notif ()).wait_children in
+  Lwt_sequence.iter_node_l
+    begin fun node ->
+      let wakener, flags, pid = Lwt_sequence.get node in
+      try
+        let ((pid', _, _) as v) = do_wait4 flags pid in
+        if pid' <> 0
+        then begin
+          Lwt_sequence.remove node; Lwt.wakeup wakener v
+        end
+      with e when Lwt.Exception_filter.run e ->
+        Lwt_sequence.remove node; Lwt.wakeup_exn wakener e
+    end
+    wait_children
 
-(* The SIGCHLD handler is process-wide, so it is installed once per process.
-   Once it is installed, checking the atomic flag is all a call costs. The
-   mutex serializes the installation itself, and is released even if it
-   raises. *)
-let sigchld_installed = Atomic.make false
-let sigchld_install_mutex = Mutex.create ()
-
-(* Does nothing on a domain other than the one that initialized this module,
-   since [Lwt_main.run] calls it on every domain and only that domain can wait
-   for children. On another domain, [waitpid] and [wait4] fail when they would
-   block. *)
+(* Per loop: each loop that waits for a child subscribes for itself. Called by
+   [Lwt_main.run] on every domain, and does nothing the second time on the same
+   domain. *)
+(* Does nothing once the channel is retired, as no signal reaches the loop any
+   more: [Lwt_main.run] calls this, and must still work in a late
+   [Domain.at_exit] callback. Waiting for a child then fails instead. *)
 let install_sigchld_handler () =
-  if is_notification_owner () && not (Atomic.get sigchld_installed)
+  let notif = self_notif () in
+  if not (notif.sigchld_installed || notif.retired)
   then begin
-    Mutex.lock sigchld_install_mutex;
-    Fun.protect
-      ~finally:(fun () -> Mutex.unlock sigchld_install_mutex)
-      (fun () ->
-         if not (Atomic.get sigchld_installed)
-         then begin
-           really_install_sigchld_handler ();
-           Atomic.set sigchld_installed true
-         end)
+    if not Sys.win32
+    then ignore (on_signal Sys.sigchld (fun _ -> sigchld_handler ()));
+    (* Set after subscribing, so that a failed subscription is tried again. *)
+    notif.sigchld_installed <- true
   end
 
 let _waitpid flags pid =
@@ -2474,9 +2765,10 @@ let waitpid =
         if pid' <> 0
         then Lwt.return res
         else begin
-          check_notification_owner ();
           let res, w = Lwt.task () in
-          let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+          let node =
+            Lwt_sequence.add_l (w, flags, pid) (live_notif ()).wait_children
+          in
           Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
           res >>= fun (pid, status, _) -> Lwt.return (pid, status)
         end
@@ -2493,9 +2785,10 @@ let wait4 flags pid =
     if pid' <> 0
     then Lwt.return res
     else begin
-      check_notification_owner ();
       let res, w = Lwt.task () in
-      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+      let node =
+        Lwt_sequence.add_l (w, flags, pid) (live_notif ()).wait_children
+      in
       Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
       res
     end
@@ -2645,4 +2938,5 @@ module Versioned = struct
   let send_msg_2 = send_msg
 end
 
-let write_job_count_runtimte_event () = Lwt_rte.emit_job_count !job_count
+let write_job_count_runtimte_event () =
+  Lwt_rte.emit_job_count (self_notif ()).job_count

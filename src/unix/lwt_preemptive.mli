@@ -8,14 +8,23 @@
     See {{:https://github.com/hcarty/mwt} Mwt} for a more modern
     implementation.
 
-    {!detach} hands its result back through Lwt's notification descriptor,
-    read by the domain that initialized {!Lwt_unix}. So {!detach}, {!init} and
-    {!set_bounds} belong to that domain, and raise {!Lwt.Domain_crossing}
-    elsewhere.
+    {!detach} may be called from any domain, and its result comes back on the
+    loop that detached the work.
+
+    Each loop has its own pool of worker threads. A domain does not terminate
+    while one of its threads runs, so a shared pool would keep a domain alive
+    after its work is done. When a domain other than the main one exits, it
+    ends its workers, and waits for the computations it detached that are
+    still running.
+
+    The bounds are process-wide settings applied per loop: [set_bounds (0, 4)]
+    means four worker threads per loop. {!nbthreads}, {!nbthreadsbusy} and
+    {!nbthreadsqueued} report on the calling loop.
+
     {!run_in_main} and {!run_in_main_dont_wait} may be called from any thread
-    and any domain: the function runs on the domain that initialized
-    {!Lwt_unix}, and {!run_in_main} blocks its caller until the loop of that
-    domain has run it. *)
+    and any domain. The function runs on the domain that initialized
+    {!Lwt_unix}, whichever domain detached the work, and {!run_in_main} blocks
+    its caller until the loop of that domain has run it. *)
 
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 (** [detach f x] runs the computation [f x] in a separate preemptive thread.
@@ -28,7 +37,15 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 
     Note that Lwt thread-local storage (i.e., {!Lwt.with_value}) cannot be
     safely used from within [f]. The same goes for most of the rest of Lwt. If
-    you need to run an Lwt thread in [f], use {!run_in_main}. *)
+    you need to run an Lwt thread in [f], use {!run_in_main}.
+
+    When a spawned domain exits, Lwt ends its threads. A [Domain.at_exit]
+    callback that runs after that still gets a result from [detach]: [f x]
+    runs at once, in the calling thread.
+
+    A spawned domain should not detach for the first time in an exit hook
+    ({!Lwt_main.at_exit}): the threads started then are never ended, and the
+    domain does not terminate. *)
 
 val run_in_main : (unit -> 'a Lwt.t) -> 'a
 (** [run_in_main f] can be called from a detached computation to execute

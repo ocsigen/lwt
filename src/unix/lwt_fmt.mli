@@ -40,10 +40,11 @@ val of_channel : Lwt_io.output_channel -> formatter
 (** [of_channel oc] creates a formatter that writes to the channel [oc]. *)
 
 val stdout : formatter
-(** Formatter printing on {!Lwt_io.stdout}. *)
+(** Formatter printing on {!Lwt_io.stdout}. Like that channel, it stands for
+    one formatter per domain, so that every loop can print with it. *)
 
 val stderr : formatter
-(** Formatter printing on {!Lwt_io.stdout}. *)
+(** Formatter printing on {!Lwt_io.stderr}, one per domain as well. *)
 
 val make_formatter :
    commit:(unit -> unit Lwt.t)

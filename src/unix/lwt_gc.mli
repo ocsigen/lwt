@@ -3,9 +3,15 @@
 
 (** Interaction with the garbage collector *)
 
-(** This module offers a convenient way to add a finaliser launching a
+(** This module offers a convenient way to add a finalizer launching a
     thread to a value, without having to use [Lwt_unix.run] in the
-    finaliser. *)
+    finalizer.
+
+    The function runs on the loop of the domain that registered it, at its
+    next iteration, since the finalizer's notification is delivered there. If
+    that domain has gone when the value is collected, the function does not
+    run: the notification names a channel that no longer exists, and is
+    dropped. *)
 
 val finalise : ('a -> unit Lwt.t) -> 'a -> unit
 (** [finalise f x] ensures [f x] is evaluated after [x] has been

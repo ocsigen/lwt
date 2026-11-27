@@ -279,8 +279,6 @@ let rusage (_pid, _status, rusage) = rusage
 external cast_chan : 'a Lwt_io.channel -> unit Lwt_io.channel = "%identity"
 (* Transform a channel into a channel that only support closing. *)
 
-let ignore_close chan = ignore (Lwt_io.close chan)
-
 class virtual common timeout proc channels =
   let wait = waitproc proc in
   object (self)
@@ -310,7 +308,7 @@ class virtual common timeout proc channels =
 
     initializer
       (* Ensure channels are closed when no longer used. *)
-      List.iter (Gc.finalise ignore_close) channels;
+      List.iter (Lwt_io.close_on_finalise [@alert "-trespassing"]) channels;
       (* Handle timeout. *)
       match timeout with
       | None -> ()
@@ -444,8 +442,6 @@ let with_process_full ?timeout ?env ?cwd cmd f =
 let exec ?timeout ?env ?cwd ?stdin ?stdout ?stderr cmd =
   (open_process_none ?timeout ?env ?cwd ?stdin ?stdout ?stderr cmd)#close
 
-let ignore_close ch = ignore (Lwt_io.close ch)
-
 let read_opt read ic =
   Lwt.catch
     (fun () -> read ic >|= fun x -> Some x)
@@ -455,7 +451,7 @@ let read_opt read ic =
 
 let recv_chars pr =
   let ic = pr#stdout in
-  Gc.finalise ignore_close ic;
+  (Lwt_io.close_on_finalise [@alert "-trespassing"]) ic;
   Lwt_stream.from (fun _ ->
     read_opt Lwt_io.read_char ic >>= fun x ->
     if x = None
@@ -466,7 +462,7 @@ let recv_chars pr =
 
 let recv_lines pr =
   let ic = pr#stdout in
-  Gc.finalise ignore_close ic;
+  (Lwt_io.close_on_finalise [@alert "-trespassing"]) ic;
   Lwt_stream.from (fun _ ->
     read_opt Lwt_io.read_line ic >>= fun x ->
     if x = None

@@ -23,7 +23,81 @@
    domain_two_loops
    domain_upstream_scenarios
    domain_shared_resolved
-   notification_reentry)))
+   notification_reentry
+   fork_pending_notification
+   signal_full_buffer
+   notification_growth
+   notification_batch
+   signal_action_raises
+   signal_handler_id
+   domain_notifications
+   domain_signals
+   domain_std_channels
+   domain_signal_forwarding
+   domain_gc
+   domain_soak
+   domain_exit_main
+   domain_emfile)))
+
+; The main domain's exit hooks can still run jobs. The test passes if the
+; program exits. Builds everywhere, since it needs no second domain.
+
+(test
+ (name domain_exit_main)
+ (package lwt)
+ (modules domain_exit_main)
+ (libraries lwt.unix threads))
+
+; Domains spawned and let die in a loop, checking that descriptors and threads
+; do not accumulate. Short by default, LWT_SOAK_SECONDS to lengthen.
+; Uses signals and a Unix socket, hence not on Windows.
+
+(test
+ (name domain_soak)
+ (package lwt)
+ (modules domain_soak)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; Lwt_gc's deferred function runs on the loop that registered it, and one whose
+; domain has gone is dropped; a domain closes the channels of its streams and
+; processes before it goes. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_gc)
+ (package lwt)
+ (modules domain_gc)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix threads))
+
+; A signal reaches every loop that subscribed to it, each on its own channel.
+; Needs a second domain, hence OCaml 5.
+; Uses Unix.kill, hence not on Windows.
+
+(test
+ (name domain_signals)
+ (package lwt)
+ (modules domain_signals)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; Every loop has its own notification channel, and an id carries the channel it
+; belongs to. Needs a second domain, hence OCaml 5.
+
+(test
+ (name domain_notifications)
+ (package lwt)
+ (modules domain_notifications)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (libraries lwt.unix threads))
 
 (executable
  (name dummy)
@@ -122,9 +196,9 @@
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
 
-; Jobs, signals and child waiting belong to the domain that initialized
-; Lwt_unix. Needs a second domain, hence OCaml 5, and Unix.fork and SIGUSR1,
-; hence not Windows.
+; Jobs, signals and child waiting work on every domain, and fork fails once a
+; domain has been spawned. Needs a second domain, hence OCaml 5, and Unix.fork
+; and SIGUSR1, hence not Windows.
 
 (test
  (name domain_unix_policy)
@@ -136,8 +210,8 @@
   (<> %{os_type} "Win32"))
  (libraries lwt.unix))
 
-; A timer wheel per domain, and detach only on the domain that initialized
-; Lwt_unix. Needs a second domain, hence OCaml 5.
+; A timer wheel and a pool of preemptive threads per domain. Needs a second
+; domain, hence OCaml 5.
 
 (test
  (name domain_timeouts)
@@ -180,6 +254,35 @@
   (>= %{ocaml_version} "5.0"))
  (libraries lwt.unix))
 
+; Loop creation when descriptors are exhausted: must fail with EMFILE and
+; leave the channel table usable. The test lowers its own limit by re-running
+; itself under a shell, hence not on Windows. Needs a second domain, hence
+; OCaml 5.
+
+(test
+ (name domain_emfile)
+ (package lwt)
+ (modules domain_emfile)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; The standard channels of Lwt_io and Lwt_fmt from every loop: one per domain,
+; over the shared standard descriptors. Needs other domains, hence OCaml 5.
+; Uses Unix.alarm, hence not on Windows.
+
+(test
+ (name domain_std_channels)
+ (package lwt)
+ (modules domain_std_channels)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
 ; Which values a resolved promise can share across domains. Needs a second
 ; domain, hence OCaml 5.
 
@@ -199,3 +302,81 @@
  (name notification_reentry)
  (libraries lwt lwt.unix threads)
  (modules notification_reentry))
+
+; A notification pending at a fork is dropped in the child, whose own
+; notifications still reach its loop. Uses fork, hence not on Windows.
+
+(test
+ (name fork_pending_notification)
+ (package lwt)
+ (modules fork_pending_notification)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; A loop subscribing to a signal after one whose engine forwards it still gets
+; the process-wide handler. Needs other domains, hence OCaml 5.
+; Uses Unix.alarm and SIGUSR2, hence not on Windows.
+
+(test
+ (name domain_signal_forwarding)
+ (package lwt)
+ (modules domain_signal_forwarding)
+ (build_if
+  (>= %{ocaml_version} "5.0"))
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; A signal arriving while the notification buffer is full is delivered,
+; without the handler growing the buffer. Uses SIGUSR1 and Unix.alarm, hence
+; not on Windows.
+
+(test
+ (name signal_full_buffer)
+ (package lwt)
+ (modules signal_full_buffer)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; Job completions on many worker threads at once while the notification buffer
+; is full. Uses a FIFO, hence not on Windows.
+
+(test
+ (name notification_growth)
+ (package lwt)
+ (modules notification_growth)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; A notification handler that raises does not lose the rest of its batch.
+
+(test
+ (name notification_batch)
+ (package lwt)
+ (modules notification_batch)
+ (libraries lwt.unix))
+
+; A signal handler that raises does not keep the next ones from running. Uses
+; SIGUSR1, hence not on Windows.
+
+(test
+ (name signal_action_raises)
+ (package lwt)
+ (modules signal_action_raises)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; Each handler of a signal gets its own id. Uses SIGUSR2, hence not on
+; Windows.
+
+(test
+ (name signal_handler_id)
+ (package lwt)
+ (modules signal_handler_id)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
