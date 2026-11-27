@@ -83,6 +83,8 @@ static value result_truncate(struct job_truncate* job)
 /* The stub creating the job structure. */
 CAMLprim value lwt_unix_truncate_job(value path, value offset)
 {
+  CAMLparam2(path, offset);
+  LWT_UNIX_CHECK_STRING(truncate, path);
   /* Get the length of the path parameter. */
   mlsize_t len_path = caml_string_length(path) + 1;
   /* Allocate a new job. */
@@ -97,12 +99,14 @@ CAMLprim value lwt_unix_truncate_job(value path, value offset)
   /* Copy the offset parameter. */
   job->offset = Long_val(offset);
   /* Wrap the structure into a caml value. */
-  return lwt_unix_alloc_job(&job->job);
+  CAMLreturn(lwt_unix_alloc_job(&job->job));
 }
 
 /* The stub creating the job structure. */
 CAMLprim value lwt_unix_truncate_64_job(value path, value offset)
 {
+  CAMLparam2(path, offset);
+  LWT_UNIX_CHECK_STRING(truncate, path);
   /* Get the length of the path parameter. */
   mlsize_t len_path = caml_string_length(path) + 1;
   /* Allocate a new job. */
@@ -117,7 +121,7 @@ CAMLprim value lwt_unix_truncate_64_job(value path, value offset)
   /* Copy the offset parameter. */
   job->offset = Int64_val(offset);
   /* Wrap the structure into a caml value. */
-  return lwt_unix_alloc_job(&job->job);
+  CAMLreturn(lwt_unix_alloc_job(&job->job));
 }
 
 #else /* !defined(LWT_ON_WINDOWS) */

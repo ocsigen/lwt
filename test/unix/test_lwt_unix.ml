@@ -124,6 +124,73 @@ let openfile_tests =
   ; test "openfile: null-byte rejection dirs" (fun () ->
       test_nullbyte "foo/\000../../../") ]
 
+(* These functions must reject a path containing a NUL byte, as the Unix
+   library does. Each path is an existing file or directory, or a fresh name,
+   followed by a NUL byte: without the check, C would act on the part before
+   the NUL byte. Each test removes the paths it made, and those a failing check
+   would have created. *)
+let nullbyte_path_tests =
+  let with_nul path = path ^ "\000.x" in
+  let created = ref [] in
+  let track path =
+    created := path :: !created;
+    path
+  in
+  let file () = track (Test_unix.temp_file ())
+  and dir () = track (Test_unix.temp_directory ())
+  and fresh () = track (Test_unix.temp_name ()) in
+  let cleanup () =
+    List.iter
+      (fun path ->
+         try
+           match (Unix.lstat path).st_kind with
+           | Unix.S_DIR -> Unix.rmdir path
+           | _ -> Unix.unlink path
+         with Unix.Unix_error _ -> ())
+      !created;
+    created := [];
+    Lwt.return_unit
+  in
+  let rejects name f =
+    test
+      ("null-byte rejection: " ^ name)
+      ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+         Lwt.finalize
+           (fun () ->
+              Lwt.try_bind f
+                (fun () -> Lwt.return_false)
+                (function
+                  | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_true
+                  | exc -> Lwt.reraise exc))
+           cleanup)
+  in
+  [ rejects "access" (fun () -> Lwt_unix.access (with_nul (file ())) [F_OK])
+  ; rejects "chdir" (fun () -> Lwt_unix.chdir (with_nul "."))
+  ; rejects "chmod" (fun () -> Lwt_unix.chmod (with_nul (file ())) 0o600)
+  ; rejects "chown" (fun () ->
+      Lwt_unix.chown (with_nul (file ())) (Unix.getuid ()) (Unix.getgid ()))
+  ; rejects "chroot" (fun () -> Lwt_unix.chroot (with_nul (dir ())))
+  ; rejects "link: old path" (fun () ->
+      Lwt_unix.link (with_nul (file ())) (fresh ()))
+  ; rejects "link: new path" (fun () ->
+      Lwt_unix.link (file ()) (with_nul (fresh ())))
+  ; rejects "mkdir" (fun () -> Lwt_unix.mkdir (with_nul (fresh ())) 0o755)
+  ; rejects "mkfifo" (fun () -> Lwt_unix.mkfifo (with_nul (fresh ())) 0o600)
+  ; rejects "rename: old path" (fun () ->
+      Lwt_unix.rename (with_nul (file ())) (fresh ()))
+  ; rejects "rename: new path" (fun () ->
+      Lwt_unix.rename (file ()) (with_nul (fresh ())))
+  ; rejects "rmdir" (fun () -> Lwt_unix.rmdir (with_nul (dir ())))
+  ; rejects "symlink: target" (fun () ->
+      Lwt_unix.symlink (with_nul (fresh ())) (fresh ()))
+  ; rejects "symlink: link name" (fun () ->
+      Lwt_unix.symlink (fresh ()) (with_nul (fresh ())))
+  ; rejects "truncate" (fun () -> Lwt_unix.truncate (with_nul (file ())) 0)
+  ; rejects "LargeFile.truncate" (fun () ->
+      Lwt_unix.LargeFile.truncate (with_nul (file ())) 0L)
+  ; rejects "unlink" (fun () -> Lwt_unix.unlink (with_nul (file ()))) ]
+
 let utimes_tests =
   [ test "utimes: basic" (fun () ->
       let temporary_file = Test_unix.temp_file () in
@@ -1028,8 +1095,8 @@ let dup_tests ~blocking =
 
 let suite =
   suite "lwt_unix"
-    (wait_tests @ openfile_tests @ utimes_tests @ readdir_tests
-   @ io_vectors_byte_count_tests @ readv_tests @ writev_tests
+    (wait_tests @ openfile_tests @ nullbyte_path_tests @ utimes_tests
+   @ readdir_tests @ io_vectors_byte_count_tests @ readv_tests @ writev_tests
    @ send_recv_msg_tests @ bind_tests @ dir_tests @ lwt_preemptive_tests
    @ lwt_user_tests @ pread_tests ~blocking:true
     @ pread_tests ~blocking:false

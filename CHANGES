@@ -42,6 +42,11 @@
     OpenBSD, which wants a one-byte value. They now pass a byte, which the
     other systems accept too. (Jérôme Vouillon)
 
+  * Lwt_unix: access, chdir, chmod, chown, chroot, link, mkdir, mkfifo, rename,
+    rmdir, symlink, truncate, LargeFile.truncate and unlink also reject paths
+    containing a NUL byte, which the fix for #1124 missed.
+    (Cuihtlauac Alvarado, #1154)
+
 ===== 6.1.3 =====
 
 ====== Changes ======
