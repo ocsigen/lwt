@@ -5,7 +5,6 @@
 ## Manual
 - [Lwt](lwt/index.md)
 - [Lwt manual](lwt/manual.md)
-- [OCaml Package Documentation](index.md)
 - [lwt\_direct index](lwt_direct/index.md)
 - [lwt\_ppx index](lwt_ppx/index.md)
 - [lwt\_ppx\_\_ppx\_let\_tests index](lwt_ppx__ppx_let_tests/index.md)
