@@ -24,7 +24,9 @@
    domain_upstream_scenarios
    domain_shared_resolved
    notification_reentry
-   fork_pending_notification)))
+   fork_pending_notification
+   signal_full_buffer
+   notification_growth)))
 
 (executable
  (name dummy)
@@ -208,6 +210,29 @@
  (name fork_pending_notification)
  (package lwt)
  (modules fork_pending_notification)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; A signal arriving while the notification buffer is full is delivered,
+; without the handler growing the buffer. Uses SIGUSR1 and Unix.alarm, hence
+; not on Windows.
+
+(test
+ (name signal_full_buffer)
+ (package lwt)
+ (modules signal_full_buffer)
+ (enabled_if
+  (<> %{os_type} "Win32"))
+ (libraries lwt.unix))
+
+; Job completions on many worker threads at once while the notification buffer
+; is full. Uses a FIFO, hence not on Windows.
+
+(test
+ (name notification_growth)
+ (package lwt)
+ (modules notification_growth)
  (enabled_if
   (<> %{os_type} "Win32"))
  (libraries lwt.unix))

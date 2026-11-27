@@ -49,6 +49,16 @@
     notification lock at fork time no longer blocks the child either.
     (Vincent Balat, Jérôme Vouillon)
 
+  * Lwt_unix: the signal handler neither allocates nor raises. When the
+    notification buffer was full, it grew it with malloc, which deadlocks if
+    the signal interrupted malloc. It now marks the signal pending, and the
+    loop delivers it the next time it reads its notifications. A failed
+    wake-up write raised an OCaml exception from the handler. It is now ignored
+    there. Several deliveries of one signal while the buffer is full now merge
+    into one, as pending signals do. The buffer now grows with its lock
+    released, so that the handler, which takes that lock, no longer waits for
+    a thread that is itself waiting for malloc.
+
 ===== 6.1.3 =====
 
 ====== Changes ======
