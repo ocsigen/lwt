@@ -1082,8 +1082,8 @@ exception Domain_crossing
     domain.
 
     A {e pending} promise belongs to the domain that created it. Its callbacks
-    run on that domain. Changing it from another domain raises
-    [Domain_crossing]. Changing it means:
+    run on that domain. Modifying the promise from another domain raises
+    [Domain_crossing]. Here "modifying" means:
 
     - resolving or rejecting it, including by canceling it,
     - attaching a callback to it, explicitly with the [on_*] functions or
@@ -2110,8 +2110,5 @@ module Private : sig
   [@@@alert "-trespassing"]
 
   val check_owner : Lwt_dls.token -> unit
-  (** [check_owner owner] raises {!Domain_crossing} unless [owner] is the
-      calling domain. For the values that belong to the domain that created
-      them, such as a mutex or a file descriptor. *)
 end
 [@@alert trespassing "for internal use only, keep away"]

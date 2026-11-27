@@ -43,7 +43,7 @@ type 'mode channel
 
     The channels {!stdout}, {!stderr}, {!stdin}, {!null} and {!zero} are
     created when this module is initialized. Therefore they belong to the
-    domain that initialized it.
+    domain that initialized them.
 
     For now, another domain can only make channels over descriptors that need
     no {!Lwt_unix} job. {!Lwt_unix.file_descr} explains which descriptors

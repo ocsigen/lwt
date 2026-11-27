@@ -1582,10 +1582,11 @@ val install_sigchld_handler : unit -> unit
 (** Installs the SIGCHLD handler of the process, unless it is already
     installed.
 
-    Only the domain that initialized this module installs it. On another
-    domain, this function does nothing.
+    The handler only wakes up the domain that initialized this module, so
+    only that domain installs it. On another domain, this function does
+    nothing, so that {!Lwt_main.run} can call it on every domain.
 
-    It can be called from several domains at once.
+    Several threads can call it at the same time.
 
     For internal use: {!Lwt_main.run} and {!waitpid} call it. *)
 

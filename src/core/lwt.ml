@@ -3135,6 +3135,9 @@ module Private = struct
 
   let tracing_context = tracing_context
 
+  (* [check_owner owner] raises [Domain_crossing] unless [owner] is the calling
+     domain. For the values that belong to the domain that created them, such
+     as a mutex or a file descriptor. *)
   let[@inline] check_owner (owner : Lwt_dls.token) =
     if (owner :> int) <> (Lwt_dls.self_token () :> int)
     then raise Domain_crossing
