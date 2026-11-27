@@ -1090,6 +1090,7 @@ exception Domain_crossing
       implicitly by binding on it.
 
     Reading a pending promise, with {!Lwt.state} for example, is not checked.
+    It does not change the promise.
 
     A {e resolved} promise has no owner. It can be used from any domain.
 
