@@ -59,6 +59,10 @@
     released, so that the handler, which takes that lock, no longer waits for
     a thread that is itself waiting for malloc.
 
+  * Lwt_unix: when a job completes and the write that wakes the loop fails,
+    the worker thread no longer raises an OCaml exception. It does not hold
+    the runtime lock, so raising there was not allowed.
+
 ===== 6.1.3 =====
 
 ====== Changes ======
