@@ -83,6 +83,8 @@ type notifier =
 
 module Notifiers = Map.Make (Int)
 
+type notification = int (* a simple ID*)
+
 (* Process-wide. Creating and stopping a notification must be safe from any
    thread or domain, like sending one. The table is an immutable map in an
    atomic. An update builds a new map, installs it with a compare-and-set, and
@@ -97,11 +99,9 @@ module Notifiers = Map.Make (Int)
    [last] is the last id handed out. See
    https://github.com/ocsigen/lwt/issues/277 and
    https://github.com/ocsigen/lwt/pull/278 for its initial value. *)
-type notifiers = {map : notifier Notifiers.t; last : int}
+type notifiers = {map : notifier Notifiers.t; last : notification}
 
 let notifiers = Atomic.make {map = Notifiers.empty; last = 0x7FFFFFFF - 1000}
-
-type notification = int (* a simple ID*)
 
 let rec find_free_id map id =
   if Notifiers.mem id map then find_free_id map (id + 1) else id
